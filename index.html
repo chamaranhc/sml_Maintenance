@@ -1,0 +1,3412 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SML - Factory Maintenance Operating System</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        factory: {
+                            900: '#0b0f17',
+                            800: '#131b2a',
+                            700: '#1e293b',
+                            600: '#334155',
+                            accent: '#3b82f6',
+                            amber: '#f59e0b',
+                            emerald: '#10b981',
+                            rose: '#f43f5e',
+                            purple: '#8b5cf6'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Firebase Compat SDKs (v10) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0f17;
+            color: #f1f5f9;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #131b2a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        .glass-card {
+            background: rgba(19, 27, 42, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .pulse-red {
+            box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7);
+            animation: pulse-red-anim 2s infinite;
+        }
+        @keyframes pulse-red-anim {
+            0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(244, 63, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased bg-factory-900 text-slate-100">
+
+    <header class="border-b border-slate-800 bg-factory-800/90 backdrop-blur sticky top-0 z-30 px-4 lg:px-8 py-3">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <!-- Brand / Logo -->
+            <div class="flex items-center space-x-3 w-full md:w-auto justify-between">
+                <div class="flex items-center space-x-3">
+                    <!-- SML Samson Manufacturers Official Logo -->
+                    <div class="bg-white px-3 py-1.5 rounded-xl shadow-md border border-slate-700 flex items-center justify-center">
+                        <svg class="h-9 w-auto" viewBox="0 0 320 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M 12 30 C 12 18, 30 8, 50 8 C 67 8, 82 17, 92 27 C 72 27, 56 21, 44 27 C 32 32, 26 41, 37 41 C 47 41, 62 34, 77 34 C 92 34, 98 45, 84 49 C 72 53, 52 47, 40 47 C 24 47, 12 38, 12 30 Z" fill="#0022FF"/>
+                            <path d="M 42 19 C 52 15, 64 19, 54 23 C 46 25, 38 23, 42 19 Z" fill="#FFFFFF"/>
+                            <path d="M 57 29 C 67 25, 77 29, 70 33 C 62 35, 54 33, 57 29 Z" fill="#FFFFFF"/>
+                            <path d="M 88 50 C 88 62, 70 72, 50 72 C 33 72, 18 63, 8 53 C 28 53, 44 59, 56 53 C 68 48, 74 39, 63 39 C 53 39, 38 46, 23 46 C 8 46, 2 35, 16 31 C 28 27, 48 33, 60 33 C 76 33, 88 42, 88 50 Z" fill="#FF0000"/>
+                            <path d="M 58 61 C 48 65, 36 61, 46 57 C 54 55, 62 57, 58 61 Z" fill="#FFFFFF"/>
+                            <path d="M 43 51 C 33 55, 23 51, 30 47 C 38 45, 46 47, 43 51 Z" fill="#FFFFFF"/>
+                            <text x="102" y="52" fill="#0022FF" font-family="'Inter', 'Arial Black', sans-serif" font-weight="900" font-style="italic" font-size="52" letter-spacing="-2">SML</text>
+                            <text x="98" y="68" fill="#FF0000" font-family="'Inter', Arial, sans-serif" font-weight="800" font-size="11.5" letter-spacing="0.2">SAMSON MANUFACTURERS (PVT) LTD.</text>
+                        </svg>
+                    </div>
+                    <div class="hidden sm:block border-l border-slate-800 pl-3">
+                        <h1 class="font-bold text-sm text-white leading-tight">Maintenance OS</h1>
+                        <p class="text-[11px] text-slate-400 font-medium">Smart Maintenance Operating System</p>
+                    </div>
+                </div>
+                <div class="flex md:hidden items-center space-x-2">
+                    <button onclick="toggleNewJobModal()" class="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg transition">
+                        <i class="fa-solid fa-plus mr-1"></i> New Job
+                    </button>
+                </div>
+            </div>
+
+            <!-- Telemetry & Database Sync Status Pill -->
+            <div id="syncStatusBadge" onclick="toggleFirebaseModal()" class="hidden lg:flex items-center space-x-3 bg-factory-900/80 px-4 py-2 rounded-xl border border-blue-500/30 text-xs cursor-pointer hover:border-blue-400 transition group" title="Click to manage Database & Real-Time Sync Settings">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-regular fa-clock text-blue-400"></i>
+                    <span id="live-time" class="font-mono text-slate-200 font-semibold">--:--:--</span>
+                </div>
+                <div class="h-3 w-px bg-slate-800"></div>
+                <div class="flex items-center space-x-2">
+                    <span id="cloud-status-dot" class="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse"></span>
+                    <span id="syncStatusText" class="font-semibold text-blue-400">Local Network Sync Active</span>
+                </div>
+                <div class="h-3 w-px bg-slate-800"></div>
+                <div class="flex items-center space-x-1.5 text-slate-400 text-[11px]">
+                    <i class="fa-solid fa-database text-blue-400 group-hover:scale-110 transition"></i>
+                    <span class="font-mono text-slate-300 font-bold">Database</span>
+                </div>
+            </div>
+
+            <!-- Header Action Toolbar -->
+            <div class="hidden md:flex items-center space-x-2.5">
+                <button onclick="toggleFirebaseModal()" class="px-3 py-2 text-xs bg-slate-800 hover:bg-slate-700 text-blue-300 font-medium rounded-lg border border-slate-700 transition flex items-center space-x-2" title="Manage Database Connectivity & Sync Settings">
+                    <i class="fa-solid fa-database text-blue-400"></i>
+                    <span>Database Sync</span>
+                </button>
+                <button onclick="triggerSimulatedAlert()" class="px-3 py-2 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium rounded-lg border border-slate-700 transition flex items-center space-x-2">
+                    <i class="fa-solid fa-bolt text-amber-400"></i>
+                    <span>Simulate Incident</span>
+                </button>
+                <button onclick="toggleManageMachinesModal()" class="px-3 py-2 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium rounded-lg border border-slate-700 transition flex items-center space-x-2">
+                    <i class="fa-solid fa-sliders text-blue-400"></i>
+                    <span>Manage Roster & Machines</span>
+                </button>
+                <button onclick="toggleBackupModal()" class="px-3 py-2 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium rounded-lg border border-slate-700 transition flex items-center space-x-2">
+                    <i class="fa-solid fa-file-export text-purple-400"></i>
+                    <span>Backup & Restore</span>
+                </button>
+                <button onclick="openClearDataConfirmationModal()" class="px-3 py-2 text-xs bg-slate-800 hover:bg-rose-900/40 hover:text-rose-300 text-slate-300 font-medium rounded-lg border border-slate-700 transition flex items-center space-x-2">
+                    <i class="fa-solid fa-trash-can text-rose-400"></i>
+                    <span>Clear Data</span>
+                </button>
+                <button onclick="toggleNewJobModal()" class="px-4 py-2 text-xs bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg shadow-lg shadow-blue-600/20 transition flex items-center space-x-2">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>New Work Order</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-6 space-y-6">
+
+        <section class="grid grid-cols-2 md:grid-cols-5 gap-3 lg:gap-4">
+            <!-- Active Jobs Card -->
+            <div class="glass-card p-4 rounded-xl border-l-4 border-l-blue-500 flex flex-col justify-between relative overflow-hidden">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Active Orders</span>
+                    <div class="p-2 bg-blue-500/10 text-blue-400 rounded-lg">
+                        <i class="fa-solid fa-screwdriver-wrench text-xs"></i>
+                    </div>
+                </div>
+                <div class="mt-2 flex items-baseline justify-between">
+                    <div id="kpi-active-count" class="text-2xl lg:text-3xl font-bold text-white">0</div>
+                    <span class="text-xs text-amber-400 font-medium flex items-center">
+                        <i class="fa-solid fa-triangle-exclamation mr-1"></i> <span id="kpi-critical-count">0</span> Critical
+                    </span>
+                </div>
+                <p class="text-[10px] text-slate-400 mt-1">Real-time open tickets</p>
+            </div>
+
+            <!-- Weekend OT Scheduled -->
+            <div class="glass-card p-4 rounded-xl border-l-4 border-l-amber-500 flex flex-col justify-between">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Weekend OT</span>
+                    <div class="p-2 bg-amber-500/10 text-amber-400 rounded-lg">
+                        <i class="fa-solid fa-calendar-week text-xs"></i>
+                    </div>
+                </div>
+                <div class="mt-2 flex items-baseline justify-between">
+                    <div id="kpi-weekend-ot-count" class="text-2xl lg:text-3xl font-bold text-white">0</div>
+                    <span id="kpi-weekend-ot-review-badge" class="text-[10px] text-amber-300 font-medium flex items-center bg-amber-950/60 border border-amber-800/60 px-1.5 py-0.5 rounded">
+                        <i class="fa-solid fa-magnifying-glass mr-1"></i> Mon Review
+                    </span>
+                </div>
+                <p class="text-[10px] text-slate-400 mt-1"><span id="kpi-weekend-ot-hours">0h</span> OT Planned</p>
+            </div>
+
+            <!-- Completed Jobs Today -->
+            <div class="glass-card p-4 rounded-xl border-l-4 border-l-emerald-500 flex flex-col justify-between">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Completed</span>
+                    <div class="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg">
+                        <i class="fa-solid fa-circle-check text-xs"></i>
+                    </div>
+                </div>
+                <div class="mt-2 flex items-baseline justify-between">
+                    <div id="kpi-completed-count" class="text-2xl lg:text-3xl font-bold text-white">0</div>
+                    <span class="text-xs text-emerald-400 font-medium flex items-center">
+                        <i class="fa-solid fa-check-double mr-1"></i> Resolved
+                    </span>
+                </div>
+                <p class="text-[10px] text-slate-400 mt-1">Total Cost: <span id="kpi-total-cost" class="text-emerald-400 font-mono font-semibold">Rs. 0.00</span></p>
+            </div>
+
+            <!-- Preventive Maintenance Schedules -->
+            <div class="glass-card p-4 rounded-xl border-l-4 border-l-purple-500 flex flex-col justify-between">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">PM Schedules</span>
+                    <div class="p-2 bg-purple-500/10 text-purple-400 rounded-lg">
+                        <i class="fa-solid fa-calendar-check text-xs"></i>
+                    </div>
+                </div>
+                <div class="mt-2 flex items-baseline justify-between">
+                    <div id="kpi-pm-count" class="text-2xl lg:text-3xl font-bold text-white">0</div>
+                    <span id="kpi-pm-overdue-badge" class="text-xs text-rose-400 font-medium flex items-center">
+                        <i class="fa-solid fa-clock-rotate-left mr-1"></i> <span id="kpi-pm-overdue-count">0</span> Overdue
+                    </span>
+                </div>
+                <p class="text-[10px] text-slate-400 mt-1">Routine inspections</p>
+            </div>
+
+            <!-- Total Downtime Logged -->
+            <div class="glass-card p-4 rounded-xl border-l-4 border-l-rose-500 flex flex-col justify-between col-span-2 md:col-span-1">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Downtime</span>
+                    <div class="p-2 bg-rose-500/10 text-rose-400 rounded-lg">
+                        <i class="fa-solid fa-stopwatch text-xs"></i>
+                    </div>
+                </div>
+                <div class="mt-2 flex items-baseline justify-between">
+                    <div id="kpi-downtime" class="text-2xl lg:text-3xl font-bold text-white">0h 0m</div>
+                    <span class="text-xs text-rose-400 font-medium">Log</span>
+                </div>
+                <p class="text-[10px] text-slate-400 mt-1">Accumulated shift downtime</p>
+            </div>
+        </section>
+
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-3">
+            <div class="flex flex-wrap gap-1 sm:gap-2 bg-factory-800 p-1 rounded-xl border border-slate-800 self-start sm:self-auto">
+                <button onclick="switchTab('active')" id="tab-btn-active" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white transition flex items-center space-x-2">
+                    <i class="fa-solid fa-spinner"></i>
+                    <span>Active Jobs (<span id="tab-active-badge">0</span>)</span>
+                </button>
+                <button onclick="switchTab('weekend-ot')" id="tab-btn-weekend-ot" class="px-3.5 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center space-x-2">
+                    <i class="fa-solid fa-calendar-week text-amber-400"></i>
+                    <span>Weekend OT Schedule (<span id="tab-weekend-ot-badge">0</span>)</span>
+                </button>
+                <button onclick="switchTab('completed')" id="tab-btn-completed" class="px-3.5 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center space-x-2">
+                    <i class="fa-solid fa-box-archive"></i>
+                    <span>Completed History (<span id="tab-completed-badge">0</span>)</span>
+                </button>
+                <button onclick="switchTab('pm')" id="tab-btn-pm" class="px-3.5 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center space-x-2">
+                    <i class="fa-solid fa-calendar-days text-purple-400"></i>
+                    <span>PM Schedules (<span id="tab-pm-badge">0</span>)</span>
+                </button>
+                <button onclick="switchTab('equipment')" id="tab-btn-equipment" class="px-3.5 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center space-x-2">
+                    <i class="fa-solid fa-cubes"></i>
+                    <span>Machinery Map</span>
+                </button>
+                <button onclick="switchTab('analytics')" id="tab-btn-analytics" class="px-3.5 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center space-x-2">
+                    <i class="fa-solid fa-chart-line text-emerald-400"></i>
+                    <span>Analytics</span>
+                </button>
+                <button onclick="switchTab('tech-workload')" id="tab-btn-tech-workload" class="px-3.5 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center space-x-2">
+                    <i class="fa-solid fa-user-check text-blue-400"></i>
+                    <span>Tech Workload (<span id="tab-tech-workload-badge">0</span>)</span>
+                </button>
+            </div>
+
+            <div id="view-mode-controls" class="flex items-center space-x-2 self-end sm:self-auto">
+                <span class="text-xs text-slate-400 hidden md:inline">Layout:</span>
+                <div class="bg-factory-800 p-1 rounded-lg border border-slate-800 flex items-center space-x-1">
+                    <button onclick="toggleActiveView('table')" id="view-mode-table" class="px-2.5 py-1 rounded text-xs bg-slate-700 text-white">
+                        <i class="fa-solid fa-list mr-1"></i> List
+                    </button>
+                    <button onclick="toggleActiveView('kanban')" id="view-mode-kanban" class="px-2.5 py-1 rounded text-xs text-slate-400 hover:text-white">
+                        <i class="fa-solid fa-border-all mr-1"></i> Board
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <section id="tab-content-active" class="space-y-4">
+            <div class="glass-card p-4 rounded-xl flex flex-col md:flex-row items-center justify-between gap-3">
+                <div class="relative w-full md:w-80">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="text" id="search-active" oninput="filterActiveJobs()" placeholder="Search equipment, ticket ID, or tech..." class="w-full bg-factory-900 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500">
+                </div>
+                
+                <div class="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
+                    <select id="filter-active-category" onchange="filterActiveJobs()" class="bg-factory-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="ALL">All Categories</option>
+                        <option value="Breakdown">Breakdowns Only</option>
+                        <option value="Fabrication">Fabrication & Projects</option>
+                        <option value="Modification">Modifications</option>
+                        <option value="Routine">Routine Tasks</option>
+                    </select>
+
+                    <select id="filter-active-priority" onchange="filterActiveJobs()" class="bg-factory-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="ALL">All Priorities</option>
+                        <option value="Critical">Critical</option>
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+
+                    <select id="filter-active-status" onchange="filterActiveJobs()" class="bg-factory-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="ALL">All Statuses</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Pending Parts">Pending Parts</option>
+                        <option value="Assigned">Assigned</option>
+                    </select>
+
+                    <select id="filter-active-tech" onchange="filterActiveJobs()" class="bg-factory-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="ALL">All Technicians</option>
+                    </select>
+
+                    <button onclick="exportActiveCSV()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold border border-slate-700 transition flex items-center space-x-1.5" title="Export Active Jobs to CSV">
+                        <i class="fa-solid fa-file-csv text-emerald-400"></i>
+                        <span>Export CSV</span>
+                    </button>
+
+                    <button onclick="resetActiveFilters()" class="p-2 text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg border border-slate-800 transition" title="Reset Filters">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Active Jobs Table View -->
+            <div id="active-table-wrapper" class="glass-card rounded-xl overflow-hidden border border-slate-800">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-900/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+                            <tr>
+                                <th class="py-3 px-4">Ticket ID & Target</th>
+                                <th class="py-3 px-4">Category</th>
+                                <th class="py-3 px-4">Issue / Task Summary</th>
+                                <th class="py-3 px-4">Priority</th>
+                                <th class="py-3 px-4">Status</th>
+                                <th class="py-3 px-4">Assigned Tech</th>
+                                <th class="py-3 px-4">Duration</th>
+                                <th class="py-3 px-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="active-jobs-tbody" class="divide-y divide-slate-800/60 font-medium"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Active Jobs Kanban Board View -->
+            <div id="active-kanban-wrapper" class="hidden grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="glass-card rounded-xl p-3 border border-slate-800">
+                    <div class="flex items-center justify-between mb-3 px-1">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-blue-400"></span>
+                            <h3 class="font-semibold text-xs uppercase tracking-wider text-slate-300">Assigned</h3>
+                        </div>
+                        <span id="kanban-count-assigned" class="px-2 py-0.5 text-[10px] bg-slate-800 rounded-full font-bold text-slate-400">0</span>
+                    </div>
+                    <div id="kanban-col-assigned" class="space-y-3 min-h-[250px]"></div>
+                </div>
+
+                <div class="glass-card rounded-xl p-3 border border-slate-800">
+                    <div class="flex items-center justify-between mb-3 px-1">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                            <h3 class="font-semibold text-xs uppercase tracking-wider text-slate-300">In Progress</h3>
+                        </div>
+                        <span id="kanban-count-in-progress" class="px-2 py-0.5 text-[10px] bg-slate-800 rounded-full font-bold text-slate-400">0</span>
+                    </div>
+                    <div id="kanban-col-in-progress" class="space-y-3 min-h-[250px]"></div>
+                </div>
+
+                <div class="glass-card rounded-xl p-3 border border-slate-800">
+                    <div class="flex items-center justify-between mb-3 px-1">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-purple-400"></span>
+                            <h3 class="font-semibold text-xs uppercase tracking-wider text-slate-300">Pending Parts</h3>
+                        </div>
+                        <span id="kanban-count-pending" class="px-2 py-0.5 text-[10px] bg-slate-800 rounded-full font-bold text-slate-400">0</span>
+                    </div>
+                    <div id="kanban-col-pending" class="space-y-3 min-h-[250px]"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-content-weekend-ot" class="hidden space-y-4">
+            <div class="glass-card p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 border-l-4 border-l-amber-500">
+                <div class="space-y-1">
+                    <div class="flex items-center space-x-2">
+                        <h2 class="font-bold text-base text-white flex items-center">
+                            <i class="fa-solid fa-calendar-week text-amber-400 mr-2"></i>
+                            <span>Weekend Overtime (OT) Operations Center</span>
+                        </h2>
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-950 text-amber-300 border border-amber-800">
+                            Planned Friday • Reviewed Monday
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-400">Schedule weekend technician teams, monitor progress, and review completion status every Monday.</p>
+                </div>
+                
+                <div class="flex flex-wrap items-center gap-3">
+                    <div class="bg-factory-900 border border-slate-800 rounded-lg p-2 text-[11px] flex items-center space-x-3">
+                        <div class="flex items-center space-x-1">
+                            <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+                            <span class="font-semibold text-slate-300">Sat:</span>
+                            <span class="font-mono text-slate-400">7:20 AM - 7:15 PM</span>
+                        </div>
+                        <div class="h-3 w-px bg-slate-800"></div>
+                        <div class="flex items-center space-x-1">
+                            <span class="w-2 h-2 rounded-full bg-purple-400"></span>
+                            <span class="font-semibold text-slate-300">Sun:</span>
+                            <span class="font-mono text-slate-400">7:20 AM - 5:15 PM</span>
+                        </div>
+                    </div>
+
+                    <button onclick="toggleNewWeekendOtModal()" class="px-4 py-2 text-xs bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-lg shadow-lg shadow-amber-600/20 transition flex items-center space-x-2">
+                        <i class="fa-solid fa-calendar-plus"></i>
+                        <span>Plan Friday OT Job</span>
+                    </button>
+                    <button onclick="exportWeekendOtCSV()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold border border-slate-700 transition flex items-center space-x-1.5" title="Export Weekend OT Schedule to CSV">
+                        <i class="fa-solid fa-file-csv text-emerald-400"></i>
+                        <span>Export CSV</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="glass-card p-4 rounded-xl flex flex-col md:flex-row items-center justify-between gap-3">
+                <div class="flex items-center space-x-3 w-full md:w-auto">
+                    <span class="text-xs text-slate-400 font-semibold">Weekend Target:</span>
+                    <input type="date" id="filter-weekend-ot-date" onchange="renderWeekendOtJobs()" class="bg-factory-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+                    <button onclick="setUpcomingWeekendFilter()" class="text-xs px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 font-medium rounded-lg border border-slate-700 transition">
+                        Next Weekend
+                    </button>
+                </div>
+
+                <div class="flex items-center space-x-2 w-full md:w-auto justify-end">
+                    <select id="filter-weekend-ot-status" onchange="renderWeekendOtJobs()" class="bg-factory-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+                        <option value="ALL">All Statuses</option>
+                        <option value="Planned">Planned (Friday)</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Completed">Completed / Verified</option>
+                        <option value="Deferred">Deferred / Rolled Over</option>
+                    </select>
+
+                    <select id="filter-weekend-ot-tech" onchange="renderWeekendOtJobs()" class="bg-factory-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+                        <option value="ALL">All Technicians</option>
+                    </select>
+
+                    <button onclick="resetWeekendOtFilters()" class="p-1.5 text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg border border-slate-800 transition" title="Reset Filters">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="glass-card rounded-xl overflow-hidden border border-slate-800">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-900/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+                            <tr>
+                                <th class="py-3 px-4">OT Job ID & Equipment</th>
+                                <th class="py-3 px-4">Schedule & Shift Hours</th>
+                                <th class="py-3 px-4">Job Scope & Objectives</th>
+                                <th class="py-3 px-4">Lead Technician</th>
+                                <th class="py-3 px-4">Supporting Tech / Helper Team</th>
+                                <th class="py-3 px-4">Status & Review</th>
+                                <th class="py-3 px-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="weekend-ot-tbody" class="divide-y divide-slate-800/60 font-medium text-slate-300"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-content-completed" class="hidden space-y-4">
+            <div class="glass-card p-4 rounded-xl flex flex-col md:flex-row items-center justify-between gap-3">
+                <div class="relative w-full md:w-80">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="text" id="search-completed" oninput="filterCompletedJobs()" placeholder="Search logs by ID, equipment, tech or summary..." class="w-full bg-factory-900 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500">
+                </div>
+
+                <div class="flex items-center space-x-2 w-full md:w-auto justify-end">
+                    <button onclick="exportCompletedCSV()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold border border-slate-700 transition flex items-center space-x-2">
+                        <i class="fa-solid fa-file-csv text-emerald-400"></i>
+                        <span>Export Completed CSV</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="glass-card rounded-xl overflow-hidden border border-slate-800">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-900/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+                            <tr>
+                                <th class="py-3 px-4">Job ID & Machinery</th>
+                                <th class="py-3 px-4">Technician</th>
+                                <th class="py-3 px-4">Completion Time</th>
+                                <th class="py-3 px-4">Auto Downtime Incurred</th>
+                                <th class="py-3 px-4">Total Cost (Rs.)</th>
+                                <th class="py-3 px-4">Resolution Summary</th>
+                                <th class="py-3 px-4 text-right">Status Badge</th>
+                            </tr>
+                        </thead>
+                        <tbody id="completed-jobs-tbody" class="divide-y divide-slate-800/60 font-medium text-slate-300"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-content-pm" class="hidden space-y-4">
+            <div class="glass-card p-4 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4">
+                <div>
+                    <h2 class="font-bold text-base text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-calendar-check text-purple-400"></i>
+                        <span>Preventive Maintenance (PM) Master Schedule</span>
+                    </h2>
+                    <p class="text-xs text-slate-400">Schedule recurring equipment inspections to avoid unexpected downtime.</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button onclick="toggleNewPMModal()" class="px-4 py-2 text-xs bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-lg shadow-lg shadow-purple-600/30 transition flex items-center space-x-2">
+                        <i class="fa-solid fa-calendar-plus"></i>
+                        <span>Schedule New PM</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="glass-card rounded-xl overflow-hidden border border-slate-800">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-900/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+                            <tr>
+                                <th class="py-3 px-4">PM ID & Equipment</th>
+                                <th class="py-3 px-4">Frequency</th>
+                                <th class="py-3 px-4">Task Description</th>
+                                <th class="py-3 px-4">Assigned Tech</th>
+                                <th class="py-3 px-4">Next Due Date</th>
+                                <th class="py-3 px-4">Status</th>
+                                <th class="py-3 px-4 text-right">Quick Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pm-schedules-tbody" class="divide-y divide-slate-800/60 font-medium text-slate-300"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-content-equipment" class="hidden space-y-4">
+            <div class="glass-card p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="font-bold text-base text-white">Factory Floor Machinery Layout</h2>
+                    <p class="text-xs text-slate-400">View machine operational statuses sorted by section or issue direct work orders.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-3 text-xs font-medium">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-slate-400">Section:</span>
+                        <select id="filter-equipment-zone" onchange="renderEquipmentGrid()" class="bg-factory-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                            <option value="ALL">All Sections / Zones</option>
+                        </select>
+                    </div>
+                    <button onclick="exportEquipmentCSV()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold border border-slate-700 transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-file-csv text-emerald-400"></i>
+                        <span>Export Equipment CSV</span>
+                    </button>
+                    <div class="h-4 w-px bg-slate-800 hidden sm:block"></div>
+                    <span class="flex items-center"><span class="w-3 h-3 rounded-full bg-emerald-500 mr-1.5"></span> Operational</span>
+                    <span class="flex items-center"><span class="w-3 h-3 rounded-full bg-amber-500 mr-1.5"></span> Maintenance</span>
+                    <span class="flex items-center"><span class="w-3 h-3 rounded-full bg-rose-500 mr-1.5"></span> Fault</span>
+                </div>
+            </div>
+
+            <div id="equipment-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4"></div>
+        </section>
+
+        <section id="tab-content-analytics" class="hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Technician Analytics Table -->
+                <div class="glass-card p-5 rounded-xl border border-slate-800">
+                    <h3 class="text-sm font-bold text-slate-200 mb-3 flex items-center justify-between">
+                        <span class="flex items-center"><i class="fa-solid fa-user-gear text-blue-400 mr-2"></i> Technician Performance Breakdown</span>
+                        <span class="text-xs font-normal text-slate-400">Sorted by Resolved Jobs</span>
+                    </h3>
+                    <div class="overflow-x-auto max-h-72 overflow-y-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-900 text-slate-400 uppercase font-semibold border-b border-slate-800 sticky top-0">
+                                <tr>
+                                    <th class="py-2 px-3">Technician</th>
+                                    <th class="py-2 px-3 text-center">Jobs Resolved</th>
+                                    <th class="py-2 px-3 text-right">Downtime Handled</th>
+                                    <th class="py-2 px-3 text-right">Total Cost (Rs.)</th>
+                                    <th class="py-2 px-3 text-right">Avg MTTR</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tech-analytics-tbody" class="divide-y divide-slate-800/60 font-medium text-slate-300"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Machine Downtime Leaderboard -->
+                <div class="glass-card p-5 rounded-xl border border-slate-800">
+                    <h3 class="text-sm font-bold text-slate-200 mb-3 flex items-center justify-between">
+                        <span class="flex items-center"><i class="fa-solid fa-triangle-exclamation text-amber-400 mr-2"></i> Machine Downtime Leaderboard</span>
+                        <span class="text-xs font-normal text-slate-400">Cumulative Duration & Cost</span>
+                    </h3>
+                    <div class="overflow-x-auto max-h-72 overflow-y-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-900 text-slate-400 uppercase font-semibold border-b border-slate-800 sticky top-0">
+                                <tr>
+                                    <th class="py-2 px-3">Equipment</th>
+                                    <th class="py-2 px-3">Section</th>
+                                    <th class="py-2 px-3 text-center">Incidents</th>
+                                    <th class="py-2 px-3 text-right">Total Downtime</th>
+                                    <th class="py-2 px-3 text-right">Total Cost (Rs.)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="machine-analytics-tbody" class="divide-y divide-slate-800/60 font-medium text-slate-300"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="glass-card p-5 rounded-xl border border-slate-800">
+                    <h3 class="text-sm font-semibold text-slate-200 mb-4 flex items-center justify-between">
+                        <span>Technician Workload & Downtime Resolved (Minutes)</span>
+                        <i class="fa-solid fa-chart-column text-slate-500"></i>
+                    </h3>
+                    <div class="h-64">
+                        <canvas id="chart-tech-performance"></canvas>
+                    </div>
+                </div>
+
+                <div class="glass-card p-5 rounded-xl border border-slate-800">
+                    <h3 class="text-sm font-semibold text-slate-200 mb-4 flex items-center justify-between">
+                        <span>Top Machine Downtime Hours</span>
+                        <i class="fa-solid fa-chart-bar text-slate-500"></i>
+                    </h3>
+                    <div class="h-64">
+                        <canvas id="chart-machine-downtime"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-content-tech-workload" class="hidden space-y-4">
+            <div class="glass-card p-4 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4 border-l-4 border-l-blue-500">
+                <div>
+                    <h2 class="font-bold text-base text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-user-check text-blue-400"></i>
+                        <span>Technician Workload & Allocated Jobs Matrix</span>
+                    </h2>
+                    <p class="text-xs text-slate-400">View real-time job allocations per technician across Active Work Orders, PM Routines, and Weekend OT.</p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
+                    <div class="relative w-full sm:w-64">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                        <input type="text" id="search-tech-workload" oninput="renderTechnicianWorkload()" placeholder="Search technician or role..." class="w-full bg-factory-900 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500">
+                    </div>
+
+                    <select id="filter-tech-workload-status" onchange="renderTechnicianWorkload()" class="bg-factory-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="ALL">All Technicians</option>
+                        <option value="ASSIGNED_ONLY">With Active Jobs Only</option>
+                        <option value="FREE_ONLY">Currently Free / Available</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="tech-workload-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </section>
+
+    </main>
+
+    <!-- MODAL 1: Create Work Order -->
+    <div id="modal-new-job" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-lg rounded-2xl border border-slate-700 shadow-2xl p-6 relative">
+            <button onclick="toggleNewJobModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-base">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <div class="flex items-center space-x-3 mb-5">
+                <div class="p-3 bg-blue-600/20 text-blue-400 rounded-xl border border-blue-500/30">
+                    <i class="fa-solid fa-screwdriver-wrench text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white">Issue Maintenance / Task Work Order</h3>
+                    <p class="text-xs text-slate-400">Dispatch technician for repairs, fabrication (e.g. cutters), or modifications</p>
+                </div>
+            </div>
+
+            <form id="form-new-job" onsubmit="handleCreateJob(event)" class="space-y-4 text-xs">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Job Category / Type</label>
+                        <select id="new-job-category" required onchange="handleJobCategorySelect(this.value)" class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-blue-500">
+                            <option value="Fabrication" selected>Fabrication & Workshop Project</option>
+                            <option value="Breakdown">Machine Breakdown / Repair</option>
+                            <option value="Modification">Modification & Upgrade</option>
+                            <option value="Routine">Routine Non-Breakdown Task</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Equipment / Target Task</label>
+                        <div class="space-y-1.5">
+                            <div class="relative">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                                <input type="text" id="new-job-equipment-search" oninput="filterNewJobEquipment(this.value)" placeholder="Search machine name, ID, or zone..." class="w-full bg-factory-900 border border-slate-700 rounded-lg pl-8 pr-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500">
+                            </div>
+                            <select id="new-job-equipment" required class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-blue-500"></select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Priority Level</label>
+                        <select id="new-job-priority" required class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-blue-500">
+                            <option value="Low">Low - Normal Project</option>
+                            <option value="Medium" selected>Medium - Planned Task</option>
+                            <option value="High">High - High Output Impact</option>
+                            <option value="Critical">Critical - Machine Down</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Assign Technician</label>
+                        <select id="new-job-tech" required class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-blue-500"></select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Job Scope / Task Description</label>
+                    <textarea id="new-job-desc" rows="3" required placeholder="e.g., Fabricate 4x new cutter blades for section 2, replace seals, or perform scheduled welding..." class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-800">
+                    <button type="button" onclick="toggleNewJobModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-lg transition">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg shadow-lg shadow-blue-600/30 transition">Dispatch Work Order</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: Complete Work Order -->
+    <div id="modal-complete-job" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-lg rounded-2xl border border-slate-700 shadow-2xl p-6 relative">
+            <button onclick="toggleCompleteJobModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-base">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <div class="flex items-center space-x-3 mb-5">
+                <div class="p-3 bg-emerald-600/20 text-emerald-400 rounded-xl border border-emerald-500/30">
+                    <i class="fa-solid fa-check-double text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white">Log Work Completion & Auto Downtime</h3>
+                    <p class="text-xs text-slate-400">Mark job as resolved; system auto-calculates elapsed downtime and records job cost</p>
+                </div>
+            </div>
+
+            <form id="form-complete-job" onsubmit="handleCompleteJob(event)" class="space-y-4 text-xs">
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Target Ticket</label>
+                    <div id="complete-job-id-display" class="p-2.5 bg-factory-900 border border-slate-700 rounded-lg text-emerald-400 font-mono font-bold">-</div>
+                </div>
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Auto-Calculated Downtime Incurred (Minutes)</label>
+                    <div class="relative">
+                        <input type="number" id="complete-downtime" min="0" required class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 pl-9 text-amber-400 font-mono font-bold focus:outline-none focus:border-blue-500">
+                        <i class="fa-solid fa-stopwatch absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    </div>
+                    <p class="text-[11px] text-slate-500 mt-1">Calculated using shift rules (Mon–Sat 7:20 AM–7:15 PM, excl. 12:30–1:00 PM lunch & Sundays).</p>
+                </div>
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Total Job Cost (Rs.)</label>
+                    <div class="relative">
+                        <input type="number" id="complete-cost" min="0" step="0.01" value="0" required class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 pl-9 text-emerald-400 font-mono font-bold focus:outline-none focus:border-blue-500" placeholder="0.00">
+                        <i class="fa-solid fa-money-bill-wave absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    </div>
+                    <p class="text-[11px] text-slate-500 mt-1">Enter total cost in Sri Lankan Rupees (Rs.) for spare parts, materials, or labor.</p>
+                </div>
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Resolution Summary / Action Taken</label>
+                    <textarea id="complete-resolution" rows="3" required placeholder="Describe fix, parts replaced, or recalibrations performed..." class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+                <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-800">
+                    <button type="button" onclick="toggleCompleteJobModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-lg transition">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg shadow-lg shadow-emerald-600/30 transition">Submit Completion Log</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: Schedule PM -->
+    <div id="modal-new-pm" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-lg rounded-2xl border border-slate-700 shadow-2xl p-6 relative">
+            <button onclick="toggleNewPMModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-base">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <div class="flex items-center space-x-3 mb-5">
+                <div class="p-3 bg-purple-600/20 text-purple-400 rounded-xl border border-purple-500/30">
+                    <i class="fa-solid fa-calendar-plus text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white">Create Preventive Maintenance Schedule</h3>
+                    <p class="text-xs text-slate-400">Set up recurring routine service tasks for factory equipment</p>
+                </div>
+            </div>
+
+            <form id="form-new-pm" onsubmit="handleCreatePM(event)" class="space-y-4 text-xs">
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Target Equipment</label>
+                    <select id="pm-equipment" required class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-purple-500"></select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Recurrence Frequency</label>
+                        <select id="pm-frequency" required class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-purple-500">
+                            <option value="Daily">Daily</option>
+                            <option value="Weekly" selected>Weekly</option>
+                            <option value="Bi-Weekly">Bi-Weekly</option>
+                            <option value="Monthly">Monthly</option>
+                            <option value="Quarterly">Quarterly</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Assigned Tech</label>
+                        <select id="pm-tech" required class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-purple-500"></select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">First Execution / Next Due Date</label>
+                    <input type="date" id="pm-due-date" required class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-purple-500">
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Routine Checklist / Task Description</label>
+                    <textarea id="pm-desc" rows="3" required placeholder="Specify checklist e.g. Replace fluid filters, check belt tension, grease bearings..." class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-purple-500"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-800">
+                    <button type="button" onclick="toggleNewPMModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-lg transition">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-lg shadow-lg shadow-purple-600/30 transition">Save PM Schedule</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 4: Plan Friday Weekend OT -->
+    <div id="modal-new-weekend-ot" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-xl rounded-2xl border border-amber-500/30 shadow-2xl p-6 relative max-h-[90vh] overflow-y-auto">
+            <button onclick="toggleNewWeekendOtModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-base">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <div class="flex items-center space-x-3 mb-5">
+                <div class="p-3 bg-amber-600/20 text-amber-400 rounded-xl border border-amber-500/30">
+                    <i class="fa-solid fa-calendar-plus text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white">Plan Friday Weekend OT Job Schedule</h3>
+                    <p class="text-xs text-slate-400">Assign weekend shifts for lead technicians and supporting helper teams</p>
+                </div>
+            </div>
+
+            <form id="form-new-weekend-ot" onsubmit="handleCreateWeekendOt(event)" class="space-y-4 text-xs">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Target Equipment / Workshop Area</label>
+                        <select id="weekend-ot-equipment" required class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-amber-500"></select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Target Weekend Date (Saturday)</label>
+                        <input type="date" id="weekend-ot-date" required class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-amber-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Shift / Working Hours Allocation</label>
+                        <select id="weekend-ot-shift" required onchange="updateWeekendOtEstimatedHours(this.value)" class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-amber-500">
+                            <option value="Saturday" selected>Saturday (7:20 AM - 7:15 PM) [11.9 hrs]</option>
+                            <option value="Sunday">Sunday (7:20 AM - 5:15 PM) [9.9 hrs]</option>
+                            <option value="Both Days">Both Saturday & Sunday [21.8 hrs]</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Estimated OT Hours</label>
+                        <input type="number" id="weekend-ot-hours" step="0.5" min="1" max="30" value="11.9" required class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 font-mono text-amber-400 font-bold focus:outline-none focus:border-amber-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Lead Technician</label>
+                        <select id="weekend-ot-lead-tech" required class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-amber-500"></select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Job Priority</label>
+                        <select id="weekend-ot-priority" required class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-amber-500">
+                            <option value="High" selected>High Priority OT</option>
+                            <option value="Critical">Critical Breakdown / Overhaul</option>
+                            <option value="Medium">Medium Planned Work</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Supporting Technician(s) / Helper Team</label>
+                    <div id="weekend-ot-support-checkboxes" class="bg-factory-900 border border-slate-700 rounded-lg p-3 max-h-36 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]"></div>
+                    <p class="text-[10px] text-slate-500 mt-1">Select one or multiple supporting technicians to assist the lead technician.</p>
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Job Scope & Objectives (Friday Plan)</label>
+                    <textarea id="weekend-ot-desc" rows="3" required placeholder="Detail planned weekend maintenance, fabrications, or overhauls..." class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-800">
+                    <button type="button" onclick="toggleNewWeekendOtModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-lg transition">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-lg shadow-lg shadow-amber-600/30 transition">Save Friday OT Plan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 5: Monday Review Weekend OT -->
+    <div id="modal-review-weekend-ot" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-md rounded-2xl border border-amber-500/30 shadow-2xl p-6 relative">
+            <button onclick="toggleReviewWeekendOtModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-base">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <div class="flex items-center space-x-3 mb-5">
+                <div class="p-3 bg-amber-600/20 text-amber-400 rounded-xl border border-amber-500/30">
+                    <i class="fa-solid fa-clipboard-check text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white">Monday Status Review: Weekend OT</h3>
+                    <p class="text-xs text-slate-400">Review execution progress and log actual OT hours completed</p>
+                </div>
+            </div>
+
+            <form id="form-review-weekend-ot" onsubmit="handleReviewWeekendOt(event)" class="space-y-4 text-xs">
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Target Weekend Ticket</label>
+                    <div id="review-ot-id-display" class="p-2.5 bg-factory-900 border border-slate-700 rounded-lg text-amber-400 font-mono font-bold">-</div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Updated Status (Monday Review)</label>
+                    <select id="review-ot-status" required class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-amber-500">
+                        <option value="Completed">Completed & Verified</option>
+                        <option value="In Progress">In Progress (Needs Weekday Work Order)</option>
+                        <option value="Deferred">Deferred / Rolled Over</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Actual OT Hours Logged</label>
+                    <input type="number" id="review-ot-actual-hours" step="0.5" min="0" required class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 font-mono text-amber-400 font-bold focus:outline-none focus:border-amber-500">
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Monday Review Comments / Findings</label>
+                    <textarea id="review-ot-comments" rows="3" placeholder="Enter post-weekend inspection findings, parts used, or comments..." class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-800">
+                    <button type="button" onclick="toggleReviewWeekendOtModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-lg transition">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-lg shadow-lg shadow-amber-600/30 transition">Submit Monday Review</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 6: Manage Roster & Machinery -->
+    <div id="modal-manage-machines" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-2xl rounded-2xl border border-slate-700 shadow-2xl p-6 relative max-h-[90vh] flex flex-col overflow-hidden">
+            <button onclick="toggleManageMachinesModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-base">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="p-3 bg-blue-600/20 text-blue-400 rounded-xl border border-blue-500/30">
+                    <i class="fa-solid fa-industry text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white">Manage Roster & Machinery</h3>
+                    <p class="text-xs text-slate-400">Import machine list, add single machines, or manage technician roster</p>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-2 border-b border-slate-800 pb-2 mb-4 text-xs font-semibold">
+                <button id="import-tab-btn-paste" onclick="switchImportTab('paste')" class="px-3 py-1.5 rounded-lg bg-blue-600 text-white">
+                    <i class="fa-solid fa-paste mr-1"></i> Paste from Excel / CSV
+                </button>
+                <button id="import-tab-btn-single" onclick="switchImportTab('single')" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-plus mr-1"></i> Add Single Machine
+                </button>
+                <button id="import-tab-btn-list" onclick="switchImportTab('list')" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-list mr-1"></i> Machine Roster (<span id="roster-count">0</span>)
+                </button>
+                <button id="import-tab-btn-techs" onclick="switchImportTab('techs')" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-users mr-1"></i> Technician Roster (<span id="tech-roster-count">0</span>)
+                </button>
+            </div>
+
+            <div id="import-view-paste" class="space-y-3 text-xs overflow-y-auto pr-1">
+                <p class="text-slate-300">Copy your columns from Excel and paste them into the text box below. Format: <code class="bg-slate-800 text-blue-300 px-1 py-0.5 rounded">Machine Name [Tab/Comma] Section [Tab/Comma] Machine ID</code></p>
+                <textarea id="excel-paste-input" rows="6" placeholder="Example Excel Copy Paste:&#10;CNC Milling Center A	Machining Bay	EQ-101&#10;500T Hydraulic Press	Stamping Dept	EQ-102&#10;Robotic Weld Cell 4	Assembly Line 1	EQ-103" class="w-full bg-factory-900 border border-slate-700 rounded-lg p-3 text-slate-200 font-mono text-xs focus:outline-none focus:border-blue-500"></textarea>
+                
+                <div class="flex items-center justify-between">
+                    <label class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 cursor-pointer font-medium">
+                        <i class="fa-solid fa-file-csv mr-1 text-emerald-400"></i> Upload .CSV File
+                        <input type="file" id="csv-file-input" accept=".csv,.tsv,.txt" class="hidden" onchange="handleCSVFileUpload(event)">
+                    </label>
+                    <button onclick="processExcelPaste()" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg shadow-lg transition">
+                        Import Machine List
+                    </button>
+                </div>
+            </div>
+
+            <form id="import-view-single" onsubmit="handleSingleMachineSubmit(event)" class="hidden space-y-3 text-xs">
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Machine Name</label>
+                    <input type="text" id="single-m-name" required placeholder="e.g. Laser Cutting Station 2" class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Section / Zone</label>
+                        <input type="text" id="single-m-zone" required placeholder="e.g. Fabrication Bay" class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Machine ID (Optional)</label>
+                        <input type="text" id="single-m-id" placeholder="e.g. EQ-205" class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+                <div class="pt-2 flex justify-end">
+                    <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg shadow-lg transition">
+                        Add Machine
+                    </button>
+                </div>
+            </form>
+
+            <div id="import-view-list" class="hidden overflow-y-auto max-h-60 border border-slate-800 rounded-lg">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-900 text-slate-400 font-semibold border-b border-slate-800 sticky top-0">
+                        <tr>
+                            <th class="py-2 px-3">ID</th>
+                            <th class="py-2 px-3">Machine Name</th>
+                            <th class="py-2 px-3">Section / Zone</th>
+                            <th class="py-2 px-3 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="roster-table-tbody" class="divide-y divide-slate-800/60 font-medium text-slate-300"></tbody>
+                </table>
+            </div>
+
+            <div id="import-view-techs" class="hidden space-y-4 text-xs overflow-y-auto pr-1 max-h-[60vh]">
+                <form id="form-add-tech" onsubmit="handleAddTechnician(event)" class="glass-card p-3.5 rounded-xl border border-slate-800 space-y-3">
+                    <h4 class="font-bold text-slate-200 flex items-center">
+                        <i class="fa-solid fa-user-plus text-blue-400 mr-2"></i> Add New Technician
+                    </h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-slate-300 font-semibold mb-1">Technician Name</label>
+                            <input type="text" id="single-tech-name" required placeholder="e.g. Nimal Perera" class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-slate-300 font-semibold mb-1">Job Role / Specialty (Optional)</label>
+                            <input type="text" id="single-tech-role" placeholder="e.g. Electrician, Mechanic, Fitter" class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-blue-500">
+                        </div>
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg shadow transition">
+                            <i class="fa-solid fa-plus mr-1"></i> Add Technician
+                        </button>
+                    </div>
+                </form>
+
+                <div class="overflow-y-auto max-h-52 border border-slate-800 rounded-lg">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-900 text-slate-400 font-semibold border-b border-slate-800 sticky top-0">
+                            <tr>
+                                <th class="py-2 px-3">#</th>
+                                <th class="py-2 px-3">Technician & Role</th>
+                                <th class="py-2 px-3 text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tech-roster-table-tbody" class="divide-y divide-slate-800/60 font-medium text-slate-300"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 7: Backup & Restore Dataset -->
+    <div id="modal-backup" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-md rounded-2xl border border-slate-700 shadow-2xl p-6 relative">
+            <button onclick="toggleBackupModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-base">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="flex items-center space-x-3 mb-5">
+                <div class="p-3 bg-purple-600/20 text-purple-400 rounded-xl border border-purple-500/30">
+                    <i class="fa-solid fa-database text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white">Backup & Restore Dataset</h3>
+                    <p class="text-xs text-slate-400">Export or restore full system data (JSON format)</p>
+                </div>
+            </div>
+            <div class="space-y-4 text-xs">
+                <div class="p-3.5 bg-factory-900 border border-slate-800 rounded-xl space-y-2">
+                    <h4 class="font-bold text-white flex items-center"><i class="fa-solid fa-download text-purple-400 mr-2"></i> Export System Backup</h4>
+                    <p class="text-slate-400">Save all active jobs, history logs, PM schedules, weekend OT plans, and machine rosters to a JSON file.</p>
+                    <button onclick="exportBackupJSON()" class="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-lg transition mt-2">
+                        Download Backup File (.json)
+                    </button>
+                </div>
+                <div class="p-3.5 bg-factory-900 border border-slate-800 rounded-xl space-y-2">
+                    <h4 class="font-bold text-white flex items-center"><i class="fa-solid fa-upload text-blue-400 mr-2"></i> Restore from Backup</h4>
+                    <p class="text-slate-400">Upload a previously saved `.json` backup file to restore all factory data.</p>
+                    <label class="block w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-lg text-center cursor-pointer transition border border-slate-700 mt-2">
+                        <i class="fa-solid fa-file-import mr-1"></i> Select Backup File
+                        <input type="file" accept=".json" class="hidden" onchange="importBackupJSON(event)">
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 8: Real-Time Database Connection & Sync Settings -->
+    <div id="modal-firebase-config" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-lg rounded-2xl border border-blue-500/40 shadow-2xl p-6 relative text-xs space-y-4 max-h-[90vh] overflow-y-auto">
+            <button onclick="toggleFirebaseModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-base">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="flex items-center space-x-3">
+                <div class="p-3 bg-blue-600/20 text-blue-400 rounded-xl border border-blue-500/30">
+                    <i class="fa-solid fa-database text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white">Database Connectivity & Sync Setup</h3>
+                    <p class="text-xs text-slate-400">Local Network Broadcast + Firebase Cloud Database Synchronization</p>
+                </div>
+            </div>
+
+            <!-- Dynamic Diagnostic Status Box -->
+            <div id="syncDiagnosticBox" class="p-3.5 bg-blue-950/40 border border-blue-800/60 rounded-xl space-y-1.5">
+                <div class="font-bold text-blue-300 flex items-center space-x-2">
+                    <i class="fa-solid fa-network-wired text-blue-400"></i>
+                    <span>Local Network Broadcast Sync Active</span>
+                </div>
+                <p class="text-slate-300 text-[11px] leading-relaxed">Updates synchronize automatically across all open browser tabs and windows on your local domain. Paste a Firebase config snippet below to activate multi-device cloud synchronization.</p>
+            </div>
+
+            <div class="p-3.5 bg-factory-900 border border-slate-800 rounded-xl space-y-2">
+                <label class="block font-bold text-slate-200">Firebase Configuration Code / JSON</label>
+                <p class="text-slate-400 leading-relaxed text-[11px]">Paste directly from Firebase Console (JSON format or JavaScript snippet e.g. <code class="bg-factory-800 text-blue-300 px-1 py-0.5 rounded">const firebaseConfig = { ... }</code>):</p>
+                <textarea id="custom-firebase-json" rows="5" placeholder='Paste from Firebase Console, e.g.:
+
+const firebaseConfig = {
+  apiKey: "AIzaSy...",
+  authDomain: "sml-factory.firebaseapp.com",
+  projectId: "sml-factory",
+  storageBucket: "sml-factory.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "1:123456789:web:abcdef"
+};' class="w-full bg-factory-800 border border-slate-700 rounded-lg p-2.5 font-mono text-[10px] text-slate-200 focus:outline-none focus:border-blue-500"></textarea>
+                <div class="flex items-center justify-between pt-1">
+                    <button onclick="clearCustomFirebaseConfig()" class="text-rose-400 hover:text-rose-300 font-semibold underline text-[11px]">
+                        Disconnect / Reset Custom Config
+                    </button>
+                    <button onclick="saveCustomFirebaseConfig()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg transition text-[11px] shadow-md">
+                        Save & Connect Cloud DB
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-2 border-t border-slate-800">
+                <button onclick="forceCloudPush()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition flex items-center space-x-1.5" title="Force pushes local state to database">
+                    <i class="fa-solid fa-cloud-arrow-up text-emerald-400"></i>
+                    <span>Force Push Database</span>
+                </button>
+                <button onclick="toggleFirebaseModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-lg transition">
+                    Done
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 9: Clear Data Confirmation (Requires Password admin123) -->
+    <div id="modal-clear-confirm" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-sm rounded-2xl border border-rose-900/80 shadow-2xl p-6 relative text-center">
+            <div class="w-12 h-12 bg-rose-500/20 text-rose-400 rounded-2xl flex items-center justify-center mx-auto mb-3 border border-rose-500/30">
+                <i class="fa-solid fa-lock text-xl"></i>
+            </div>
+            <h3 class="text-base font-bold text-white">Clear All Dashboard Data?</h3>
+            <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">This action will permanently delete all work orders, logs, weekend OT schedules, and PM schedules. Enter admin password to proceed.</p>
+            
+            <div class="mt-4 text-left">
+                <label class="block text-slate-300 font-semibold text-xs mb-1">Admin Password</label>
+                <input type="password" id="clear-data-password" placeholder="Enter password (default: admin123)" onkeydown="if(event.key === 'Enter') confirmClearAllData()" class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-rose-500">
+                <p id="clear-password-error" class="text-rose-400 text-[11px] mt-1.5 hidden"><i class="fa-solid fa-circle-exclamation mr-1"></i> Incorrect password. Access denied.</p>
+            </div>
+
+            <div class="flex items-center justify-center space-x-3 mt-5">
+                <button onclick="closeClearDataConfirmationModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-lg transition">Cancel</button>
+                <button onclick="confirmClearAllData()" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs rounded-lg shadow-lg shadow-rose-600/30 transition">Verify & Clear Data</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <script>
+        const STORAGE_KEY = 'sml_maintenance_dashboard_data_v4';
+        const ADMIN_CLEAR_PASSWORD = 'admin123';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'sml-global-plant';
+
+        // Embedded default Firebase config fallback (Optional)
+        const DEFAULT_FIREBASE_CONFIG = {};
+
+        // Safe Storage Wrappers
+        function getSafeStorage(key) {
+            try { return localStorage.getItem(key); } catch(e) { return null; }
+        }
+        function setSafeStorage(key, val) {
+            try { localStorage.setItem(key, val); } catch(e) {}
+        }
+
+        // Default Equipment Roster
+        const defaultEquipmentList = [
+            { id: 'EQ-000', name: 'General Workshop / Non-Equipment Task', zone: 'Workshop / General', status: 'Operational', lastService: '2026-10-01' },
+            { id: 'EQ-101', name: 'CNC Milling Center A', zone: 'Machining Bay', status: 'Operational', lastService: '2026-10-01' },
+            { id: 'EQ-102', name: '500T Hydraulic Press', zone: 'Stamping Dept', status: 'Operational', lastService: '2026-09-15' },
+            { id: 'EQ-103', name: 'Robotic Weld Cell 4', zone: 'Assembly Line 1', status: 'Operational', lastService: '2026-10-10' },
+            { id: 'EQ-104', name: 'Conveyor Drive Motor B', zone: 'Packaging Line', status: 'Operational', lastService: '2026-08-20' },
+            { id: 'EQ-105', name: 'Injection Molding M04', zone: 'Plastics Line', status: 'Operational', lastService: '2026-10-12' },
+            { id: 'EQ-106', name: 'Air Compressor Unit 2', zone: 'Utility Room', status: 'Operational', lastService: '2026-07-11' },
+            { id: 'EQ-107', name: 'Automated Guided Vehicle 3', zone: 'Logistics Bay', status: 'Operational', lastService: '2026-09-28' },
+            { id: 'EQ-108', name: 'Industrial Boiler B1', zone: 'Utilities Bay', status: 'Operational', lastService: '2026-06-30' }
+        ];
+
+        // Default Technicians Roster
+        const defaultTechnicianList = [
+            'Thushara (Day/Night Elec)',
+            'A (Day/Night Elec)',
+            'B (Electrician)',
+            'Christy (Electrician)',
+            'Ruwan (Electrician)',
+            'Viraj (Mechanic)',
+            'Kanil (Mechanic)',
+            'Vimash (Mechanic)',
+            'Shenal (Mechanic)',
+            'Athula (Fitter)',
+            'Eranjen (Fitter - Inter)',
+            'Chandrarathna (Civil & Fitter)',
+            'Kapila (Mechanic Helper)',
+            'Lasantha (Cutter)',
+            'Wasantha (Cutter)',
+            'Vihaga (Cutter)',
+            'Sanjeewa (Lathe Op.)',
+            'Roshan (Sewing Tec.)',
+            'Unassigned'
+        ];
+
+        // Default PM Schedules
+        const defaultPmSchedules = [
+            { id: 'PM-201', equipmentId: 'EQ-101', equipmentName: 'CNC Milling Center A', frequency: 'Monthly', nextDueDate: '2026-10-20', assignedTech: 'Thushara (Day/Night Elec)', taskDescription: 'Check spindle vibration & replace coolant filters', lastCompleted: '2026-09-20' },
+            { id: 'PM-202', equipmentId: 'EQ-102', equipmentName: '500T Hydraulic Press', frequency: 'Weekly', nextDueDate: '2026-10-12', assignedTech: 'Viraj (Mechanic)', taskDescription: 'Hydraulic fluid pressure check & seal leak inspection', lastCompleted: '2026-10-05' },
+            { id: 'PM-203', equipmentId: 'EQ-106', equipmentName: 'Air Compressor Unit 2', frequency: 'Quarterly', nextDueDate: '2026-10-15', assignedTech: 'Athula (Fitter)', taskDescription: 'Desiccant dryer inspection & valve lubrication', lastCompleted: '2026-07-15' }
+        ];
+
+        // Default Weekend OT Jobs
+        const defaultWeekendOtJobs = [
+            {
+                id: 'OT-101',
+                equipmentId: 'EQ-101',
+                equipmentName: 'CNC Milling Center A',
+                weekendDate: '2026-10-17',
+                shiftType: 'Saturday',
+                shiftHours: 11.9,
+                leadTech: 'Thushara (Day/Night Elec)',
+                supportTechs: ['A (Day/Night Elec)', 'Kapila (Mechanic Helper)'],
+                priority: 'High',
+                jobScope: 'Overhaul main spindle bearings & rewire power terminal block.',
+                status: 'Planned',
+                actualHours: 0,
+                mondayComments: ''
+            },
+            {
+                id: 'OT-102',
+                equipmentId: 'EQ-000',
+                equipmentName: 'General Workshop / Cutters',
+                weekendDate: '2026-10-18',
+                shiftType: 'Sunday',
+                shiftHours: 9.9,
+                leadTech: 'Lasantha (Cutter)',
+                supportTechs: ['Wasantha (Cutter)', 'Vihaga (Cutter)'],
+                priority: 'Medium',
+                jobScope: 'Fabricate 8x heavy duty cutter blades and sharpen lathe tooling bits.',
+                status: 'Planned',
+                actualHours: 0,
+                mondayComments: ''
+            }
+        ];
+
+        // Global State Arrays
+        let equipmentList = [];
+        let technicianList = [];
+        let activeJobs = [];
+        let completedJobs = [];
+        let pmSchedules = [];
+        let weekendOtJobs = [];
+        let selectedJobForCompletion = null;
+        let selectedWeekendOtForReview = null;
+
+        let activeViewMode = 'table';
+        let techPerformanceChartInstance = null;
+        let machineDowntimeChartInstance = null;
+
+        const broadcastChannel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('sml_maintenance_sync_channel') : null;
+
+        if (broadcastChannel) {
+            broadcastChannel.onmessage = (event) => {
+                if (event.data && event.data.type === 'SML_MAINTENANCE_UPDATE') {
+                    const payload = event.data.payload;
+                    applySyncedData(payload, false);
+                }
+            };
+        }
+
+        window.addEventListener('storage', (e) => {
+            if (e.key === STORAGE_KEY) {
+                loadFromLocalStorage();
+                refreshUI();
+            }
+        });
+
+        let db = null;
+        let auth = null;
+        let currentUser = null;
+        let unsubscribeSyncListener = null;
+
+        function updateCloudUIStatus(isOnline, label, detailError = null) {
+            const dot = document.getElementById('cloud-status-dot');
+            const text = document.getElementById('syncStatusText');
+            const badge = document.getElementById('syncStatusBadge');
+            
+            if (text) text.innerText = label;
+
+            if (dot) {
+                if (isOnline) {
+                    dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse";
+                    if (text) text.className = "font-semibold text-emerald-400";
+                    if (badge) badge.className = "hidden lg:flex items-center space-x-3 bg-factory-900/80 px-4 py-2 rounded-xl border border-emerald-500/40 text-xs cursor-pointer hover:border-emerald-400 transition group";
+                } else {
+                    dot.className = "w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse";
+                    if (text) text.className = "font-semibold text-blue-400";
+                    if (badge) badge.className = "hidden lg:flex items-center space-x-3 bg-factory-900/80 px-4 py-2 rounded-xl border border-blue-500/30 text-xs cursor-pointer hover:border-blue-400 transition group";
+                }
+            }
+
+            const diagBox = document.getElementById('syncDiagnosticBox');
+            if (diagBox) {
+                if (isOnline) {
+                    diagBox.className = "p-3.5 bg-emerald-950/40 border border-emerald-800/60 rounded-xl space-y-1.5";
+                    diagBox.innerHTML = `
+                        <div class="font-bold text-emerald-300 flex items-center space-x-2">
+                            <i class="fa-solid fa-cloud-check text-emerald-400"></i>
+                            <span>Firebase Cloud Real-Time Database Connected</span>
+                        </div>
+                        <p class="text-slate-300 text-[11px] leading-relaxed">All work order updates, downtime logs, and roster modifications stream instantly across all connected factory tablets and computers in real time.</p>
+                    `;
+                } else if (detailError) {
+                    let fixGuide = "";
+                    if (detailError.includes("auth/operation-not-allowed")) {
+                        fixGuide = `<strong>Action Needed:</strong> Anonymous Authentication is turned OFF in Firebase.<br/>
+                        1. Open <a href="https://console.firebase.google.com" target="_blank" class="underline font-bold text-amber-300">Firebase Console</a> &rarr; <strong>Authentication</strong> &rarr; <strong>Sign-in method</strong>.<br/>
+                        2. Enable <strong>Anonymous</strong> and click <strong>Save</strong>.`;
+                    } else if (detailError.includes("permission-denied")) {
+                        fixGuide = `<strong>Action Needed:</strong> Firestore Security Rules are blocking access.<br/>
+                        1. Open <a href="https://console.firebase.google.com" target="_blank" class="underline font-bold text-amber-300">Firebase Console</a> &rarr; <strong>Firestore Database</strong> &rarr; <strong>Rules</strong>.<br/>
+                        2. Publish test rules: <code class="bg-factory-800 font-mono text-amber-300 px-1 rounded">allow read, write: if true;</code>`;
+                    } else {
+                        fixGuide = `<strong>Details:</strong> ${detailError}<br/>Please verify API keys and network connection.`;
+                    }
+                    diagBox.className = "p-3.5 bg-rose-950/40 border border-rose-800/60 rounded-xl space-y-1.5";
+                    diagBox.innerHTML = `
+                        <div class="font-bold text-rose-300 flex items-center space-x-2">
+                            <i class="fa-solid fa-triangle-exclamation text-rose-400"></i>
+                            <span>Cloud Sync Disconnected (${detailError})</span>
+                        </div>
+                        <div class="text-slate-300 text-[11px] leading-relaxed">${fixGuide}</div>
+                    `;
+                } else {
+                    diagBox.className = "p-3.5 bg-blue-950/40 border border-blue-800/60 rounded-xl space-y-1.5";
+                    diagBox.innerHTML = `
+                        <div class="font-bold text-blue-300 flex items-center space-x-2">
+                            <i class="fa-solid fa-network-wired text-blue-400"></i>
+                            <span>Local Network Broadcast Sync Active</span>
+                        </div>
+                        <p class="text-slate-300 text-[11px] leading-relaxed">Updates synchronize automatically across all open browser tabs and windows on your local domain. Paste a Firebase config snippet below to activate multi-device cloud synchronization.</p>
+                    `;
+                }
+            }
+        }
+
+        function parseFirebaseConfigInput(rawInput) {
+            if (!rawInput || !rawInput.trim()) return null;
+            let str = rawInput.trim();
+
+            try {
+                const parsed = JSON.parse(str);
+                if (parsed && parsed.apiKey) return parsed;
+            } catch (e) {}
+
+            const extractKey = (keyName) => {
+                const regex = new RegExp(`${keyName}\\s*:\\s*["']([^"']+)["']`, 'i');
+                const match = str.match(regex);
+                return match ? match[1] : null;
+            };
+
+            const apiKey = extractKey('apiKey');
+            const authDomain = extractKey('authDomain');
+            const projectId = extractKey('projectId');
+            const storageBucket = extractKey('storageBucket');
+            const messagingSenderId = extractKey('messagingSenderId');
+            const appIdKey = extractKey('appId');
+
+            if (apiKey && projectId) {
+                return {
+                    apiKey,
+                    authDomain: authDomain || `${projectId}.firebaseapp.com`,
+                    projectId,
+                    storageBucket: storageBucket || `${projectId}.appspot.com`,
+                    messagingSenderId: messagingSenderId || '',
+                    appId: appIdKey || ''
+                };
+            }
+
+            return null;
+        }
+
+        async function initCloudSync() {
+            try {
+                if (typeof firebase === 'undefined') {
+                    updateCloudUIStatus(false, "Local Network Sync Active");
+                    return;
+                }
+
+                let firebaseConfig = null;
+
+                const customConfigRaw = getSafeStorage('sml_custom_firebase_json');
+                if (customConfigRaw) {
+                    try { firebaseConfig = JSON.parse(customConfigRaw); } catch(e){}
+                }
+
+                if (!firebaseConfig && DEFAULT_FIREBASE_CONFIG && DEFAULT_FIREBASE_CONFIG.apiKey) {
+                    firebaseConfig = DEFAULT_FIREBASE_CONFIG;
+                }
+
+                if (!firebaseConfig && typeof __firebase_config !== 'undefined') {
+                    try { firebaseConfig = JSON.parse(__firebase_config); } catch(e){}
+                }
+
+                if (!firebaseConfig || !firebaseConfig.apiKey) {
+                    updateCloudUIStatus(false, "Local Network Sync Active");
+                    return;
+                }
+
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                
+                auth = firebase.auth();
+                db = firebase.firestore();
+
+                const authToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                if (authToken) {
+                    try {
+                        const userCred = await auth.signInWithCustomToken(authToken);
+                        currentUser = userCred.user;
+                    } catch (e) {
+                        const userCred = await auth.signInAnonymously();
+                        currentUser = userCred.user;
+                    }
+                } else {
+                    const userCred = await auth.signInAnonymously();
+                    currentUser = userCred.user;
+                }
+
+                if (!currentUser) return;
+
+                subscribeToFirebaseSync();
+
+            } catch (err) {
+                console.warn("Firebase sync init notice:", err);
+                updateCloudUIStatus(false, "Local Network Sync Active", err.code || err.message);
+            }
+        }
+
+        function subscribeToFirebaseSync() {
+            if (!db || !currentUser) return;
+
+            if (unsubscribeSyncListener) {
+                unsubscribeSyncListener();
+            }
+
+            const cloudDocRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('sml_plant_floor').doc('main_database');
+
+            unsubscribeSyncListener = cloudDocRef.onSnapshot((snapshot) => {
+                if (snapshot.exists) {
+                    const cloudData = snapshot.data();
+                    applySyncedData(cloudData, true);
+                    updateCloudUIStatus(true, "Firebase Live Cloud Sync");
+                } else {
+                    saveToCloudAndLocal();
+                }
+            }, (error) => {
+                console.warn("Firestore sync error notice:", error);
+                updateCloudUIStatus(false, "Local Network Sync Active", error.code || error.message);
+            });
+        }
+
+        function applySyncedData(cloudData, isFromCloud = false) {
+            if (!cloudData) return;
+            if (cloudData.equipmentList) equipmentList = cloudData.equipmentList;
+            if (cloudData.technicianList) technicianList = cloudData.technicianList;
+            if (cloudData.activeJobs) activeJobs = cloudData.activeJobs;
+            if (cloudData.completedJobs) completedJobs = cloudData.completedJobs;
+            if (cloudData.pmSchedules) pmSchedules = cloudData.pmSchedules;
+            if (cloudData.weekendOtJobs) weekendOtJobs = cloudData.weekendOtJobs;
+
+            saveToLocalStorage();
+            refreshUI();
+        }
+
+        async function saveToCloudAndLocal() {
+            saveToLocalStorage();
+
+            if (broadcastChannel) {
+                broadcastChannel.postMessage({
+                    type: 'SML_MAINTENANCE_UPDATE',
+                    payload: {
+                        equipmentList,
+                        technicianList,
+                        activeJobs,
+                        completedJobs,
+                        pmSchedules,
+                        weekendOtJobs
+                    }
+                });
+            }
+
+            if (db && currentUser) {
+                try {
+                    const cloudDocRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('sml_plant_floor').doc('main_database');
+                    const payload = {
+                        equipmentList: equipmentList,
+                        technicianList: technicianList,
+                        activeJobs: activeJobs,
+                        completedJobs: completedJobs,
+                        pmSchedules: pmSchedules,
+                        weekendOtJobs: weekendOtJobs,
+                        lastUpdatedBy: currentUser.uid,
+                        lastUpdatedAt: new Date().toISOString()
+                    };
+                    await cloudDocRef.set(payload, { merge: true });
+                    updateCloudUIStatus(true, "Firebase Live Cloud Sync");
+                } catch (err) {
+                    console.warn("Cloud push notice:", err);
+                    updateCloudUIStatus(false, "Local Network Sync Active", err.code || err.message);
+                }
+            }
+        }
+
+        function saveToLocalStorage() {
+            try {
+                const payload = {
+                    equipmentList: equipmentList,
+                    technicianList: technicianList,
+                    activeJobs: activeJobs,
+                    completedJobs: completedJobs,
+                    pmSchedules: pmSchedules,
+                    weekendOtJobs: weekendOtJobs,
+                    lastSaved: new Date().toISOString()
+                };
+                setSafeStorage(STORAGE_KEY, JSON.stringify(payload));
+            } catch (err) {
+                console.error("Local storage save notice:", err);
+            }
+        }
+
+        function loadFromLocalStorage() {
+            try {
+                const savedRaw = getSafeStorage(STORAGE_KEY);
+                if (savedRaw) {
+                    const parsed = JSON.parse(savedRaw);
+                    equipmentList = parsed.equipmentList && parsed.equipmentList.length > 0 ? parsed.equipmentList : [...defaultEquipmentList];
+                    technicianList = parsed.technicianList && parsed.technicianList.length > 0 ? parsed.technicianList : [...defaultTechnicianList];
+                    activeJobs = parsed.activeJobs || [];
+                    completedJobs = parsed.completedJobs || [];
+                    pmSchedules = parsed.pmSchedules || [...defaultPmSchedules];
+                    weekendOtJobs = parsed.weekendOtJobs || [...defaultWeekendOtJobs];
+                    return true;
+                }
+            } catch (err) {
+                console.error("Failed to load local storage state:", err);
+            }
+            equipmentList = [...defaultEquipmentList];
+            technicianList = [...defaultTechnicianList];
+            activeJobs = [];
+            completedJobs = [];
+            pmSchedules = [...defaultPmSchedules];
+            weekendOtJobs = [...defaultWeekendOtJobs];
+            saveToLocalStorage();
+            return false;
+        }
+
+        function refreshUI() {
+            updateAllMachineViews();
+            renderActiveJobs();
+            renderWeekendOtJobs();
+            renderCompletedJobs();
+            renderPMSchedules();
+            updateKPICards();
+            renderAnalyticsTables();
+            updateCharts();
+        }
+
+        function toggleFirebaseModal() {
+            const customConfigRaw = getSafeStorage('sml_custom_firebase_json');
+            const jsonInput = document.getElementById('custom-firebase-json');
+            if (jsonInput && customConfigRaw) {
+                try {
+                    jsonInput.value = JSON.stringify(JSON.parse(customConfigRaw), null, 2);
+                } catch(e) {
+                    jsonInput.value = customConfigRaw;
+                }
+            }
+            document.getElementById('modal-firebase-config')?.classList.toggle('hidden');
+        }
+
+        function saveCustomFirebaseConfig() {
+            const val = document.getElementById('custom-firebase-json')?.value.trim();
+            if (!val) return;
+            const parsed = parseFirebaseConfigInput(val);
+            if (!parsed) {
+                showToast("Invalid Firebase config snippet! Please check syntax.", "danger");
+                return;
+            }
+
+            setSafeStorage('sml_custom_firebase_json', JSON.stringify(parsed));
+            showToast("Saved Firebase Configuration! Connecting to Cloud Database...", "success");
+            toggleFirebaseModal();
+            initCloudSync();
+        }
+
+        function clearCustomFirebaseConfig() {
+            localStorage.removeItem('sml_custom_firebase_json');
+            if (unsubscribeSyncListener) unsubscribeSyncListener();
+            db = null;
+            auth = null;
+            currentUser = null;
+            updateCloudUIStatus(false, "Local Network Sync Active");
+            showToast("Disconnected from Firebase Cloud. Reverted to Local Network mode.", "info");
+            toggleFirebaseModal();
+        }
+
+        function forceCloudPush() {
+            saveToCloudAndLocal();
+            showToast("Force pushed current maintenance database to real-time engine!", "success");
+        }
+
+        function calculateLiveElapsedMins(isoString) {
+            if (!isoString) return 0;
+            const start = new Date(isoString);
+            const end = new Date();
+            if (isNaN(start.getTime()) || end <= start) return 0;
+
+            let totalMins = 0;
+            let currentDay = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+            const lastDay = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+
+            while (currentDay <= lastDay) {
+                const dayOfWeek = currentDay.getDay();
+
+                if (dayOfWeek !== 0) {
+                    const y = currentDay.getFullYear();
+                    const m = currentDay.getMonth();
+                    const d = currentDay.getDate();
+
+                    const s1Start = new Date(y, m, d, 7, 20, 0).getTime();
+                    const s1End = new Date(y, m, d, 12, 30, 0).getTime();
+
+                    const s2Start = new Date(y, m, d, 13, 0, 0).getTime();
+                    const s2End = new Date(y, m, d, 19, 15, 0).getTime();
+
+                    const o1Start = Math.max(start.getTime(), s1Start);
+                    const o1End = Math.min(end.getTime(), s1End);
+                    if (o1End > o1Start) totalMins += (o1End - o1Start) / 60000;
+
+                    const o2Start = Math.max(start.getTime(), s2Start);
+                    const o2End = Math.min(end.getTime(), s2End);
+                    if (o2End > o2Start) totalMins += (o2End - o2Start) / 60000;
+                }
+                currentDay.setDate(currentDay.getDate() + 1);
+            }
+
+            return Math.max(0, Math.floor(totalMins));
+        }
+
+        function formatElapsed(mins) {
+            if (mins < 60) return `${mins}m`;
+            const hrs = Math.floor(mins / 60);
+            const rem = mins % 60;
+            return `${hrs}h ${rem}m`;
+        }
+
+        function updateLiveClock() {
+            const el = document.getElementById('live-time');
+            if (el) {
+                const now = new Date();
+                el.innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            }
+            renderActiveJobs();
+        }
+
+        function getCategoryBadge(category) {
+            switch(category) {
+                case 'Fabrication':
+                    return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-950/90 text-indigo-300 border border-indigo-700/80"><i class="fa-solid fa-hammer mr-1 text-[9px]"></i>FABRICATION</span>`;
+                case 'Modification':
+                    return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-950/90 text-teal-300 border border-teal-700/80"><i class="fa-solid fa-sliders mr-1 text-[9px]"></i>MODIFICATION</span>`;
+                case 'Routine':
+                    return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700"><i class="fa-solid fa-list-check mr-1 text-[9px]"></i>ROUTINE</span>`;
+                case 'Breakdown':
+                default:
+                    return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-950/90 text-rose-300 border border-rose-700/80"><i class="fa-solid fa-triangle-exclamation mr-1 text-[9px]"></i>BREAKDOWN</span>`;
+            }
+        }
+
+        function handleJobCategorySelect(cat) {
+            const equipSelect = document.getElementById('new-job-equipment');
+            if (equipSelect && (cat === 'Fabrication' || cat === 'Routine')) {
+                const genEquip = equipmentList.find(e => e.id === 'EQ-000');
+                if (genEquip) equipSelect.value = genEquip.id;
+            }
+        }
+
+        function getNextSaturdayDate() {
+            const now = new Date();
+            const dayOfWeek = now.getDay();
+            const distanceToSaturday = (6 - dayOfWeek + 7) % 7 || 7;
+            const nextSat = new Date(now.getTime() + distanceToSaturday * 24 * 60 * 60 * 1000);
+            return nextSat.toISOString().slice(0, 10);
+        }
+
+        function switchTab(tab) {
+            const tabs = ['active', 'weekend-ot', 'completed', 'pm', 'equipment', 'analytics', 'tech-workload'];
+            tabs.forEach(t => {
+                const content = document.getElementById(`tab-content-${t}`);
+                const btn = document.getElementById(`tab-btn-${t}`);
+                if (content && btn) {
+                    if (t === tab) {
+                        content.classList.remove('hidden');
+                        btn.className = "px-3.5 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white transition flex items-center space-x-2";
+                    } else {
+                        content.classList.add('hidden');
+                        btn.className = "px-3.5 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center space-x-2";
+                    }
+                }
+            });
+            if (tab === 'analytics') {
+                renderAnalyticsTables();
+                updateCharts();
+            } else if (tab === 'tech-workload') {
+                renderTechnicianWorkload();
+            }
+        }
+
+        function toggleActiveView(mode) {
+            activeViewMode = mode;
+            const tblWrp = document.getElementById('active-table-wrapper');
+            const knbWrp = document.getElementById('active-kanban-wrapper');
+            const btnTbl = document.getElementById('view-mode-table');
+            const btnKnb = document.getElementById('view-mode-kanban');
+
+            if (mode === 'table') {
+                tblWrp?.classList.remove('hidden');
+                knbWrp?.classList.add('hidden');
+                if (btnTbl) btnTbl.className = "px-2.5 py-1 rounded text-xs bg-slate-700 text-white";
+                if (btnKnb) btnKnb.className = "px-2.5 py-1 rounded text-xs text-slate-400 hover:text-white";
+            } else {
+                tblWrp?.classList.add('hidden');
+                knbWrp?.classList.remove('hidden');
+                if (btnTbl) btnTbl.className = "px-2.5 py-1 rounded text-xs text-slate-400 hover:text-white";
+                if (btnKnb) btnKnb.className = "px-2.5 py-1 rounded text-xs bg-slate-700 text-white";
+            }
+            renderActiveJobs();
+        }
+
+        // Modal Controls
+        function toggleNewJobModal() { 
+            const modal = document.getElementById('modal-new-job');
+            if (modal) {
+                modal.classList.toggle('hidden');
+                if (!modal.classList.contains('hidden')) {
+                    const searchInput = document.getElementById('new-job-equipment-search');
+                    if (searchInput) searchInput.value = '';
+                    populateEquipmentDropdowns();
+                }
+            }
+        }
+        function toggleCompleteJobModal() { document.getElementById('modal-complete-job')?.classList.toggle('hidden'); }
+        function toggleNewPMModal() { document.getElementById('modal-new-pm')?.classList.toggle('hidden'); }
+        function toggleNewWeekendOtModal() { document.getElementById('modal-new-weekend-ot')?.classList.toggle('hidden'); }
+        function toggleReviewWeekendOtModal() { document.getElementById('modal-review-weekend-ot')?.classList.toggle('hidden'); }
+        function toggleManageMachinesModal() { document.getElementById('modal-manage-machines')?.classList.toggle('hidden'); }
+        function toggleBackupModal() { document.getElementById('modal-backup')?.classList.toggle('hidden'); }
+
+        function openClearDataConfirmationModal() { 
+            const passInput = document.getElementById('clear-data-password');
+            const errEl = document.getElementById('clear-password-error');
+            if (passInput) passInput.value = '';
+            if (errEl) errEl.classList.add('hidden');
+            document.getElementById('modal-clear-confirm')?.classList.remove('hidden'); 
+            setTimeout(() => passInput?.focus(), 100);
+        }
+
+        function closeClearDataConfirmationModal() { 
+            const passInput = document.getElementById('clear-data-password');
+            const errEl = document.getElementById('clear-password-error');
+            if (passInput) passInput.value = '';
+            if (errEl) errEl.classList.add('hidden');
+            document.getElementById('modal-clear-confirm')?.classList.add('hidden'); 
+        }
+
+        function confirmClearAllData() {
+            const passInput = document.getElementById('clear-data-password');
+            const errEl = document.getElementById('clear-password-error');
+            const enteredPass = passInput ? passInput.value : '';
+
+            if (enteredPass !== ADMIN_CLEAR_PASSWORD) {
+                if (errEl) errEl.classList.remove('hidden');
+                if (passInput) passInput.focus();
+                showToast('Incorrect admin password!', 'danger');
+                return;
+            }
+
+            activeJobs = [];
+            completedJobs = [];
+            pmSchedules = [];
+            weekendOtJobs = [];
+
+            saveToCloudAndLocal();
+            closeClearDataConfirmationModal();
+            refreshUI();
+            showToast('All dashboard data cleared successfully.', 'success');
+        }
+
+        function updateAllMachineViews() {
+            populateEquipmentDropdowns();
+            populateSectionFilterDropdown();
+            populateTechnicianDropdowns();
+            renderEquipmentGrid();
+            renderRosterTable();
+            renderTechnicianRoster();
+        }
+
+        function populateEquipmentDropdowns(filterQuery = '') {
+            const selectJob = document.getElementById('new-job-equipment');
+            const selectPM = document.getElementById('pm-equipment');
+            const selectOT = document.getElementById('weekend-ot-equipment');
+
+            const query = (filterQuery || '').toLowerCase().trim();
+            const filteredForJob = query 
+                ? equipmentList.filter(eq => 
+                    eq.id.toLowerCase().includes(query) || 
+                    eq.name.toLowerCase().includes(query) || 
+                    eq.zone.toLowerCase().includes(query)
+                  )
+                : equipmentList;
+
+            const jobOptionsHtml = filteredForJob.length > 0 
+                ? filteredForJob.map(eq => `<option value="${eq.id}">${eq.id} - ${eq.name} (${eq.zone})</option>`).join('')
+                : `<option value="" disabled>No matching machinery found</option>`;
+
+            const optionsHtml = equipmentList.map(eq => `<option value="${eq.id}">${eq.id} - ${eq.name} (${eq.zone})</option>`).join('');
+
+            if (selectJob) selectJob.innerHTML = jobOptionsHtml;
+            if (selectPM) selectPM.innerHTML = optionsHtml;
+            if (selectOT) selectOT.innerHTML = optionsHtml;
+        }
+
+        function filterNewJobEquipment(query) {
+            populateEquipmentDropdowns(query);
+        }
+
+        function populateSectionFilterDropdown() {
+            const select = document.getElementById('filter-equipment-zone');
+            if (select) {
+                const sections = Array.from(new Set(equipmentList.map(e => e.zone)));
+                select.innerHTML = '<option value="ALL">All Sections / Zones</option>' + 
+                    sections.map(sec => `<option value="${sec}">${sec}</option>`).join('');
+            }
+        }
+
+        function populateTechnicianDropdowns() {
+            const selectPM = document.getElementById('pm-tech');
+            const selectOtLead = document.getElementById('weekend-ot-lead-tech');
+            const supportCheckboxes = document.getElementById('weekend-ot-support-checkboxes');
+            const filterActiveTech = document.getElementById('filter-active-tech');
+            const filterOtTech = document.getElementById('filter-weekend-ot-tech');
+
+            const jobTechSelect = document.getElementById('new-job-tech');
+            const optionsHtml = technicianList.map(t => `<option value="${t}">${t}</option>`).join('');
+            if (jobTechSelect) jobTechSelect.innerHTML = optionsHtml;
+            if (selectPM) selectPM.innerHTML = optionsHtml;
+            if (selectOtLead) selectOtLead.innerHTML = optionsHtml;
+
+            const filterOptionsHtml = '<option value="ALL">All Technicians</option>' + technicianList.map(t => `<option value="${t}">${t}</option>`).join('');
+            if (filterActiveTech) filterActiveTech.innerHTML = filterOptionsHtml;
+            if (filterOtTech) filterOtTech.innerHTML = filterOptionsHtml;
+
+            if (supportCheckboxes) {
+                supportCheckboxes.innerHTML = technicianList
+                    .filter(t => t !== 'Unassigned')
+                    .map((t) => `
+                        <label class="flex items-center space-x-2 text-slate-300 hover:text-white cursor-pointer p-1 rounded hover:bg-slate-800/60">
+                            <input type="checkbox" name="ot-support-tech" value="${t}" class="rounded border-slate-700 bg-factory-900 text-amber-500 focus:ring-amber-500">
+                            <span class="truncate">${t}</span>
+                        </label>
+                    `).join('');
+            }
+        }
+
+        function filterActiveJobs() {
+            renderActiveJobs();
+        }
+
+        function resetActiveFilters() {
+            const search = document.getElementById('search-active');
+            const prio = document.getElementById('filter-active-priority');
+            const status = document.getElementById('filter-active-status');
+            const category = document.getElementById('filter-active-category');
+            const tech = document.getElementById('filter-active-tech');
+            if (search) search.value = '';
+            if (prio) prio.value = 'ALL';
+            if (status) status.value = 'ALL';
+            if (category) category.value = 'ALL';
+            if (tech) tech.value = 'ALL';
+            renderActiveJobs();
+        }
+
+        function renderActiveJobs() {
+            const tbody = document.getElementById('active-jobs-tbody');
+            const searchVal = (document.getElementById('search-active')?.value || '').toLowerCase();
+            const prioVal = document.getElementById('filter-active-priority')?.value || 'ALL';
+            const statusVal = document.getElementById('filter-active-status')?.value || 'ALL';
+            const catVal = document.getElementById('filter-active-category')?.value || 'ALL';
+            const techVal = document.getElementById('filter-active-tech')?.value || 'ALL';
+
+            const filtered = activeJobs.filter(j => {
+                const matchSearch = j.id.toLowerCase().includes(searchVal) || 
+                                    j.equipmentName.toLowerCase().includes(searchVal) || 
+                                    j.assignedTo.toLowerCase().includes(searchVal) ||
+                                    j.description.toLowerCase().includes(searchVal);
+                const matchPrio = prioVal === 'ALL' || j.priority === prioVal;
+                const matchStatus = statusVal === 'ALL' || j.status === statusVal;
+                const matchCat = catVal === 'ALL' || (j.category || 'Breakdown') === catVal;
+                const matchTech = techVal === 'ALL' || j.assignedTo === techVal;
+                return matchSearch && matchPrio && matchStatus && matchCat && matchTech;
+            });
+
+            if (activeViewMode === 'kanban') {
+                renderKanbanBoard(filtered);
+            }
+
+            if (!tbody) return;
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center py-8 text-slate-500 font-medium">
+                            <i class="fa-solid fa-clipboard-check text-2xl mb-2 text-slate-600 block"></i>
+                            No active work orders match the criteria.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(job => {
+                const liveMins = calculateLiveElapsedMins(job.createdIso);
+                const elapsedFormatted = formatElapsed(liveMins);
+                const categoryBadge = getCategoryBadge(job.category || 'Breakdown');
+                
+                let prioBadge = 'bg-slate-800 text-slate-300 border-slate-700';
+                if (job.priority === 'Critical') prioBadge = 'bg-rose-950/80 text-rose-300 border-rose-800/80 pulse-red';
+                else if (job.priority === 'High') prioBadge = 'bg-amber-950/80 text-amber-300 border-amber-800/80';
+                else if (job.priority === 'Medium') prioBadge = 'bg-blue-950/80 text-blue-300 border-blue-800/80';
+
+                const techOptions = technicianList.map(t => `<option value="${t}" ${job.assignedTo === t ? 'selected' : ''}>${t}</option>`).join('');
+
+                return `
+                    <tr class="hover:bg-slate-800/30 transition">
+                        <td class="py-3 px-4">
+                            <div class="font-bold text-white font-mono text-xs text-blue-400">${job.id}</div>
+                            <div class="text-slate-300 font-semibold mt-0.5">${job.equipmentName} <span class="text-slate-500 font-mono text-[11px]">(${job.equipmentId})</span></div>
+                        </td>
+                        <td class="py-3 px-4">${categoryBadge}</td>
+                        <td class="py-3 px-4 max-w-xs text-slate-300 truncate" title="${job.description}">${job.description}</td>
+                        <td class="py-3 px-4">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border ${prioBadge}">
+                                ${job.priority}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4">
+                            <select onchange="updateActiveJobStatus('${job.id}', this.value)" class="bg-factory-900 border border-slate-700 rounded px-2 py-1 text-[11px] text-slate-200 focus:outline-none focus:border-blue-500">
+                                <option value="Assigned" ${job.status === 'Assigned' ? 'selected' : ''}>Assigned</option>
+                                <option value="In Progress" ${job.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                                <option value="Pending Parts" ${job.status === 'Pending Parts' ? 'selected' : ''}>Pending Parts</option>
+                            </select>
+                        </td>
+                        <td class="py-3 px-4">
+                            <select onchange="updateActiveJobTech('${job.id}', this.value)" class="bg-factory-900 border border-slate-700 rounded px-2 py-1 text-[11px] text-slate-200 focus:outline-none focus:border-blue-500 max-w-[160px] truncate">
+                                ${techOptions}
+                            </select>
+                        </td>
+                        <td class="py-3 px-4">
+                            <span class="inline-flex items-center space-x-1.5 font-mono text-amber-400 bg-amber-950/40 border border-amber-800/40 px-2 py-0.5 rounded text-[11px]">
+                                <i class="fa-solid fa-stopwatch text-[10px]"></i>
+                                <span>${elapsedFormatted}</span>
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 text-right space-x-2">
+                            <button onclick="openCompleteModal('${job.id}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded text-[11px] transition shadow">
+                                <i class="fa-solid fa-check mr-1"></i> Resolve
+                            </button>
+                            <button onclick="deleteActiveJob('${job.id}')" class="p-1 text-slate-400 hover:text-rose-400 transition" title="Cancel Ticket">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderKanbanBoard(jobs) {
+            const colAssigned = document.getElementById('kanban-col-assigned');
+            const colInProgress = document.getElementById('kanban-col-in-progress');
+            const colPending = document.getElementById('kanban-col-pending');
+            
+            if (!colAssigned || !colInProgress || !colPending) return;
+
+            const assigned = jobs.filter(j => j.status === 'Assigned');
+            const inProgress = jobs.filter(j => j.status === 'In Progress');
+            const pending = jobs.filter(j => j.status === 'Pending Parts');
+
+            const countAssigned = document.getElementById('kanban-count-assigned');
+            const countInProgress = document.getElementById('kanban-count-in-progress');
+            const countPending = document.getElementById('kanban-count-pending');
+
+            if (countAssigned) countAssigned.innerText = assigned.length;
+            if (countInProgress) countInProgress.innerText = inProgress.length;
+            if (countPending) countPending.innerText = pending.length;
+
+            const renderCard = (j) => {
+                const liveMins = calculateLiveElapsedMins(j.createdIso);
+                const elapsedFormatted = formatElapsed(liveMins);
+                const categoryBadge = getCategoryBadge(j.category || 'Breakdown');
+                let prioBadge = 'bg-slate-800 text-slate-300 border-slate-700';
+                if (j.priority === 'Critical') prioBadge = 'bg-rose-950/80 text-rose-300 border-rose-800/80 pulse-red';
+                else if (j.priority === 'High') prioBadge = 'bg-amber-950/80 text-amber-300 border-amber-800/80';
+                else if (j.priority === 'Medium') prioBadge = 'bg-blue-950/80 text-blue-300 border-blue-800/80';
+
+                return `
+                    <div class="bg-factory-900/90 p-3 rounded-xl border border-slate-800 space-y-2 shadow-sm hover:border-slate-700 transition">
+                        <div class="flex items-center justify-between">
+                            <span class="font-mono text-xs font-bold text-blue-400">${j.id}</span>
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border ${prioBadge}">${j.priority}</span>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-white text-xs">${j.equipmentName}</h4>
+                            <p class="text-[11px] text-slate-400 mt-0.5 line-clamp-2" title="${j.description}">${j.description}</p>
+                        </div>
+                        <div class="flex items-center justify-between text-[11px] pt-1 border-t border-slate-800/60">
+                            <span class="text-slate-300 flex items-center"><i class="fa-solid fa-user-gear text-blue-400 mr-1"></i>${j.assignedTo}</span>
+                            <span class="font-mono text-amber-400 font-semibold"><i class="fa-solid fa-stopwatch mr-1"></i>${elapsedFormatted}</span>
+                        </div>
+                        <div class="flex items-center justify-between pt-1">
+                            ${categoryBadge}
+                            <button onclick="openCompleteModal('${j.id}')" class="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-semibold transition">
+                                Resolve
+                            </button>
+                        </div>
+                    </div>
+                `;
+            };
+
+            colAssigned.innerHTML = assigned.length ? assigned.map(renderCard).join('') : '<div class="text-xs text-slate-500 text-center py-6">No assigned jobs</div>';
+            colInProgress.innerHTML = inProgress.length ? inProgress.map(renderCard).join('') : '<div class="text-xs text-slate-500 text-center py-6">No jobs in progress</div>';
+            colPending.innerHTML = pending.length ? pending.map(renderCard).join('') : '<div class="text-xs text-slate-500 text-center py-6">No jobs pending parts</div>';
+        }
+
+        function resetWeekendOtFilters() {
+            const dateInput = document.getElementById('filter-weekend-ot-date');
+            const statusInput = document.getElementById('filter-weekend-ot-status');
+            const techInput = document.getElementById('filter-weekend-ot-tech');
+            if (dateInput) dateInput.value = '';
+            if (statusInput) statusInput.value = 'ALL';
+            if (techInput) techInput.value = 'ALL';
+            renderWeekendOtJobs();
+        }
+
+        function renderWeekendOtJobs() {
+            const tbody = document.getElementById('weekend-ot-tbody');
+            const dateFilter = document.getElementById('filter-weekend-ot-date')?.value;
+            const statusFilter = document.getElementById('filter-weekend-ot-status')?.value || 'ALL';
+            const techFilter = document.getElementById('filter-weekend-ot-tech')?.value || 'ALL';
+
+            if (!tbody) return;
+
+            const filtered = weekendOtJobs.filter(ot => {
+                const matchDate = !dateFilter || ot.weekendDate === dateFilter;
+                const matchStatus = statusFilter === 'ALL' || ot.status === statusFilter;
+                const matchTech = techFilter === 'ALL' || ot.leadTech === techFilter || (ot.supportTechs && ot.supportTechs.includes(techFilter));
+                return matchDate && matchStatus && matchTech;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center py-8 text-slate-500 font-medium">
+                            <i class="fa-solid fa-calendar-xmark text-2xl mb-2 text-slate-600 block"></i>
+                            No weekend OT jobs planned for the selected filters.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(ot => {
+                let statusBadge = 'bg-amber-950/80 text-amber-300 border-amber-800';
+                if (ot.status === 'Completed') statusBadge = 'bg-emerald-950/80 text-emerald-300 border-emerald-800';
+                else if (ot.status === 'Deferred') statusBadge = 'bg-purple-950/80 text-purple-300 border-purple-800';
+
+                const supportList = ot.supportTechs && ot.supportTechs.length > 0 
+                    ? ot.supportTechs.map(st => `<span class="inline-block bg-slate-800 border border-slate-700 text-slate-300 px-1.5 py-0.5 rounded text-[10px] mr-1 mb-1">${st}</span>`).join('')
+                    : `<span class="text-slate-500 text-[10px]">No helper team</span>`;
+
+                return `
+                    <tr class="hover:bg-slate-800/30 transition">
+                        <td class="py-3 px-4">
+                            <div class="font-bold text-amber-400 font-mono text-xs">${ot.id}</div>
+                            <div class="text-slate-200 font-semibold">${ot.equipmentName}</div>
+                        </td>
+                        <td class="py-3 px-4">
+                            <div class="font-semibold text-slate-200">${ot.shiftType} (${ot.weekendDate})</div>
+                            <div class="text-[11px] font-mono text-amber-400"><i class="fa-regular fa-clock mr-1"></i>${ot.shiftHours} hrs planned</div>
+                        </td>
+                        <td class="py-3 px-4 max-w-xs text-slate-300 line-clamp-2" title="${ot.jobScope}">
+                            ${ot.jobScope}
+                        </td>
+                        <td class="py-3 px-4 text-slate-200 font-semibold">
+                            <i class="fa-solid fa-user-shield text-amber-400 mr-1.5"></i>${ot.leadTech}
+                        </td>
+                        <td class="py-3 px-4 max-w-xs">
+                            <div class="flex flex-wrap">${supportList}</div>
+                        </td>
+                        <td class="py-3 px-4">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${statusBadge}">
+                                ${ot.status}
+                            </span>
+                            ${ot.actualHours > 0 ? `<div class="text-[10px] text-emerald-400 font-mono mt-1">${ot.actualHours} hrs logged</div>` : ''}
+                        </td>
+                        <td class="py-3 px-4 text-right space-x-2">
+                            <button onclick="openReviewWeekendOtModal('${ot.id}')" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded text-[11px] transition shadow" title="Review status on Monday">
+                                <i class="fa-solid fa-clipboard-check mr-1"></i> Review
+                            </button>
+                            <button onclick="rolloverOtToActiveJob('${ot.id}')" class="p-1 text-blue-400 hover:text-blue-300" title="Rollover / Convert to Active Work Order">
+                                <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                            </button>
+                            <button onclick="deleteWeekendOtJob('${ot.id}')" class="p-1 text-slate-400 hover:text-rose-400 transition" title="Delete OT Job">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderTechnicianWorkload() {
+            const grid = document.getElementById('tech-workload-grid');
+            const searchVal = (document.getElementById('search-tech-workload')?.value || '').toLowerCase();
+            const statusFilter = document.getElementById('filter-tech-workload-status')?.value || 'ALL';
+
+            if (!grid) return;
+
+            const filteredTechs = technicianList.filter(t => {
+                if (t === 'Unassigned') return false;
+                const matchSearch = t.toLowerCase().includes(searchVal);
+                
+                const assignedActive = activeJobs.filter(j => j.assignedTo === t);
+                if (statusFilter === 'ASSIGNED_ONLY') return matchSearch && assignedActive.length > 0;
+                if (statusFilter === 'FREE_ONLY') return matchSearch && assignedActive.length === 0;
+                return matchSearch;
+            });
+
+            if (filteredTechs.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full glass-card p-8 rounded-xl text-center text-slate-500">
+                        <i class="fa-solid fa-user-slash text-3xl mb-2 text-slate-600 block"></i>
+                        No technicians found matching search filter.
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = filteredTechs.map(tech => {
+                const assignedActive = activeJobs.filter(j => j.assignedTo === tech);
+                const assignedPM = pmSchedules.filter(p => p.assignedTech === tech);
+                const leadOt = weekendOtJobs.filter(o => o.leadTech === tech && o.status === 'Planned');
+                const supportOt = weekendOtJobs.filter(o => o.supportTechs && o.supportTechs.includes(tech) && o.status === 'Planned');
+                const resolvedCount = completedJobs.filter(j => j.technician === tech).length;
+
+                const isOccupied = assignedActive.length > 0;
+                const escapedTech = tech.replace(/'/g, "\\'");
+
+                let activeListHtml = assignedActive.map(j => `
+                    <div class="bg-factory-900 p-2.5 rounded-lg border border-slate-800 space-y-1">
+                        <div class="flex items-center justify-between">
+                            <span class="font-mono text-[11px] font-bold text-blue-400">${j.id}</span>
+                            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded ${j.priority === 'Critical' ? 'bg-rose-950 text-rose-300 border border-rose-800' : 'bg-slate-800 text-slate-300'}">${j.priority}</span>
+                        </div>
+                        <div class="text-xs font-bold text-white">${j.equipmentName}</div>
+                        <p class="text-[11px] text-slate-400 truncate">${j.description}</p>
+                    </div>
+                `).join('');
+
+                if (assignedActive.length === 0) {
+                    activeListHtml = `<div class="text-[11px] text-slate-500 italic py-1">No active work orders. Technician is available.</div>`;
+                }
+
+                let pmListHtml = assignedPM.map(p => `
+                    <div class="text-[11px] text-slate-300 flex items-center justify-between py-1 border-b border-slate-800/60">
+                        <span><i class="fa-solid fa-calendar-check text-purple-400 mr-1"></i>${p.equipmentName} (${p.frequency})</span>
+                        <span class="font-mono text-slate-400 text-[10px]">${p.nextDueDate}</span>
+                    </div>
+                `).join('');
+
+                let otSummaryHtml = '';
+                if (leadOt.length > 0 || supportOt.length > 0) {
+                    otSummaryHtml = `
+                        <div class="pt-2 border-t border-slate-800 text-[11px] text-amber-300">
+                            <i class="fa-solid fa-calendar-week mr-1"></i>
+                            <strong>Weekend OT:</strong> ${leadOt.length} Lead | ${supportOt.length} Helper
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="glass-card p-4 rounded-xl border border-slate-800 flex flex-col justify-between space-y-3">
+                        <div>
+                            <div class="flex items-center justify-between pb-2 border-b border-slate-800 mb-3">
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-8 h-8 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center font-bold text-xs border border-blue-500/30">
+                                        <i class="fa-solid fa-user-gear"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold text-white text-xs">${tech}</h3>
+                                        <span class="text-[10px] ${isOccupied ? 'text-amber-400 font-semibold' : 'text-emerald-400 font-semibold'}">
+                                            <i class="fa-solid fa-circle text-[8px] mr-1"></i>${isOccupied ? `${assignedActive.length} Active Job(s)` : 'Available'}
+                                        </span>
+                                    </div>
+                                </div>
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700">
+                                    ${resolvedCount} Resolved
+                                </span>
+                            </div>
+
+                            <div class="space-y-2">
+                                <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Active Assignments</div>
+                                <div class="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                                    ${activeListHtml}
+                                </div>
+                            </div>
+
+                            ${assignedPM.length > 0 ? `
+                                <div class="mt-3">
+                                    <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1">Scheduled PM Tasks</div>
+                                    ${pmListHtml}
+                                </div>
+                            ` : ''}
+
+                            ${otSummaryHtml}
+                        </div>
+
+                        <div class="pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-semibold">
+                            <button onclick="filterActiveJobsByTech('${escapedTech}')" class="text-blue-400 hover:text-blue-300 flex items-center space-x-1">
+                                <span>View Active Jobs</span>
+                                <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                            </button>
+                            <button onclick="quickDispatchForTech('${escapedTech}')" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-[11px] shadow transition flex items-center space-x-1">
+                                <i class="fa-solid fa-plus text-[9px]"></i>
+                                <span>Assign Job</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterActiveJobsByTech(techName) {
+            switchTab('active');
+            const techFilter = document.getElementById('filter-active-tech');
+            if (techFilter) techFilter.value = techName;
+            renderActiveJobs();
+        }
+
+        function quickDispatchForTech(techName) {
+            const techSelect = document.getElementById('new-job-tech');
+            if (techSelect) techSelect.value = techName;
+            toggleNewJobModal();
+        }
+
+        function updateKPICards() {
+            const activeEl = document.getElementById('kpi-active-count');
+            const tabActiveEl = document.getElementById('tab-active-badge');
+            const completedEl = document.getElementById('kpi-completed-count');
+            const tabCompletedEl = document.getElementById('tab-completed-badge');
+            const criticalEl = document.getElementById('kpi-critical-count');
+            const downtimeEl = document.getElementById('kpi-downtime');
+            
+            const pmEl = document.getElementById('kpi-pm-count');
+            const tabPmEl = document.getElementById('tab-pm-badge');
+            const pmOverdueEl = document.getElementById('kpi-pm-overdue-count');
+
+            const weekendOtCountEl = document.getElementById('kpi-weekend-ot-count');
+            const tabWeekendOtEl = document.getElementById('tab-weekend-ot-badge');
+            const weekendOtHoursEl = document.getElementById('kpi-weekend-ot-hours');
+            const tabTechBadgeEl = document.getElementById('tab-tech-workload-badge');
+
+            if (activeEl) activeEl.innerText = activeJobs.length;
+            if (tabActiveEl) tabActiveEl.innerText = activeJobs.length;
+            if (completedEl) completedEl.innerText = completedJobs.length;
+            if (tabCompletedEl) tabCompletedEl.innerText = completedJobs.length;
+
+            if (pmEl) pmEl.innerText = pmSchedules.length;
+            if (tabPmEl) tabPmEl.innerText = pmSchedules.length;
+
+            if (weekendOtCountEl) weekendOtCountEl.innerText = weekendOtJobs.length;
+            if (tabWeekendOtEl) tabWeekendOtEl.innerText = weekendOtJobs.length;
+            if (tabTechBadgeEl) tabTechBadgeEl.innerText = technicianList.filter(t => t !== 'Unassigned').length;
+
+            const totalOtHours = weekendOtJobs.reduce((sum, ot) => sum + (ot.shiftHours || 0), 0);
+            if (weekendOtHoursEl) weekendOtHoursEl.innerText = `${Math.round(totalOtHours * 10) / 10}h`;
+
+            const todayStr = new Date().toISOString().slice(0, 10);
+            const overduePMs = pmSchedules.filter(p => p.nextDueDate < todayStr).length;
+            if (pmOverdueEl) pmOverdueEl.innerText = overduePMs;
+
+            const criticals = activeJobs.filter(j => j.priority === 'Critical').length;
+            if (criticalEl) criticalEl.innerText = criticals;
+
+            const totalDowntimeMins = completedJobs.reduce((acc, curr) => acc + (curr.downtimeMins || 0), 0);
+            const hrs = Math.floor(totalDowntimeMins / 60);
+            const mins = totalDowntimeMins % 60;
+            if (downtimeEl) downtimeEl.innerText = `${hrs}h ${mins}m`;
+
+            const totalCostRs = completedJobs.reduce((acc, curr) => acc + (curr.costRs || 0), 0);
+            const kpiTotalCostEl = document.getElementById('kpi-total-cost');
+            if (kpiTotalCostEl) kpiTotalCostEl.innerText = `Rs. ${totalCostRs.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        }
+
+        function updateWeekendOtEstimatedHours(shiftVal) {
+            const hoursInput = document.getElementById('weekend-ot-hours');
+            if (!hoursInput) return;
+            if (shiftVal === 'Saturday') hoursInput.value = 11.9;
+            else if (shiftVal === 'Sunday') hoursInput.value = 9.9;
+            else if (shiftVal === 'Both Days') hoursInput.value = 21.8;
+        }
+
+        function handleCreateWeekendOt(e) {
+            e.preventDefault();
+            const equipId = document.getElementById('weekend-ot-equipment').value;
+            const dateVal = document.getElementById('weekend-ot-date').value;
+            const shiftType = document.getElementById('weekend-ot-shift').value;
+            const hoursVal = parseFloat(document.getElementById('weekend-ot-hours').value) || 11.9;
+            const leadTech = document.getElementById('weekend-ot-lead-tech').value;
+            const priority = document.getElementById('weekend-ot-priority').value;
+            const desc = document.getElementById('weekend-ot-desc').value;
+
+            const supportTechs = Array.from(document.querySelectorAll('input[name="ot-support-tech"]:checked')).map(cb => cb.value);
+
+            const equip = equipmentList.find(e => e.id === equipId);
+            if (!equip) return;
+
+            const newOtJob = {
+                id: `OT-${Math.floor(100 + Math.random() * 900)}`,
+                equipmentId: equip.id,
+                equipmentName: equip.name,
+                weekendDate: dateVal,
+                shiftType: shiftType,
+                shiftHours: hoursVal,
+                leadTech: leadTech,
+                supportTechs: supportTechs,
+                priority: priority,
+                jobScope: desc,
+                status: 'Planned',
+                actualHours: 0,
+                mondayComments: ''
+            };
+
+            weekendOtJobs.unshift(newOtJob);
+            saveToCloudAndLocal();
+
+            document.getElementById('form-new-weekend-ot').reset();
+            toggleNewWeekendOtModal();
+
+            refreshUI();
+            showToast(`Planned Weekend OT Job ${newOtJob.id} for ${leadTech}`, 'success');
+        }
+
+        function openReviewWeekendOtModal(otId) {
+            const ot = weekendOtJobs.find(o => o.id === otId);
+            if (!ot) return;
+
+            selectedWeekendOtForReview = ot;
+            document.getElementById('review-ot-id-display').innerText = `${ot.id} - ${ot.equipmentName} (${ot.leadTech})`;
+            document.getElementById('review-ot-status').value = ot.status === 'Planned' ? 'Completed' : ot.status;
+            document.getElementById('review-ot-actual-hours').value = ot.actualHours || ot.shiftHours;
+            document.getElementById('review-ot-comments').value = ot.mondayComments || '';
+
+            toggleReviewWeekendOtModal();
+        }
+
+        function handleReviewWeekendOt(e) {
+            e.preventDefault();
+            if (!selectedWeekendOtForReview) return;
+
+            const statusVal = document.getElementById('review-ot-status').value;
+            const actualHours = parseFloat(document.getElementById('review-ot-actual-hours').value) || 0;
+            const comments = document.getElementById('review-ot-comments').value;
+
+            selectedWeekendOtForReview.status = statusVal;
+            selectedWeekendOtForReview.actualHours = actualHours;
+            selectedWeekendOtForReview.mondayComments = comments;
+
+            saveToCloudAndLocal();
+            toggleReviewWeekendOtModal();
+
+            refreshUI();
+            showToast(`Updated Monday Review for ${selectedWeekendOtForReview.id}`, 'success');
+            selectedWeekendOtForReview = null;
+        }
+
+        function rolloverOtToActiveJob(otId) {
+            const ot = weekendOtJobs.find(o => o.id === otId);
+            if (!ot) return;
+
+            const newJob = {
+                id: `JOB-${Math.floor(1000 + Math.random() * 9000)}`,
+                equipmentId: ot.equipmentId,
+                equipmentName: ot.equipmentName,
+                category: 'Routine',
+                priority: ot.priority || 'High',
+                assignedTo: ot.leadTech,
+                status: 'In Progress',
+                startTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                createdIso: new Date().toISOString(),
+                description: `[Weekend OT Rollover] ${ot.jobScope}`
+            };
+
+            activeJobs.unshift(newJob);
+            ot.status = 'Deferred';
+            
+            saveToCloudAndLocal();
+            refreshUI();
+            showToast(`Converted OT Job ${ot.id} to Active Work Order ${newJob.id}`, 'info');
+        }
+
+        function deleteWeekendOtJob(otId) {
+            weekendOtJobs = weekendOtJobs.filter(o => o.id !== otId);
+            saveToCloudAndLocal();
+            refreshUI();
+            showToast('Weekend OT Job deleted.', 'info');
+        }
+
+        function setUpcomingWeekendFilter() {
+            const nextSat = getNextSaturdayDate();
+            const dateInput = document.getElementById('filter-weekend-ot-date');
+            if (dateInput) dateInput.value = nextSat;
+            renderWeekendOtJobs();
+        }
+
+        function updateActiveJobStatus(jobId, newStatus) {
+            const job = activeJobs.find(j => j.id === jobId);
+            if (job) {
+                job.status = newStatus;
+                saveToCloudAndLocal();
+                renderActiveJobs();
+            }
+        }
+
+        function updateActiveJobTech(jobId, newTech) {
+            const job = activeJobs.find(j => j.id === jobId);
+            if (job) {
+                job.assignedTo = newTech;
+                saveToCloudAndLocal();
+                renderActiveJobs();
+            }
+        }
+
+        function handleCreateJob(event) {
+            event.preventDefault();
+            const equipId = document.getElementById('new-job-equipment').value;
+            const category = document.getElementById('new-job-category').value;
+            const priority = document.getElementById('new-job-priority').value;
+            const tech = document.getElementById('new-job-tech').value;
+            const desc = document.getElementById('new-job-desc').value;
+
+            const equip = equipmentList.find(e => e.id === equipId);
+            if (!equip) return;
+
+            const newJob = {
+                id: `JOB-${Math.floor(1000 + Math.random() * 9000)}`,
+                equipmentId: equip.id,
+                equipmentName: equip.name,
+                category: category,
+                priority: priority,
+                assignedTo: tech,
+                status: 'In Progress',
+                startTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                createdIso: new Date().toISOString(),
+                description: desc
+            };
+
+            if (category === 'Breakdown' && equip.id !== 'EQ-000') {
+                if (priority === 'Critical' || priority === 'High') {
+                    equip.status = 'Fault';
+                } else {
+                    equip.status = 'Maintenance';
+                }
+            }
+
+            activeJobs.unshift(newJob);
+            saveToCloudAndLocal();
+            
+            document.getElementById('form-new-job').reset();
+            toggleNewJobModal();
+            
+            refreshUI();
+            showToast(`Dispatched ${newJob.id} (${category}) for ${tech}`, 'success');
+        }
+
+        function openCompleteModal(jobId) {
+            const job = activeJobs.find(j => j.id === jobId);
+            if (!job) return;
+
+            selectedJobForCompletion = job;
+            const liveMins = calculateLiveElapsedMins(job.createdIso);
+
+            document.getElementById('complete-job-id-display').innerText = `${job.id} - ${job.equipmentName}`;
+            document.getElementById('complete-downtime').value = liveMins;
+            document.getElementById('complete-cost').value = '0';
+            document.getElementById('complete-resolution').value = '';
+
+            toggleCompleteJobModal();
+        }
+
+        function handleCompleteJob(event) {
+            event.preventDefault();
+            if (!selectedJobForCompletion) return;
+
+            const downtimeVal = document.getElementById('complete-downtime').value;
+            const costVal = parseFloat(document.getElementById('complete-cost').value) || 0;
+            const resolutionText = document.getElementById('complete-resolution').value;
+
+            activeJobs = activeJobs.filter(j => j.id !== selectedJobForCompletion.id);
+
+            const completedRecord = {
+                id: selectedJobForCompletion.id,
+                equipmentId: selectedJobForCompletion.equipmentId,
+                equipmentName: selectedJobForCompletion.equipmentName,
+                category: selectedJobForCompletion.category || 'Breakdown',
+                technician: selectedJobForCompletion.assignedTo,
+                completedTime: `${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (${new Date().toLocaleDateString()})`,
+                downtimeMins: parseInt(downtimeVal) || 0,
+                costRs: costVal,
+                resolution: resolutionText,
+                priority: selectedJobForCompletion.priority
+            };
+
+            completedJobs.unshift(completedRecord);
+
+            const otherActiveOnEquip = activeJobs.some(j => j.equipmentId === selectedJobForCompletion.equipmentId && j.category === 'Breakdown');
+            if (!otherActiveOnEquip && selectedJobForCompletion.equipmentId !== 'EQ-000') {
+                const equip = equipmentList.find(e => e.id === selectedJobForCompletion.equipmentId);
+                if (equip) equip.status = 'Operational';
+            }
+
+            saveToCloudAndLocal();
+            toggleCompleteJobModal();
+
+            refreshUI();
+            showToast(`Resolved ${selectedJobForCompletion.id} (Cost: Rs. ${costVal.toLocaleString()})!`, 'success');
+            selectedJobForCompletion = null;
+        }
+
+        function deleteActiveJob(jobId) {
+            const job = activeJobs.find(j => j.id === jobId);
+            if (!job) return;
+
+            activeJobs = activeJobs.filter(j => j.id !== jobId);
+            
+            const otherActiveOnEquip = activeJobs.some(j => j.equipmentId === job.equipmentId);
+            if (!otherActiveOnEquip) {
+                const equip = equipmentList.find(e => e.id === job.equipmentId);
+                if (equip) equip.status = 'Operational';
+            }
+
+            saveToCloudAndLocal();
+            refreshUI();
+            showToast(`Cancelled work order ${jobId}`, 'info');
+        }
+
+        function filterCompletedJobs() {
+            renderCompletedJobs();
+        }
+
+        function renderCompletedJobs() {
+            const tbody = document.getElementById('completed-jobs-tbody');
+            const searchVal = (document.getElementById('search-completed')?.value || '').toLowerCase();
+            if (!tbody) return;
+
+            const filtered = completedJobs.filter(j => 
+                j.id.toLowerCase().includes(searchVal) ||
+                j.equipmentName.toLowerCase().includes(searchVal) ||
+                j.technician.toLowerCase().includes(searchVal) ||
+                j.resolution.toLowerCase().includes(searchVal)
+            );
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center py-8 text-slate-500 font-medium">
+                            No completed maintenance records found.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(j => `
+                <tr class="hover:bg-slate-800/30 transition">
+                    <td class="py-3 px-4">
+                        <div class="font-bold text-emerald-400 font-mono text-xs">${j.id}</div>
+                        <div class="text-slate-200 font-semibold">${j.equipmentName}</div>
+                    </td>
+                    <td class="py-3 px-4 text-slate-300">
+                        <i class="fa-solid fa-user-gear text-blue-400 mr-1.5"></i>${j.technician}
+                    </td>
+                    <td class="py-3 px-4 text-slate-400 text-[11px] font-mono">
+                        ${j.completedTime}
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="font-mono text-amber-400 font-bold bg-amber-950/40 border border-amber-800/40 px-2 py-0.5 rounded text-[11px]">
+                            ${formatElapsed(j.downtimeMins)}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="font-mono text-emerald-400 font-bold bg-emerald-950/40 border border-emerald-800/40 px-2 py-0.5 rounded text-[11px]">
+                            Rs. ${(j.costRs || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 max-w-sm text-slate-300 truncate" title="${j.resolution}">
+                        ${j.resolution}
+                    </td>
+                    <td class="py-3 px-4 text-right">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-800">
+                            RESOLVED
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function handleCreatePM(event) {
+            event.preventDefault();
+            const equipId = document.getElementById('pm-equipment').value;
+            const freq = document.getElementById('pm-frequency').value;
+            const tech = document.getElementById('pm-tech').value;
+            const dueDate = document.getElementById('pm-due-date').value;
+            const desc = document.getElementById('pm-desc').value;
+
+            const equip = equipmentList.find(e => e.id === equipId);
+            if (!equip) return;
+
+            const newPM = {
+                id: `PM-${Math.floor(200 + Math.random() * 800)}`,
+                equipmentId: equip.id,
+                equipmentName: equip.name,
+                frequency: freq,
+                nextDueDate: dueDate,
+                assignedTech: tech,
+                taskDescription: desc,
+                lastCompleted: 'Never'
+            };
+
+            pmSchedules.push(newPM);
+            saveToCloudAndLocal();
+            
+            document.getElementById('form-new-pm').reset();
+            toggleNewPMModal();
+
+            refreshUI();
+            showToast(`Scheduled PM task for ${equip.name}`, 'success');
+        }
+
+        function renderPMSchedules() {
+            const tbody = document.getElementById('pm-schedules-tbody');
+            if (!tbody) return;
+
+            if (pmSchedules.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-500">No preventive maintenance tasks scheduled.</td></tr>`;
+                return;
+            }
+
+            const todayStr = new Date().toISOString().slice(0, 10);
+
+            tbody.innerHTML = pmSchedules.map(pm => {
+                const isOverdue = pm.nextDueDate < todayStr;
+                return `
+                    <tr class="hover:bg-slate-800/30 transition">
+                        <td class="py-3 px-4">
+                            <div class="font-bold text-purple-400 font-mono text-xs">${pm.id}</div>
+                            <div class="text-slate-200 font-semibold">${pm.equipmentName}</div>
+                        </td>
+                        <td class="py-3 px-4 font-medium text-slate-300">${pm.frequency}</td>
+                        <td class="py-3 px-4 max-w-xs text-slate-300 truncate" title="${pm.taskDescription}">${pm.taskDescription}</td>
+                        <td class="py-3 px-4 text-slate-300"><i class="fa-solid fa-user-gear text-blue-400 mr-1"></i>${pm.assignedTech}</td>
+                        <td class="py-3 px-4 font-mono ${isOverdue ? 'text-rose-400 font-bold' : 'text-slate-300'}">${pm.nextDueDate}</td>
+                        <td class="py-3 px-4">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isOverdue ? 'bg-rose-950 text-rose-300 border border-rose-800' : 'bg-slate-800 text-slate-300'}">
+                                ${isOverdue ? 'OVERDUE' : 'UPCOMING'}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 text-right space-x-2">
+                            <button onclick="executePMNow('${pm.id}')" class="px-2.5 py-1 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded text-[11px] transition shadow">
+                                <i class="fa-solid fa-bolt mr-1"></i> Dispatch Order
+                            </button>
+                            <button onclick="deletePMSchedule('${pm.id}')" class="text-slate-400 hover:text-rose-400 transition" title="Delete Schedule">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function executePMNow(pmId) {
+            const pm = pmSchedules.find(p => p.id === pmId);
+            if (!pm) return;
+
+            const newJob = {
+                id: `JOB-${Math.floor(1000 + Math.random() * 9000)}`,
+                equipmentId: pm.equipmentId,
+                equipmentName: pm.equipmentName,
+                category: 'Routine',
+                priority: 'Low',
+                assignedTo: pm.assignedTech,
+                status: 'In Progress',
+                startTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                createdIso: new Date().toISOString(),
+                description: `Routine PM: ${pm.taskDescription}`
+            };
+
+            const equip = equipmentList.find(e => e.id === pm.equipmentId);
+            if (equip && equip.id !== 'EQ-000') equip.status = 'Maintenance';
+
+            activeJobs.unshift(newJob);
+            pm.lastCompleted = new Date().toISOString().slice(0, 10);
+            
+            saveToCloudAndLocal();
+            switchTab('active');
+            refreshUI();
+            showToast(`Dispatched PM Work Order ${newJob.id}`, 'success');
+        }
+
+        function deletePMSchedule(pmId) {
+            pmSchedules = pmSchedules.filter(p => p.id !== pmId);
+            saveToCloudAndLocal();
+            refreshUI();
+            showToast('PM Schedule deleted.', 'info');
+        }
+
+        function renderEquipmentGrid() {
+            const grid = document.getElementById('equipment-grid');
+            const zoneFilter = document.getElementById('filter-equipment-zone')?.value || 'ALL';
+            if (!grid) return;
+
+            const filtered = zoneFilter === 'ALL' ? equipmentList : equipmentList.filter(e => e.zone === zoneFilter);
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-10 text-slate-500">No machinery found in this section.</div>`;
+                return;
+            }
+
+            grid.innerHTML = filtered.map(eq => {
+                let statusBadge = 'bg-emerald-950/80 text-emerald-400 border-emerald-800/80';
+                let borderBar = 'border-l-emerald-500';
+                if (eq.status === 'Fault') {
+                    statusBadge = 'bg-rose-950/80 text-rose-400 border-rose-800/80 pulse-red';
+                    borderBar = 'border-l-rose-500';
+                } else if (eq.status === 'Maintenance') {
+                    statusBadge = 'bg-amber-950/80 text-amber-400 border-amber-800/80';
+                    borderBar = 'border-l-amber-500';
+                }
+
+                return `
+                    <div class="glass-card p-4 rounded-xl border-l-4 ${borderBar} flex flex-col justify-between space-y-3">
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="font-mono text-[11px] text-blue-400 font-bold">${eq.id}</span>
+                                <span class="px-2 py-0.5 text-[10px] rounded-full font-semibold border ${statusBadge}">${eq.status}</span>
+                            </div>
+                            <h4 class="font-bold text-white text-xs">${eq.name}</h4>
+                            <p class="text-[11px] text-slate-400"><i class="fa-solid fa-location-dot mr-1"></i>${eq.zone}</p>
+                        </div>
+                        <div class="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px]">
+                            <span class="text-slate-500">Last Service: ${eq.lastService}</span>
+                            <button onclick="openQuickDispatch('${eq.id}')" class="text-blue-400 hover:text-blue-300 font-semibold flex items-center">
+                                Dispatch <i class="fa-solid fa-plus ml-1 text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openQuickDispatch(equipId) {
+            const searchInput = document.getElementById('new-job-equipment-search');
+            if (searchInput) searchInput.value = '';
+            populateEquipmentDropdowns();
+            const select = document.getElementById('new-job-equipment');
+            if (select) select.value = equipId;
+            toggleNewJobModal();
+        }
+
+        function renderAnalyticsTables() {
+            const techTbody = document.getElementById('tech-analytics-tbody');
+            const machineTbody = document.getElementById('machine-analytics-tbody');
+
+            if (techTbody) {
+                const techMap = {};
+                technicianList.forEach(t => { if (t !== 'Unassigned') techMap[t] = { count: 0, downtime: 0, cost: 0 }; });
+
+                completedJobs.forEach(j => {
+                    if (j.technician && techMap[j.technician]) {
+                        techMap[j.technician].count++;
+                        techMap[j.technician].downtime += (j.downtimeMins || 0);
+                        techMap[j.technician].cost += (j.costRs || 0);
+                    }
+                });
+
+                const sortedTechs = Object.keys(techMap).sort((a, b) => techMap[b].count - techMap[a].count);
+
+                techTbody.innerHTML = sortedTechs.map(t => {
+                    const stats = techMap[t];
+                    const mttr = stats.count > 0 ? Math.round(stats.downtime / stats.count) : 0;
+                    return `
+                        <tr class="hover:bg-slate-800/30 transition">
+                            <td class="py-2.5 px-3 font-semibold text-white">${t}</td>
+                            <td class="py-2.5 px-3 text-center font-bold text-blue-400">${stats.count}</td>
+                            <td class="py-2.5 px-3 text-right font-mono text-amber-400">${formatElapsed(stats.downtime)}</td>
+                            <td class="py-2.5 px-3 text-right font-mono text-emerald-400">Rs. ${stats.cost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                            <td class="py-2.5 px-3 text-right font-mono text-emerald-400">${mttr}m</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            if (machineTbody) {
+                const machineMap = {};
+                equipmentList.forEach(eq => machineMap[eq.name] = { zone: eq.zone, count: 0, downtime: 0, cost: 0 });
+
+                completedJobs.forEach(j => {
+                    if (machineMap[j.equipmentName]) {
+                        machineMap[j.equipmentName].count++;
+                        machineMap[j.equipmentName].downtime += (j.downtimeMins || 0);
+                        machineMap[j.equipmentName].cost += (j.costRs || 0);
+                    }
+                });
+
+                const sortedMachines = Object.keys(machineMap).sort((a, b) => machineMap[b].downtime - machineMap[a].downtime);
+
+                machineTbody.innerHTML = sortedMachines.map(m => {
+                    const stats = machineMap[m];
+                    return `
+                        <tr class="hover:bg-slate-800/30 transition">
+                            <td class="py-2.5 px-3 font-semibold text-white">${m}</td>
+                            <td class="py-2.5 px-3 text-slate-400">${stats.zone}</td>
+                            <td class="py-2.5 px-3 text-center font-bold text-rose-400">${stats.count}</td>
+                            <td class="py-2.5 px-3 text-right font-mono text-amber-400">${formatElapsed(stats.downtime)}</td>
+                            <td class="py-2.5 px-3 text-right font-mono text-emerald-400">Rs. ${stats.cost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        }
+
+        function initCharts() {
+            if (typeof Chart === 'undefined') return;
+
+            const canvas1 = document.getElementById('chart-tech-performance');
+            if (canvas1) {
+                if (techPerformanceChartInstance) techPerformanceChartInstance.destroy();
+                const ctx1 = canvas1.getContext('2d');
+                techPerformanceChartInstance = new Chart(ctx1, {
+                    type: 'bar',
+                    data: getTechChartData(),
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                            y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                        },
+                        plugins: { legend: { position: 'top', labels: { color: '#94a3b8', font: { size: 11 } } } }
+                    }
+                });
+            }
+
+            const canvas2 = document.getElementById('chart-machine-downtime');
+            if (canvas2) {
+                if (machineDowntimeChartInstance) machineDowntimeChartInstance.destroy();
+                const ctx2 = canvas2.getContext('2d');
+                machineDowntimeChartInstance = new Chart(ctx2, {
+                    type: 'bar',
+                    data: getMachineChartData(),
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                            y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                        },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            }
+        }
+
+        function getTechChartData() {
+            const techMap = {};
+            technicianList.slice(0, 8).forEach(t => { if(t !== 'Unassigned') techMap[t] = 0; });
+            completedJobs.forEach(j => {
+                if (j.technician && techMap[j.technician] !== undefined) {
+                    techMap[j.technician] += (j.downtimeMins || 0);
+                }
+            });
+
+            return {
+                labels: Object.keys(techMap).map(name => name.split(' ')[0]),
+                datasets: [{
+                    label: 'Downtime Resolved (Minutes)',
+                    data: Object.values(techMap),
+                    backgroundColor: '#3b82f6',
+                    borderRadius: 6
+                }]
+            };
+        }
+
+        function getMachineChartData() {
+            const machineMap = {};
+            equipmentList.slice(0, 6).forEach(eq => machineMap[eq.name] = 0);
+            completedJobs.forEach(j => {
+                if (machineMap[j.equipmentName] !== undefined) {
+                    machineMap[j.equipmentName] += Math.round((j.downtimeMins || 0) / 60 * 10) / 10;
+                }
+            });
+
+            return {
+                labels: Object.keys(machineMap),
+                datasets: [{
+                    label: 'Downtime (Hours)',
+                    data: Object.values(machineMap),
+                    backgroundColor: '#f59e0b',
+                    borderRadius: 6
+                }]
+            };
+        }
+
+        function updateCharts() {
+            if (techPerformanceChartInstance) {
+                techPerformanceChartInstance.data = getTechChartData();
+                techPerformanceChartInstance.update();
+            }
+            if (machineDowntimeChartInstance) {
+                machineDowntimeChartInstance.data = getMachineChartData();
+                machineDowntimeChartInstance.update();
+            }
+        }
+
+        function triggerSimulatedAlert() {
+            if (equipmentList.length === 0) {
+                showToast('No equipment configured to trigger incident.', 'danger');
+                return;
+            }
+            const randomEquip = equipmentList[Math.floor(Math.random() * equipmentList.length)];
+            const issues = [
+                'Hydraulic seal blowout detected',
+                'Spindle thermal overheating high limit',
+                'Emergency E-Stop triggered on line',
+                'PLC Communication timeout error'
+            ];
+            const issue = issues[Math.floor(Math.random() * issues.length)];
+            const newId = `JOB-${Math.floor(3000 + Math.random() * 9000)}`;
+            
+            activeJobs.unshift({
+                id: newId,
+                equipmentId: randomEquip.id,
+                equipmentName: randomEquip.name,
+                category: 'Breakdown',
+                priority: 'Critical',
+                assignedTo: 'Unassigned',
+                status: 'Assigned',
+                startTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                createdIso: new Date().toISOString(),
+                description: issue
+            });
+
+            if (randomEquip.id !== 'EQ-000') randomEquip.status = 'Fault';
+
+            saveToCloudAndLocal();
+            showToast(`EMERGENCY: ${issue} on ${randomEquip.name}!`, 'danger');
+            refreshUI();
+        }
+
+        function triggerDownloadCSV(filename, csvContent) {
+            const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", filename);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function exportActiveCSV() {
+            if (activeJobs.length === 0) {
+                showToast("No active work orders to export.", "info");
+                return;
+            }
+            let csv = "Ticket ID,Equipment ID,Equipment Name,Category,Priority,Status,Assigned Tech,Start Time,Live Elapsed Mins,Description\n";
+            activeJobs.forEach(j => {
+                const mins = calculateLiveElapsedMins(j.createdIso);
+                csv += `"${j.id}","${j.equipmentId}","${j.equipmentName}","${j.category || 'Breakdown'}","${j.priority}","${j.status}","${j.assignedTo}","${j.startTime}",${mins},"${j.description.replace(/"/g, '""')}"\n`;
+            });
+            triggerDownloadCSV(`active_work_orders_${new Date().toISOString().slice(0,10)}.csv`, csv);
+            showToast("Exported active jobs to CSV!", "success");
+        }
+
+        function exportWeekendOtCSV() {
+            if (weekendOtJobs.length === 0) {
+                showToast("No weekend OT jobs to export.", "info");
+                return;
+            }
+            let csv = "OT Job ID,Equipment ID,Equipment Name,Weekend Date,Shift Type,Shift Hours,Lead Tech,Support Techs,Priority,Status,Actual Logged Hours,Job Scope,Monday Review Comments\n";
+            weekendOtJobs.forEach(ot => {
+                const supportStr = (ot.supportTechs || []).join('; ');
+                csv += `"${ot.id}","${ot.equipmentId}","${ot.equipmentName}","${ot.weekendDate}","${ot.shiftType}",${ot.shiftHours},"${ot.leadTech}","${supportStr}","${ot.priority}","${ot.status}",${ot.actualHours},"${ot.jobScope.replace(/"/g, '""')}","${(ot.mondayComments||'').replace(/"/g, '""')}"\n`;
+            });
+            triggerDownloadCSV(`weekend_ot_schedule_${new Date().toISOString().slice(0,10)}.csv`, csv);
+            showToast("Exported Weekend OT schedule to CSV!", "success");
+        }
+
+        function exportCompletedCSV() {
+            if (completedJobs.length === 0) {
+                showToast("No completed log records to export.", "info");
+                return;
+            }
+            let csv = "Job ID,Equipment ID,Equipment Name,Category,Technician,Completed Time,Auto Downtime (Mins),Total Cost (Rs.),Resolution\n";
+            completedJobs.forEach(j => {
+                csv += `"${j.id}","${j.equipmentId}","${j.equipmentName}","${j.category || 'Breakdown'}","${j.technician}","${j.completedTime}",${j.downtimeMins},${(j.costRs || 0).toFixed(2)},"${j.resolution.replace(/"/g, '""')}"\n`;
+            });
+            triggerDownloadCSV(`maintenance_completed_log_${new Date().toISOString().slice(0,10)}.csv`, csv);
+            showToast("Exported completed log to CSV!", "success");
+        }
+
+        function exportEquipmentCSV() {
+            if (equipmentList.length === 0) {
+                showToast("No machinery roster to export.", "info");
+                return;
+            }
+            let csv = "Machine ID,Machine Name,Section/Zone,Current Status,Last Service Date\n";
+            equipmentList.forEach(e => {
+                csv += `"${e.id}","${e.name}","${e.zone}","${e.status}","${e.lastService}"\n`;
+            });
+            triggerDownloadCSV(`machinery_roster_${new Date().toISOString().slice(0,10)}.csv`, csv);
+            showToast("Exported machinery roster to CSV!", "success");
+        }
+
+        function exportBackupJSON() {
+            const data = {
+                version: "4.0",
+                exportDate: new Date().toISOString(),
+                equipmentList: equipmentList,
+                technicianList: technicianList,
+                activeJobs: activeJobs,
+                completedJobs: completedJobs,
+                pmSchedules: pmSchedules,
+                weekendOtJobs: weekendOtJobs
+            };
+            const jsonStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `factory_maintenance_backup_${new Date().toISOString().slice(0,10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showToast("Backup JSON file downloaded!", "success");
+        }
+
+        function importBackupJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed.equipmentList) equipmentList = parsed.equipmentList;
+                    if (parsed.technicianList) technicianList = parsed.technicianList;
+                    if (parsed.activeJobs) activeJobs = parsed.activeJobs;
+                    if (parsed.completedJobs) completedJobs = parsed.completedJobs;
+                    if (parsed.pmSchedules) pmSchedules = parsed.pmSchedules;
+                    if (parsed.weekendOtJobs) weekendOtJobs = parsed.weekendOtJobs;
+
+                    saveToCloudAndLocal();
+                    refreshUI();
+                    toggleBackupModal();
+                    showToast("Workspace restored from backup file!", "success");
+                } catch (err) {
+                    showToast("Invalid JSON backup file.", "danger");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function switchImportTab(tab) {
+            const tabs = ['paste', 'single', 'list', 'techs'];
+            tabs.forEach(t => {
+                const view = document.getElementById(`import-view-${t}`);
+                const btn = document.getElementById(`import-tab-btn-${t}`);
+                if (view && btn) {
+                    if (t === tab) {
+                        view.classList.remove('hidden');
+                        btn.className = "px-3 py-1.5 rounded-lg bg-blue-600 text-white font-semibold";
+                    } else {
+                        view.classList.add('hidden');
+                        btn.className = "px-3 py-1.5 rounded-lg text-slate-400 hover:text-white font-semibold";
+                    }
+                }
+            });
+        }
+
+        function processExcelPaste() {
+            const raw = document.getElementById('excel-paste-input')?.value.trim();
+            if (!raw) {
+                showToast("Please paste table rows from Excel first.", "danger");
+                return;
+            }
+
+            const lines = raw.split(/\r?\n/);
+            let count = 0;
+
+            lines.forEach((line) => {
+                if (!line.trim()) return;
+                const cols = line.split(/[\t,;]/).map(c => c.trim());
+                if (cols.length >= 2) {
+                    const name = cols[0];
+                    const zone = cols[1];
+                    const id = cols[2] || `EQ-${Math.floor(100 + Math.random() * 900)}`;
+
+                    if (!equipmentList.some(e => e.id === id || e.name === name)) {
+                        equipmentList.push({
+                            id: id,
+                            name: name,
+                            zone: zone,
+                            status: 'Operational',
+                            lastService: new Date().toISOString().slice(0, 10)
+                        });
+                        count++;
+                    }
+                }
+            });
+
+            if (count > 0) {
+                saveToCloudAndLocal();
+                updateAllMachineViews();
+                showToast(`Imported ${count} new machines from Excel!`, "success");
+                document.getElementById('excel-paste-input').value = '';
+                switchImportTab('list');
+            } else {
+                showToast("No new unique machines found or invalid format.", "info");
+            }
+        }
+
+        function handleCSVFileUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const text = evt.target.result;
+                document.getElementById('excel-paste-input').value = text;
+                processExcelPaste();
+            };
+            reader.readAsText(file);
+        }
+
+        function handleSingleMachineSubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById('single-m-name').value.trim();
+            const zone = document.getElementById('single-m-zone').value.trim();
+            const idVal = document.getElementById('single-m-id').value.trim();
+            const id = idVal || `EQ-${Math.floor(100 + Math.random() * 900)}`;
+
+            if (equipmentList.some(e => e.id === id)) {
+                showToast(`Machine ID ${id} already exists.`, "danger");
+                return;
+            }
+
+            equipmentList.push({
+                id: id,
+                name: name,
+                zone: zone,
+                status: 'Operational',
+                lastService: new Date().toISOString().slice(0, 10)
+            });
+
+            saveToCloudAndLocal();
+            updateAllMachineViews();
+            document.getElementById('import-view-single').reset();
+            showToast(`Added ${name} to machinery roster!`, "success");
+            switchImportTab('list');
+        }
+
+        function renderRosterTable() {
+            const tbody = document.getElementById('roster-table-tbody');
+            const countBadge = document.getElementById('roster-count');
+            if (countBadge) countBadge.innerText = equipmentList.length;
+            if (!tbody) return;
+
+            tbody.innerHTML = equipmentList.map(e => `
+                <tr class="hover:bg-slate-800/40">
+                    <td class="py-2 px-3 font-mono text-blue-400 font-bold">${e.id}</td>
+                    <td class="py-2 px-3 font-semibold text-white">${e.name}</td>
+                    <td class="py-2 px-3 text-slate-400">${e.zone}</td>
+                    <td class="py-2 px-3 text-right">
+                        ${e.id === 'EQ-000' ? '<span class="text-slate-500 text-[10px]">Default</span>' : `
+                            <button onclick="removeMachine('${e.id}')" class="text-slate-400 hover:text-rose-400 transition" title="Delete Machine">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        `}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function removeMachine(id) {
+            equipmentList = equipmentList.filter(e => e.id !== id);
+            saveToCloudAndLocal();
+            updateAllMachineViews();
+            showToast("Machine removed from roster.", "info");
+        }
+
+        function handleAddTechnician(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('single-tech-name');
+            const roleInput = document.getElementById('single-tech-role');
+            
+            const name = nameInput?.value.trim();
+            const role = roleInput?.value.trim();
+
+            if (!name) return;
+
+            const formatted = role ? `${name} (${role})` : name;
+
+            if (technicianList.includes(formatted)) {
+                showToast("Technician already exists in roster.", "danger");
+                return;
+            }
+
+            technicianList.push(formatted);
+            saveToCloudAndLocal();
+            updateAllMachineViews();
+
+            if (nameInput) nameInput.value = '';
+            if (roleInput) roleInput.value = '';
+
+            showToast(`Added ${formatted} to technician roster!`, "success");
+        }
+
+        function renderTechnicianRoster() {
+            const tbody = document.getElementById('tech-roster-table-tbody');
+            const countBadge = document.getElementById('tech-roster-count');
+            if (countBadge) countBadge.innerText = technicianList.filter(t => t !== 'Unassigned').length;
+            if (!tbody) return;
+
+            tbody.innerHTML = technicianList
+                .filter(t => t !== 'Unassigned')
+                .map((t, idx) => `
+                    <tr class="hover:bg-slate-800/40">
+                        <td class="py-2 px-3 font-mono text-slate-500">${idx + 1}</td>
+                        <td class="py-2 px-3 font-semibold text-white">
+                            <i class="fa-solid fa-user-gear text-blue-400 mr-2"></i>${t}
+                        </td>
+                        <td class="py-2 px-3 text-right">
+                            <button onclick="removeTechnician('${t.replace(/'/g, "\\'")}')" class="text-slate-400 hover:text-rose-400 transition" title="Remove Technician">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+        }
+
+        function removeTechnician(techName) {
+            technicianList = technicianList.filter(t => t !== techName);
+            saveToCloudAndLocal();
+            updateAllMachineViews();
+            showToast(`Removed ${techName} from roster.`, "info");
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const toast = document.createElement('div');
+            
+            let bg = 'bg-slate-800 border-slate-700 text-slate-200';
+            let icon = 'fa-circle-info text-blue-400';
+
+            if (type === 'success') {
+                bg = 'bg-emerald-950/90 border-emerald-600/50 text-emerald-200';
+                icon = 'fa-circle-check text-emerald-400';
+            } else if (type === 'danger') {
+                bg = 'bg-rose-950/90 border-rose-600/50 text-rose-200';
+                icon = 'fa-triangle-exclamation text-rose-400';
+            }
+
+            toast.className = `p-3.5 rounded-xl border shadow-xl flex items-center space-x-3 text-xs transition transform translate-y-2 opacity-0 pointer-events-auto ${bg}`;
+            toast.innerHTML = `
+                <i class="fa-solid ${icon} text-base"></i>
+                <span class="font-medium">${message}</span>
+            `;
+
+            container.appendChild(toast);
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadFromLocalStorage();
+            updateLiveClock();
+            setInterval(updateLiveClock, 30000);
+            
+            refreshUI();
+            initCharts();
+
+            initCloudSync();
+            
+            const pmDateInput = document.getElementById('pm-due-date');
+            if (pmDateInput) pmDateInput.value = new Date().toISOString().slice(0, 10);
+
+            const otDateInput = document.getElementById('weekend-ot-date');
+            if (otDateInput) {
+                otDateInput.value = getNextSaturdayDate();
+            }
+        });
+    </script>
+</body>
+</html>
