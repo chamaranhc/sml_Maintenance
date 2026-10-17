@@ -103,16 +103,13 @@
                 </div>
 
                 <div class="flex md:hidden items-center space-x-2">
-                    <!-- Mobile Database Quick Sync Icon -->
                     <button onclick="toggleFirebaseModal()" class="p-2 text-xs bg-factory-900 border border-slate-700 text-blue-400 hover:text-blue-300 rounded-lg flex items-center justify-center transition" title="Database Sync Settings">
                         <i class="fa-solid fa-database text-sm"></i>
                     </button>
-                    <!-- Mobile Menu Tools Trigger -->
                     <button onclick="toggleMobileActionsMenu()" class="px-2.5 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg transition flex items-center space-x-1.5">
                         <i class="fa-solid fa-bars text-sm text-blue-400"></i>
                         <span class="font-semibold text-[11px]">Tools</span>
                     </button>
-                    <!-- Mobile New Work Order Button -->
                     <button onclick="toggleNewJobModal()" class="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg transition flex items-center shadow-md">
                         <i class="fa-solid fa-plus mr-1"></i> New Job
                     </button>
@@ -139,7 +136,7 @@
 
             <!-- Header Action Toolbar -->
             <div class="hidden md:flex items-center space-x-2.5">
-                <button onclick="toggleFirebaseModal()" class="px-3 py-2 text-xs bg-slate-800 hover:bg-slate-700 text-blue-300 font-medium rounded-lg border border-slate-700 transition flex items-center space-x-2" title="Manage Database Connectivity & Sync Settings">
+                <button onclick="toggleFirebaseModal()" class="px-3 py-2 text-xs bg-slate-800 hover:bg-slate-700 text-blue-300 font-medium rounded-lg border border-slate-700 transition flex items-center space-x-2">
                     <i class="fa-solid fa-database text-blue-400"></i>
                     <span>Database Sync</span>
                 </button>
@@ -250,6 +247,7 @@
             </div>
         </section>
 
+        <!-- Navigation Bar Tabs -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-3">
             <div class="flex overflow-x-auto whitespace-nowrap scrollbar-none gap-1 sm:gap-2 bg-factory-800 p-1 rounded-xl border border-slate-800 max-w-full pb-1 sm:pb-1">
                 <button onclick="switchTab('active')" id="tab-btn-active" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white transition flex items-center space-x-2">
@@ -263,6 +261,10 @@
                 <button onclick="switchTab('completed')" id="tab-btn-completed" class="px-3.5 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center space-x-2">
                     <i class="fa-solid fa-box-archive"></i>
                     <span>Completed History (<span id="tab-completed-badge">0</span>)</span>
+                </button>
+                <button onclick="switchTab('deleted-history')" id="tab-btn-deleted-history" class="px-3.5 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center space-x-2">
+                    <i class="fa-solid fa-trash-can-arrow-up text-rose-400"></i>
+                    <span>Deleted History Log (<span id="tab-deleted-history-badge">0</span>)</span>
                 </button>
                 <button onclick="switchTab('pm')" id="tab-btn-pm" class="px-3.5 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center space-x-2">
                     <i class="fa-solid fa-calendar-days text-purple-400"></i>
@@ -295,6 +297,7 @@
             </div>
         </div>
 
+        <!-- TAB 1: Active Jobs -->
         <section id="tab-content-active" class="space-y-4">
             <div class="glass-card p-4 rounded-xl flex flex-col md:flex-row items-center justify-between gap-3">
                 <div class="relative w-full md:w-80">
@@ -399,6 +402,7 @@
             </div>
         </section>
 
+        <!-- TAB 2: Weekend OT Schedule -->
         <section id="tab-content-weekend-ot" class="hidden space-y-4">
             <div class="glass-card p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 border-l-4 border-l-amber-500">
                 <div class="space-y-1">
@@ -488,6 +492,7 @@
             </div>
         </section>
 
+        <!-- TAB 3: Completed History -->
         <section id="tab-content-completed" class="hidden space-y-4">
             <div class="glass-card p-4 rounded-xl flex flex-col md:flex-row items-center justify-between gap-3">
                 <div class="relative w-full md:w-80">
@@ -496,6 +501,10 @@
                 </div>
 
                 <div class="flex items-center space-x-2 w-full md:w-auto justify-end">
+                    <button onclick="openClearHistoryModal()" class="px-3 py-2 bg-slate-800 hover:bg-rose-900/40 hover:text-rose-300 text-slate-300 rounded-lg text-xs font-semibold border border-slate-700 transition flex items-center space-x-2">
+                        <i class="fa-solid fa-trash-can text-rose-400"></i>
+                        <span>Clear History Log</span>
+                    </button>
                     <button onclick="exportCompletedCSV()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold border border-slate-700 transition flex items-center space-x-2">
                         <i class="fa-solid fa-file-csv text-emerald-400"></i>
                         <span>Export Completed CSV</span>
@@ -514,7 +523,7 @@
                                 <th class="py-3 px-4">Auto Downtime Incurred</th>
                                 <th class="py-3 px-4">Total Cost (Rs.)</th>
                                 <th class="py-3 px-4">Resolution Summary</th>
-                                <th class="py-3 px-4 text-right">Status Badge</th>
+                                <th class="py-3 px-4 text-right">Status / Actions</th>
                             </tr>
                         </thead>
                         <tbody id="completed-jobs-tbody" class="divide-y divide-slate-800/60 font-medium text-slate-300"></tbody>
@@ -523,6 +532,75 @@
             </div>
         </section>
 
+        <!-- TAB 4: Deleted History Log -->
+        <section id="tab-content-deleted-history" class="hidden space-y-4">
+            <div class="glass-card p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 border-l-4 border-l-rose-500">
+                <div class="space-y-1">
+                    <div class="flex items-center space-x-2">
+                        <h2 class="font-bold text-base text-white flex items-center">
+                            <i class="fa-solid fa-trash-can-arrow-up text-rose-400 mr-2"></i>
+                            <span>Deleted History Log & Audit Trail</span>
+                        </h2>
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-950 text-rose-300 border border-rose-800">
+                            Restorable System Trash
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-400">Review all deleted work orders, completed logs, OT schedules, and PM routines. Items can be restored back to their original state.</p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="exportDeletedLogsCSV()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold border border-slate-700 transition flex items-center space-x-1.5" title="Export Deleted Logs to CSV">
+                        <i class="fa-solid fa-file-csv text-emerald-400"></i>
+                        <span>Export CSV</span>
+                    </button>
+                    <button onclick="openPurgeDeletedLogsModal()" class="px-3 py-2 bg-slate-800 hover:bg-rose-950/50 hover:text-rose-300 text-slate-300 rounded-lg text-xs font-semibold border border-slate-700 transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-fire-flame-curved text-rose-400"></i>
+                        <span>Empty Trash Permanently</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="glass-card p-4 rounded-xl flex flex-col md:flex-row items-center justify-between gap-3">
+                <div class="relative w-full md:w-80">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="text" id="search-deleted-logs" oninput="renderDeletedLogs()" placeholder="Search deleted records by ID, equipment, tech, or scope..." class="w-full bg-factory-900 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-rose-500">
+                </div>
+
+                <div class="flex items-center space-x-2 w-full md:w-auto justify-end">
+                    <select id="filter-deleted-type" onchange="renderDeletedLogs()" class="bg-factory-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-rose-500">
+                        <option value="ALL">All Deleted Item Types</option>
+                        <option value="Completed Log">Completed History Logs</option>
+                        <option value="Active Work Order">Active Work Orders</option>
+                        <option value="Weekend OT Job">Weekend OT Schedules</option>
+                        <option value="PM Schedule">PM Schedules</option>
+                    </select>
+
+                    <button onclick="resetDeletedLogFilters()" class="p-2 text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg border border-slate-800 transition" title="Reset Search Filters">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="glass-card rounded-xl overflow-hidden border border-slate-800">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-900/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+                            <tr>
+                                <th class="py-3 px-4">Deleted ID & Type</th>
+                                <th class="py-3 px-4">Equipment / Target</th>
+                                <th class="py-3 px-4">Tech / Category</th>
+                                <th class="py-3 px-4">Original Scope & Notes</th>
+                                <th class="py-3 px-4">Deletion Date & Time</th>
+                                <th class="py-3 px-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="deleted-logs-tbody" class="divide-y divide-slate-800/60 font-medium text-slate-300"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 5: PM Schedules -->
         <section id="tab-content-pm" class="hidden space-y-4">
             <div class="glass-card p-4 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4">
                 <div>
@@ -560,6 +638,7 @@
             </div>
         </section>
 
+        <!-- TAB 6: Machinery Map -->
         <section id="tab-content-equipment" class="hidden space-y-4">
             <div class="glass-card p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
@@ -587,6 +666,7 @@
             <div id="equipment-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4"></div>
         </section>
 
+        <!-- TAB 7: Analytics -->
         <section id="tab-content-analytics" class="hidden space-y-6">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <!-- Technician Analytics Table -->
@@ -634,7 +714,7 @@
                 </div>
             </div>
 
-            <!-- Charts Grid -->
+            <!-- Analytics Charts Grid -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div class="glass-card p-5 rounded-xl border border-slate-800">
                     <h3 class="text-sm font-semibold text-slate-200 mb-4 flex items-center justify-between">
@@ -658,6 +738,7 @@
             </div>
         </section>
 
+        <!-- TAB 8: Tech Workload Matrix -->
         <section id="tab-content-tech-workload" class="hidden space-y-4">
             <div class="glass-card p-4 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4 border-l-4 border-l-blue-500">
                 <div>
@@ -1250,7 +1331,73 @@ const firebaseConfig = {
         </div>
     </div>
 
-    <!-- MOBILE ACTIONS MENU DRAWER FOR MOBILE PHONES -->
+    <!-- MODAL 10: Clear Completed History Confirmation -->
+    <div id="modal-clear-history-confirm" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-md rounded-2xl border border-rose-500/40 shadow-2xl p-6 relative">
+            <button onclick="closeClearHistoryModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-base">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <div class="flex items-center space-x-3 mb-5">
+                <div class="p-3 bg-rose-600/20 text-rose-400 rounded-xl border border-rose-500/30">
+                    <i class="fa-solid fa-trash-can text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white">Clear Completed History Logs</h3>
+                    <p class="text-xs text-slate-400">Move all completed work order logs to Deleted History</p>
+                </div>
+            </div>
+
+            <div class="space-y-4 text-xs">
+                <p class="text-slate-300 leading-relaxed">
+                    Are you sure you want to clear all completed history logs? These items will be archived in the Deleted History Log where they can be reviewed or restored.
+                </p>
+
+                <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-800">
+                    <button type="button" onclick="closeClearHistoryModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-lg transition">Cancel</button>
+                    <button type="button" onclick="confirmClearHistoryLogs()" class="px-5 py-2 bg-rose-600 hover:bg-rose-500 text-white font-semibold rounded-lg shadow-lg shadow-rose-600/30 transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-trash-can"></i>
+                        <span>Confirm Clear History</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 11: Purge All Deleted Logs Confirmation -->
+    <div id="modal-purge-deleted-confirm" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-md rounded-2xl border border-rose-500/40 shadow-2xl p-6 relative">
+            <button onclick="closePurgeDeletedLogsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-base">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <div class="flex items-center space-x-3 mb-5">
+                <div class="p-3 bg-rose-600/20 text-rose-400 rounded-xl border border-rose-500/30">
+                    <i class="fa-solid fa-fire-flame-curved text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white">Permanently Empty Trash Log</h3>
+                    <p class="text-xs text-slate-400">Purge all records from the Deleted History Log</p>
+                </div>
+            </div>
+
+            <div class="space-y-4 text-xs">
+                <p class="text-slate-300 leading-relaxed">
+                    Are you sure you want to permanently delete all items in the Deleted History Log? Once purged, these records cannot be restored.
+                </p>
+
+                <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-800">
+                    <button type="button" onclick="closePurgeDeletedLogsModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-lg transition">Cancel</button>
+                    <button type="button" onclick="confirmPurgeAllDeletedLogs()" class="px-5 py-2 bg-rose-600 hover:bg-rose-500 text-white font-semibold rounded-lg shadow-lg shadow-rose-600/30 transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-fire-flame-curved"></i>
+                        <span>Permanently Purge All</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MOBILE ACTIONS MENU DRAWER -->
     <div id="mobile-actions-menu" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
         <div class="glass-card w-full max-w-md rounded-t-2xl sm:rounded-2xl border border-slate-700 shadow-2xl p-5 relative space-y-3">
             <div class="flex items-center justify-between pb-3 border-b border-slate-800">
@@ -1315,7 +1462,7 @@ const firebaseConfig = {
         const ADMIN_CLEAR_PASSWORD = 'Chama123';
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'sml-global-plant';
 
-        // Embedded default Firebase config fallback (Optional)
+        // Embedded default Firebase config fallback
         const DEFAULT_FIREBASE_CONFIG = {};
 
         // Safe Storage Wrappers
@@ -1403,13 +1550,13 @@ const firebaseConfig = {
             }
         ];
 
-        // Global State Arrays
         let equipmentList = [];
         let technicianList = [];
         let activeJobs = [];
         let completedJobs = [];
         let pmSchedules = [];
         let weekendOtJobs = [];
+        let deletedLogs = [];
         let selectedJobForCompletion = null;
         let selectedWeekendOtForReview = null;
 
@@ -1439,6 +1586,174 @@ const firebaseConfig = {
         let auth = null;
         let currentUser = null;
         let unsubscribeSyncListener = null;
+
+        function updateLiveClock() {
+            const el = document.getElementById('live-time');
+            if (el) {
+                const now = new Date();
+                el.innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            }
+        }
+
+        function getNextSaturdayDate() {
+            const today = new Date();
+            const dayOfWeek = today.getDay(); // 0 is Sun, 6 is Sat
+            const distanceToSat = (6 - dayOfWeek + 7) % 7;
+            const nextSat = new Date(today);
+            nextSat.setDate(today.getDate() + (distanceToSat === 0 ? 0 : distanceToSat));
+            return nextSat.toISOString().slice(0, 10);
+        }
+
+        function formatElapsed(totalMins) {
+            if (!totalMins || totalMins <= 0) return '0m';
+            const hrs = Math.floor(totalMins / 60);
+            const mins = totalMins % 60;
+            return hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
+        }
+
+        function calculateLiveElapsedMins(isoCreated) {
+            if (!isoCreated) return 0;
+            const start = new Date(isoCreated);
+            const now = new Date();
+            const diffMs = Math.max(0, now - start);
+            return Math.floor(diffMs / (1000 * 60));
+        }
+
+        function toggleNewJobModal() {
+            const modal = document.getElementById('modal-new-job');
+            if (modal) {
+                modal.classList.toggle('hidden');
+                if (!modal.classList.contains('hidden')) {
+                    const searchInput = document.getElementById('new-job-equipment-search');
+                    if (searchInput) searchInput.value = '';
+                    populateEquipmentDropdowns();
+                    populateTechnicianDropdowns();
+                }
+            }
+        }
+
+        function toggleCompleteJobModal() {
+            const modal = document.getElementById('modal-complete-job');
+            if (modal) modal.classList.toggle('hidden');
+        }
+
+        function toggleNewPMModal() {
+            const modal = document.getElementById('modal-new-pm');
+            if (modal) {
+                modal.classList.toggle('hidden');
+                if (!modal.classList.contains('hidden')) {
+                    populateEquipmentDropdowns();
+                    populateTechnicianDropdowns();
+                }
+            }
+        }
+
+        function toggleNewWeekendOtModal() {
+            const modal = document.getElementById('modal-new-weekend-ot');
+            if (modal) {
+                modal.classList.toggle('hidden');
+                if (!modal.classList.contains('hidden')) {
+                    populateEquipmentDropdowns();
+                    populateTechnicianDropdowns();
+                    renderSupportTechCheckboxes();
+                }
+            }
+        }
+
+        function toggleReviewWeekendOtModal() {
+            const modal = document.getElementById('modal-review-weekend-ot');
+            if (modal) modal.classList.toggle('hidden');
+        }
+
+        function toggleManageMachinesModal() {
+            const modal = document.getElementById('modal-manage-machines');
+            if (modal) {
+                modal.classList.toggle('hidden');
+                if (!modal.classList.contains('hidden')) {
+                    renderRosterTable();
+                    renderTechnicianRoster();
+                }
+            }
+        }
+
+        function toggleBackupModal() {
+            const modal = document.getElementById('modal-backup');
+            if (modal) modal.classList.toggle('hidden');
+        }
+
+        function toggleFirebaseModal() {
+            const modal = document.getElementById('modal-firebase-config');
+            if (modal) modal.classList.toggle('hidden');
+        }
+
+        function openClearDataConfirmationModal() {
+            const modal = document.getElementById('modal-clear-confirm');
+            if (modal) {
+                modal.classList.remove('hidden');
+                const pwdInput = document.getElementById('clear-data-password');
+                if (pwdInput) pwdInput.value = '';
+                const errText = document.getElementById('clear-password-error');
+                if (errText) errText.classList.add('hidden');
+            }
+        }
+
+        function closeClearDataConfirmationModal() {
+            const modal = document.getElementById('modal-clear-confirm');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function openClearHistoryModal() {
+            if (completedJobs.length === 0) {
+                showToast("Completed history log is already empty.", "info");
+                return;
+            }
+            document.getElementById('modal-clear-history-confirm')?.classList.remove('hidden');
+        }
+
+        function closeClearHistoryModal() {
+            document.getElementById('modal-clear-history-confirm')?.classList.add('hidden');
+        }
+
+        function openPurgeDeletedLogsModal() {
+            if (deletedLogs.length === 0) {
+                showToast("Deleted History Log is already empty.", "info");
+                return;
+            }
+            document.getElementById('modal-purge-deleted-confirm')?.classList.remove('hidden');
+        }
+
+        function closePurgeDeletedLogsModal() {
+            document.getElementById('modal-purge-deleted-confirm')?.classList.add('hidden');
+        }
+
+        function toggleMobileActionsMenu() {
+            const menu = document.getElementById('mobile-actions-menu');
+            if (menu) menu.classList.toggle('hidden');
+        }
+
+        function confirmClearAllData() {
+            const pwdInput = document.getElementById('clear-data-password');
+            const errText = document.getElementById('clear-password-error');
+            const inputVal = pwdInput ? pwdInput.value.trim() : '';
+
+            if (inputVal === ADMIN_CLEAR_PASSWORD) {
+                if (errText) errText.classList.add('hidden');
+                activeJobs = [];
+                completedJobs = [];
+                pmSchedules = [];
+                weekendOtJobs = [];
+                deletedLogs = [];
+
+                equipmentList.forEach(e => e.status = 'Operational');
+
+                saveToCloudAndLocal();
+                closeClearDataConfirmationModal();
+                refreshUI();
+                showToast("System operational data reset successfully!", "success");
+            } else {
+                if (errText) errText.classList.remove('hidden');
+            }
+        }
 
         function updateCloudUIStatus(isOnline, label, detailError = null) {
             const dot = document.getElementById('cloud-status-dot');
@@ -1621,6 +1936,30 @@ const firebaseConfig = {
             });
         }
 
+        function saveCustomFirebaseConfig() {
+            const inputVal = document.getElementById('custom-firebase-json')?.value;
+            const parsed = parseFirebaseConfigInput(inputVal);
+
+            if (parsed) {
+                setSafeStorage('sml_custom_firebase_json', JSON.stringify(parsed));
+                showToast("Saved custom Firebase config. Connecting...", "success");
+                setTimeout(() => window.location.reload(), 800);
+            } else {
+                showToast("Invalid Firebase configuration snippet.", "danger");
+            }
+        }
+
+        function clearCustomFirebaseConfig() {
+            try { localStorage.removeItem('sml_custom_firebase_json'); } catch(e){}
+            showToast("Reset custom Firebase config.", "info");
+            setTimeout(() => window.location.reload(), 800);
+        }
+
+        function forceCloudPush() {
+            saveToCloudAndLocal();
+            showToast("Forced local database push to cloud!", "success");
+        }
+
         function applySyncedData(cloudData, isFromCloud = false) {
             if (!cloudData) return;
             if (cloudData.equipmentList) equipmentList = cloudData.equipmentList;
@@ -1629,6 +1968,7 @@ const firebaseConfig = {
             if (cloudData.completedJobs) completedJobs = cloudData.completedJobs;
             if (cloudData.pmSchedules) pmSchedules = cloudData.pmSchedules;
             if (cloudData.weekendOtJobs) weekendOtJobs = cloudData.weekendOtJobs;
+            if (cloudData.deletedLogs) deletedLogs = cloudData.deletedLogs;
 
             saveToLocalStorage();
             refreshUI();
@@ -1646,7 +1986,8 @@ const firebaseConfig = {
                         activeJobs,
                         completedJobs,
                         pmSchedules,
-                        weekendOtJobs
+                        weekendOtJobs,
+                        deletedLogs
                     }
                 });
             }
@@ -1661,6 +2002,7 @@ const firebaseConfig = {
                         completedJobs: completedJobs,
                         pmSchedules: pmSchedules,
                         weekendOtJobs: weekendOtJobs,
+                        deletedLogs: deletedLogs,
                         lastUpdatedBy: currentUser.uid,
                         lastUpdatedAt: new Date().toISOString()
                     };
@@ -1682,6 +2024,7 @@ const firebaseConfig = {
                     completedJobs: completedJobs,
                     pmSchedules: pmSchedules,
                     weekendOtJobs: weekendOtJobs,
+                    deletedLogs: deletedLogs,
                     lastSaved: new Date().toISOString()
                 };
                 setSafeStorage(STORAGE_KEY, JSON.stringify(payload));
@@ -1701,6 +2044,7 @@ const firebaseConfig = {
                     completedJobs = parsed.completedJobs || [];
                     pmSchedules = parsed.pmSchedules || [...defaultPmSchedules];
                     weekendOtJobs = parsed.weekendOtJobs || [...defaultWeekendOtJobs];
+                    deletedLogs = parsed.deletedLogs || [];
                     return true;
                 }
             } catch (err) {
@@ -1712,6 +2056,7 @@ const firebaseConfig = {
             completedJobs = [];
             pmSchedules = [...defaultPmSchedules];
             weekendOtJobs = [...defaultWeekendOtJobs];
+            deletedLogs = [];
             saveToLocalStorage();
             return false;
         }
@@ -1721,142 +2066,16 @@ const firebaseConfig = {
             renderActiveJobs();
             renderWeekendOtJobs();
             renderCompletedJobs();
+            renderDeletedLogs();
             renderPMSchedules();
             updateKPICards();
             renderAnalyticsTables();
             updateCharts();
-        }
-
-        function toggleFirebaseModal() {
-            const customConfigRaw = getSafeStorage('sml_custom_firebase_json');
-            const jsonInput = document.getElementById('custom-firebase-json');
-            if (jsonInput && customConfigRaw) {
-                try {
-                    jsonInput.value = JSON.stringify(JSON.parse(customConfigRaw), null, 2);
-                } catch(e) {
-                    jsonInput.value = customConfigRaw;
-                }
-            }
-            document.getElementById('modal-firebase-config')?.classList.toggle('hidden');
-        }
-
-        function saveCustomFirebaseConfig() {
-            const val = document.getElementById('custom-firebase-json')?.value.trim();
-            if (!val) return;
-            const parsed = parseFirebaseConfigInput(val);
-            if (!parsed) {
-                showToast("Invalid Firebase config snippet! Please check syntax.", "danger");
-                return;
-            }
-
-            setSafeStorage('sml_custom_firebase_json', JSON.stringify(parsed));
-            showToast("Saved Firebase Configuration! Connecting to Cloud Database...", "success");
-            toggleFirebaseModal();
-            initCloudSync();
-        }
-
-        function clearCustomFirebaseConfig() {
-            localStorage.removeItem('sml_custom_firebase_json');
-            if (unsubscribeSyncListener) unsubscribeSyncListener();
-            db = null;
-            auth = null;
-            currentUser = null;
-            updateCloudUIStatus(false, "Local Network Sync Active");
-            showToast("Disconnected from Firebase Cloud. Reverted to Local Network mode.", "info");
-            toggleFirebaseModal();
-        }
-
-        function forceCloudPush() {
-            saveToCloudAndLocal();
-            showToast("Force pushed current maintenance database to real-time engine!", "success");
-        }
-
-        function calculateLiveElapsedMins(isoString) {
-            if (!isoString) return 0;
-            const start = new Date(isoString);
-            const end = new Date();
-            if (isNaN(start.getTime()) || end <= start) return 0;
-
-            let totalMins = 0;
-            let currentDay = new Date(start.getFullYear(), start.getMonth(), start.getDate());
-            const lastDay = new Date(end.getFullYear(), end.getMonth(), end.getDate());
-
-            while (currentDay <= lastDay) {
-                const dayOfWeek = currentDay.getDay();
-
-                if (dayOfWeek !== 0) {
-                    const y = currentDay.getFullYear();
-                    const m = currentDay.getMonth();
-                    const d = currentDay.getDate();
-
-                    const s1Start = new Date(y, m, d, 7, 20, 0).getTime();
-                    const s1End = new Date(y, m, d, 12, 30, 0).getTime();
-
-                    const s2Start = new Date(y, m, d, 13, 0, 0).getTime();
-                    const s2End = new Date(y, m, d, 19, 15, 0).getTime();
-
-                    const o1Start = Math.max(start.getTime(), s1Start);
-                    const o1End = Math.min(end.getTime(), s1End);
-                    if (o1End > o1Start) totalMins += (o1End - o1Start) / 60000;
-
-                    const o2Start = Math.max(start.getTime(), s2Start);
-                    const o2End = Math.min(end.getTime(), s2End);
-                    if (o2End > o2Start) totalMins += (o2End - o2Start) / 60000;
-                }
-                currentDay.setDate(currentDay.getDate() + 1);
-            }
-
-            return Math.max(0, Math.floor(totalMins));
-        }
-
-        function formatElapsed(mins) {
-            if (mins < 60) return `${mins}m`;
-            const hrs = Math.floor(mins / 60);
-            const rem = mins % 60;
-            return `${hrs}h ${rem}m`;
-        }
-
-        function updateLiveClock() {
-            const el = document.getElementById('live-time');
-            if (el) {
-                const now = new Date();
-                el.innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            }
-            renderActiveJobs();
-        }
-
-        function getCategoryBadge(category) {
-            switch(category) {
-                case 'Fabrication':
-                    return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-950/90 text-indigo-300 border border-indigo-700/80"><i class="fa-solid fa-hammer mr-1 text-[9px]"></i>FABRICATION</span>`;
-                case 'Modification':
-                    return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-950/90 text-teal-300 border border-teal-700/80"><i class="fa-solid fa-sliders mr-1 text-[9px]"></i>MODIFICATION</span>`;
-                case 'Routine':
-                    return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700"><i class="fa-solid fa-list-check mr-1 text-[9px]"></i>ROUTINE</span>`;
-                case 'Breakdown':
-                default:
-                    return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-950/90 text-rose-300 border border-rose-700/80"><i class="fa-solid fa-triangle-exclamation mr-1 text-[9px]"></i>BREAKDOWN</span>`;
-            }
-        }
-
-        function handleJobCategorySelect(cat) {
-            const equipSelect = document.getElementById('new-job-equipment');
-            if (equipSelect && (cat === 'Fabrication' || cat === 'Routine')) {
-                const genEquip = equipmentList.find(e => e.id === 'EQ-000');
-                if (genEquip) equipSelect.value = genEquip.id;
-            }
-        }
-
-        function getNextSaturdayDate() {
-            const now = new Date();
-            const dayOfWeek = now.getDay();
-            const distanceToSaturday = (6 - dayOfWeek + 7) % 7 || 7;
-            const nextSat = new Date(now.getTime() + distanceToSaturday * 24 * 60 * 60 * 1000);
-            return nextSat.toISOString().slice(0, 10);
+            renderTechnicianWorkload();
         }
 
         function switchTab(tab) {
-            const tabs = ['active', 'weekend-ot', 'completed', 'pm', 'equipment', 'analytics', 'tech-workload'];
+            const tabs = ['active', 'weekend-ot', 'completed', 'deleted-history', 'pm', 'equipment', 'analytics', 'tech-workload'];
             tabs.forEach(t => {
                 const content = document.getElementById(`tab-content-${t}`);
                 const btn = document.getElementById(`tab-btn-${t}`);
@@ -1875,369 +2094,197 @@ const firebaseConfig = {
                 updateCharts();
             } else if (tab === 'tech-workload') {
                 renderTechnicianWorkload();
+            } else if (tab === 'deleted-history') {
+                renderDeletedLogs();
             }
         }
 
         function toggleActiveView(mode) {
             activeViewMode = mode;
-            const tblWrp = document.getElementById('active-table-wrapper');
-            const knbWrp = document.getElementById('active-kanban-wrapper');
-            const btnTbl = document.getElementById('view-mode-table');
-            const btnKnb = document.getElementById('view-mode-kanban');
+            const tableWrap = document.getElementById('active-table-wrapper');
+            const kanbanWrap = document.getElementById('active-kanban-wrapper');
+            const btnTable = document.getElementById('view-mode-table');
+            const btnKanban = document.getElementById('view-mode-kanban');
 
-            if (mode === 'table') {
-                tblWrp?.classList.remove('hidden');
-                knbWrp?.classList.add('hidden');
-                if (btnTbl) btnTbl.className = "px-2.5 py-1 rounded text-xs bg-slate-700 text-white";
-                if (btnKnb) btnKnb.className = "px-2.5 py-1 rounded text-xs text-slate-400 hover:text-white";
+            if (mode === 'kanban') {
+                if (tableWrap) tableWrap.classList.add('hidden');
+                if (kanbanWrap) kanbanWrap.classList.remove('hidden');
+                if (btnTable) btnTable.className = "px-2.5 py-1 rounded text-xs text-slate-400 hover:text-white";
+                if (btnKanban) btnKanban.className = "px-2.5 py-1 rounded text-xs bg-slate-700 text-white";
             } else {
-                tblWrp?.classList.add('hidden');
-                knbWrp?.classList.remove('hidden');
-                if (btnTbl) btnTbl.className = "px-2.5 py-1 rounded text-xs text-slate-400 hover:text-white";
-                if (btnKnb) btnKnb.className = "px-2.5 py-1 rounded text-xs bg-slate-700 text-white";
+                if (kanbanWrap) kanbanWrap.classList.add('hidden');
+                if (tableWrap) tableWrap.classList.remove('hidden');
+                if (btnTable) btnTable.className = "px-2.5 py-1 rounded text-xs bg-slate-700 text-white";
+                if (btnKanban) btnKanban.className = "px-2.5 py-1 rounded text-xs text-slate-400 hover:text-white";
             }
-            renderActiveJobs();
-        }
-
-        // Modal Controls
-        function toggleNewJobModal() { 
-            const modal = document.getElementById('modal-new-job');
-            if (modal) {
-                modal.classList.toggle('hidden');
-                if (!modal.classList.contains('hidden')) {
-                    const searchInput = document.getElementById('new-job-equipment-search');
-                    if (searchInput) searchInput.value = '';
-                    populateEquipmentDropdowns();
-                }
-            }
-        }
-        function toggleCompleteJobModal() { document.getElementById('modal-complete-job')?.classList.toggle('hidden'); }
-        function toggleMobileActionsMenu() { document.getElementById('mobile-actions-menu')?.classList.toggle('hidden'); }
-        function toggleNewPMModal() { document.getElementById('modal-new-pm')?.classList.toggle('hidden'); }
-        function toggleNewWeekendOtModal() { document.getElementById('modal-new-weekend-ot')?.classList.toggle('hidden'); }
-        function toggleReviewWeekendOtModal() { document.getElementById('modal-review-weekend-ot')?.classList.toggle('hidden'); }
-        function toggleManageMachinesModal() { document.getElementById('modal-manage-machines')?.classList.toggle('hidden'); }
-        function toggleBackupModal() { document.getElementById('modal-backup')?.classList.toggle('hidden'); }
-
-        function openClearDataConfirmationModal() { 
-            const passInput = document.getElementById('clear-data-password');
-            const errEl = document.getElementById('clear-password-error');
-            if (passInput) passInput.value = '';
-            if (errEl) errEl.classList.add('hidden');
-            document.getElementById('modal-clear-confirm')?.classList.remove('hidden'); 
-            setTimeout(() => passInput?.focus(), 100);
-        }
-
-        function closeClearDataConfirmationModal() { 
-            const passInput = document.getElementById('clear-data-password');
-            const errEl = document.getElementById('clear-password-error');
-            if (passInput) passInput.value = '';
-            if (errEl) errEl.classList.add('hidden');
-            document.getElementById('modal-clear-confirm')?.classList.add('hidden'); 
-        }
-
-        function confirmClearAllData() {
-            const passInput = document.getElementById('clear-data-password');
-            const errEl = document.getElementById('clear-password-error');
-            const enteredPass = passInput ? passInput.value : '';
-
-            if (enteredPass !== ADMIN_CLEAR_PASSWORD) {
-                if (errEl) errEl.classList.remove('hidden');
-                if (passInput) passInput.focus();
-                showToast('Incorrect admin password!', 'danger');
-                return;
-            }
-
-            activeJobs = [];
-            completedJobs = [];
-            pmSchedules = [];
-            weekendOtJobs = [];
-
-            saveToCloudAndLocal();
-            closeClearDataConfirmationModal();
-            refreshUI();
-            showToast('All dashboard data cleared successfully.', 'success');
-        }
-
-        function updateAllMachineViews() {
-            populateEquipmentDropdowns();
-            populateSectionFilterDropdown();
-            populateTechnicianDropdowns();
-            renderEquipmentGrid();
-            renderRosterTable();
-            renderTechnicianRoster();
-        }
-
-        function populateEquipmentDropdowns(filterQuery = '') {
-            const selectJob = document.getElementById('new-job-equipment');
-            const selectPM = document.getElementById('pm-equipment');
-            const selectOT = document.getElementById('weekend-ot-equipment');
-
-            const query = (filterQuery || '').toLowerCase().trim();
-            const filteredForJob = query 
-                ? equipmentList.filter(eq => 
-                    eq.id.toLowerCase().includes(query) || 
-                    eq.name.toLowerCase().includes(query) || 
-                    eq.zone.toLowerCase().includes(query)
-                  )
-                : equipmentList;
-
-            const jobOptionsHtml = filteredForJob.length > 0 
-                ? filteredForJob.map(eq => `<option value="${eq.id}">${eq.id} - ${eq.name} (${eq.zone})</option>`).join('')
-                : `<option value="" disabled>No matching machinery found</option>`;
-
-            const optionsHtml = equipmentList.map(eq => `<option value="${eq.id}">${eq.id} - ${eq.name} (${eq.zone})</option>`).join('');
-
-            if (selectJob) selectJob.innerHTML = jobOptionsHtml;
-            if (selectPM) selectPM.innerHTML = optionsHtml;
-            if (selectOT) selectOT.innerHTML = optionsHtml;
-        }
-
-        function filterNewJobEquipment(query) {
-            populateEquipmentDropdowns(query);
-        }
-
-        function populateSectionFilterDropdown() {
-            const select = document.getElementById('filter-equipment-zone');
-            if (select) {
-                const sections = Array.from(new Set(equipmentList.map(e => e.zone)));
-                select.innerHTML = '<option value="ALL">All Sections / Zones</option>' + 
-                    sections.map(sec => `<option value="${sec}">${sec}</option>`).join('');
-            }
-        }
-
-        function populateTechnicianDropdowns() {
-            const selectPM = document.getElementById('pm-tech');
-            const selectOtLead = document.getElementById('weekend-ot-lead-tech');
-            const supportCheckboxes = document.getElementById('weekend-ot-support-checkboxes');
-            const filterActiveTech = document.getElementById('filter-active-tech');
-            const filterOtTech = document.getElementById('filter-weekend-ot-tech');
-
-            const jobTechSelect = document.getElementById('new-job-tech');
-            const optionsHtml = technicianList.map(t => `<option value="${t}">${t}</option>`).join('');
-            if (jobTechSelect) jobTechSelect.innerHTML = optionsHtml;
-            if (selectPM) selectPM.innerHTML = optionsHtml;
-            if (selectOtLead) selectOtLead.innerHTML = optionsHtml;
-
-            const filterOptionsHtml = '<option value="ALL">All Technicians</option>' + technicianList.map(t => `<option value="${t}">${t}</option>`).join('');
-            if (filterActiveTech) filterActiveTech.innerHTML = filterOptionsHtml;
-            if (filterOtTech) filterOtTech.innerHTML = filterOptionsHtml;
-
-            if (supportCheckboxes) {
-                supportCheckboxes.innerHTML = technicianList
-                    .filter(t => t !== 'Unassigned')
-                    .map((t) => `
-                        <label class="flex items-center space-x-2 text-slate-300 hover:text-white cursor-pointer p-1 rounded hover:bg-slate-800/60">
-                            <input type="checkbox" name="ot-support-tech" value="${t}" class="rounded border-slate-700 bg-factory-900 text-amber-500 focus:ring-amber-500">
-                            <span class="truncate">${t}</span>
-                        </label>
-                    `).join('');
-            }
-        }
-
-        function filterActiveJobs() {
-            renderActiveJobs();
-        }
-
-        function resetActiveFilters() {
-            const search = document.getElementById('search-active');
-            const prio = document.getElementById('filter-active-priority');
-            const status = document.getElementById('filter-active-status');
-            const category = document.getElementById('filter-active-category');
-            const tech = document.getElementById('filter-active-tech');
-            if (search) search.value = '';
-            if (prio) prio.value = 'ALL';
-            if (status) status.value = 'ALL';
-            if (category) category.value = 'ALL';
-            if (tech) tech.value = 'ALL';
             renderActiveJobs();
         }
 
         function renderActiveJobs() {
             const tbody = document.getElementById('active-jobs-tbody');
             const searchVal = (document.getElementById('search-active')?.value || '').toLowerCase();
+            const catVal = document.getElementById('filter-active-category')?.value || 'ALL';
             const prioVal = document.getElementById('filter-active-priority')?.value || 'ALL';
             const statusVal = document.getElementById('filter-active-status')?.value || 'ALL';
-            const catVal = document.getElementById('filter-active-category')?.value || 'ALL';
             const techVal = document.getElementById('filter-active-tech')?.value || 'ALL';
 
             const filtered = activeJobs.filter(j => {
-                const matchSearch = j.id.toLowerCase().includes(searchVal) || 
-                                    j.equipmentName.toLowerCase().includes(searchVal) || 
+                const matchSearch = j.id.toLowerCase().includes(searchVal) ||
+                                    j.equipmentName.toLowerCase().includes(searchVal) ||
                                     j.assignedTo.toLowerCase().includes(searchVal) ||
                                     j.description.toLowerCase().includes(searchVal);
+                const matchCat = catVal === 'ALL' || (j.category || 'Breakdown') === catVal;
                 const matchPrio = prioVal === 'ALL' || j.priority === prioVal;
                 const matchStatus = statusVal === 'ALL' || j.status === statusVal;
-                const matchCat = catVal === 'ALL' || (j.category || 'Breakdown') === catVal;
                 const matchTech = techVal === 'ALL' || j.assignedTo === techVal;
-                return matchSearch && matchPrio && matchStatus && matchCat && matchTech;
+                return matchSearch && matchCat && matchPrio && matchStatus && matchTech;
             });
 
-            if (activeViewMode === 'kanban') {
-                renderKanbanBoard(filtered);
+            if (tbody) {
+                if (filtered.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-500 font-medium">No open active work orders found.</td></tr>`;
+                } else {
+                    tbody.innerHTML = filtered.map(j => {
+                        let prioBadge = 'bg-slate-800 text-slate-300';
+                        if (j.priority === 'Critical') prioBadge = 'bg-rose-950/80 text-rose-300 border border-rose-800 pulse-red';
+                        else if (j.priority === 'High') prioBadge = 'bg-amber-950/80 text-amber-300 border border-amber-800';
+
+                        const liveMins = calculateLiveElapsedMins(j.createdIso);
+
+                        return `
+                            <tr class="hover:bg-slate-800/30 transition">
+                                <td class="py-3 px-4">
+                                    <div class="font-bold text-blue-400 font-mono text-xs">${j.id}</div>
+                                    <div class="text-slate-200 font-semibold">${j.equipmentName}</div>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">
+                                        ${j.category || 'Breakdown'}
+                                    </span>
+                                </td>
+                                <td class="py-3 px-4 max-w-xs text-slate-300 truncate" title="${j.description}">${j.description}</td>
+                                <td class="py-3 px-4">
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${prioBadge}">${j.priority}</span>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <select onchange="updateActiveJobStatus('${j.id}', this.value)" class="bg-factory-900 border border-slate-700 rounded px-2 py-1 text-[11px] text-slate-200 focus:outline-none focus:border-blue-500">
+                                        <option value="In Progress" ${j.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                                        <option value="Pending Parts" ${j.status === 'Pending Parts' ? 'selected' : ''}>Pending Parts</option>
+                                        <option value="Assigned" ${j.status === 'Assigned' ? 'selected' : ''}>Assigned</option>
+                                    </select>
+                                </td>
+                                <td class="py-3 px-4 text-slate-300">
+                                    <select onchange="updateActiveJobTech('${j.id}', this.value)" class="bg-factory-900 border border-slate-700 rounded px-2 py-1 text-[11px] text-slate-200 focus:outline-none focus:border-blue-500">
+                                        ${technicianList.filter(t => t !== 'Unassigned').map(t => `<option value="${t}" ${j.assignedTo === t ? 'selected' : ''}>${t}</option>`).join('')}
+                                    </select>
+                                </td>
+                                <td class="py-3 px-4 font-mono text-amber-400 text-[11px]">${formatElapsed(liveMins)}</td>
+                                <td class="py-3 px-4 text-right space-x-2 whitespace-nowrap">
+                                    <button onclick="openCompleteModal('${j.id}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded text-[11px] transition shadow">
+                                        <i class="fa-solid fa-check mr-1"></i> Resolve
+                                    </button>
+                                    <button onclick="deleteActiveJob('${j.id}')" class="text-slate-400 hover:text-rose-400 transition" title="Cancel Work Order">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
             }
 
-            if (!tbody) return;
-
-            if (filtered.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="8" class="text-center py-8 text-slate-500 font-medium">
-                            <i class="fa-solid fa-clipboard-check text-2xl mb-2 text-slate-600 block"></i>
-                            No active work orders match the criteria.
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            tbody.innerHTML = filtered.map(job => {
-                const liveMins = calculateLiveElapsedMins(job.createdIso);
-                const elapsedFormatted = formatElapsed(liveMins);
-                const categoryBadge = getCategoryBadge(job.category || 'Breakdown');
-                
-                let prioBadge = 'bg-slate-800 text-slate-300 border-slate-700';
-                if (job.priority === 'Critical') prioBadge = 'bg-rose-950/80 text-rose-300 border-rose-800/80 pulse-red';
-                else if (job.priority === 'High') prioBadge = 'bg-amber-950/80 text-amber-300 border-amber-800/80';
-                else if (job.priority === 'Medium') prioBadge = 'bg-blue-950/80 text-blue-300 border-blue-800/80';
-
-                const techOptions = technicianList.map(t => `<option value="${t}" ${job.assignedTo === t ? 'selected' : ''}>${t}</option>`).join('');
-
-                return `
-                    <tr class="hover:bg-slate-800/30 transition">
-                        <td class="py-3 px-4">
-                            <div class="font-bold text-white font-mono text-xs text-blue-400">${job.id}</div>
-                            <div class="text-slate-300 font-semibold mt-0.5">${job.equipmentName} <span class="text-slate-500 font-mono text-[11px]">(${job.equipmentId})</span></div>
-                        </td>
-                        <td class="py-3 px-4">${categoryBadge}</td>
-                        <td class="py-3 px-4 max-w-xs text-slate-300 truncate" title="${job.description}">${job.description}</td>
-                        <td class="py-3 px-4">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border ${prioBadge}">
-                                ${job.priority}
-                            </span>
-                        </td>
-                        <td class="py-3 px-4">
-                            <select onchange="updateActiveJobStatus('${job.id}', this.value)" class="bg-factory-900 border border-slate-700 rounded px-2 py-1 text-[11px] text-slate-200 focus:outline-none focus:border-blue-500">
-                                <option value="Assigned" ${job.status === 'Assigned' ? 'selected' : ''}>Assigned</option>
-                                <option value="In Progress" ${job.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
-                                <option value="Pending Parts" ${job.status === 'Pending Parts' ? 'selected' : ''}>Pending Parts</option>
-                            </select>
-                        </td>
-                        <td class="py-3 px-4">
-                            <select onchange="updateActiveJobTech('${job.id}', this.value)" class="bg-factory-900 border border-slate-700 rounded px-2 py-1 text-[11px] text-slate-200 focus:outline-none focus:border-blue-500 max-w-[160px] truncate">
-                                ${techOptions}
-                            </select>
-                        </td>
-                        <td class="py-3 px-4">
-                            <span class="inline-flex items-center space-x-1.5 font-mono text-amber-400 bg-amber-950/40 border border-amber-800/40 px-2 py-0.5 rounded text-[11px]">
-                                <i class="fa-solid fa-stopwatch text-[10px]"></i>
-                                <span>${elapsedFormatted}</span>
-                            </span>
-                        </td>
-                        <td class="py-3 px-4 text-right space-x-2">
-                            <button onclick="openCompleteModal('${job.id}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded text-[11px] transition shadow">
-                                <i class="fa-solid fa-check mr-1"></i> Resolve
-                            </button>
-                            <button onclick="deleteActiveJob('${job.id}')" class="p-1 text-slate-400 hover:text-rose-400 transition" title="Cancel Ticket">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-        }
-
-        function renderKanbanBoard(jobs) {
+            // Render Kanban Columns
             const colAssigned = document.getElementById('kanban-col-assigned');
             const colInProgress = document.getElementById('kanban-col-in-progress');
             const colPending = document.getElementById('kanban-col-pending');
-            
-            if (!colAssigned || !colInProgress || !colPending) return;
 
-            const assigned = jobs.filter(j => j.status === 'Assigned');
-            const inProgress = jobs.filter(j => j.status === 'In Progress');
-            const pending = jobs.filter(j => j.status === 'Pending Parts');
+            if (colAssigned && colInProgress && colPending) {
+                const assignedJobs = filtered.filter(j => j.status === 'Assigned');
+                const inProgressJobs = filtered.filter(j => j.status === 'In Progress');
+                const pendingJobs = filtered.filter(j => j.status === 'Pending Parts');
 
-            const countAssigned = document.getElementById('kanban-count-assigned');
-            const countInProgress = document.getElementById('kanban-count-in-progress');
-            const countPending = document.getElementById('kanban-count-pending');
+                document.getElementById('kanban-count-assigned').innerText = assignedJobs.length;
+                document.getElementById('kanban-count-in-progress').innerText = inProgressJobs.length;
+                document.getElementById('kanban-count-pending').innerText = pendingJobs.length;
 
-            if (countAssigned) countAssigned.innerText = assigned.length;
-            if (countInProgress) countInProgress.innerText = inProgress.length;
-            if (countPending) countPending.innerText = pending.length;
-
-            const renderCard = (j) => {
-                const liveMins = calculateLiveElapsedMins(j.createdIso);
-                const elapsedFormatted = formatElapsed(liveMins);
-                const categoryBadge = getCategoryBadge(j.category || 'Breakdown');
-                let prioBadge = 'bg-slate-800 text-slate-300 border-slate-700';
-                if (j.priority === 'Critical') prioBadge = 'bg-rose-950/80 text-rose-300 border-rose-800/80 pulse-red';
-                else if (j.priority === 'High') prioBadge = 'bg-amber-950/80 text-amber-300 border-amber-800/80';
-                else if (j.priority === 'Medium') prioBadge = 'bg-blue-950/80 text-blue-300 border-blue-800/80';
-
-                return `
-                    <div class="bg-factory-900/90 p-3 rounded-xl border border-slate-800 space-y-2 shadow-sm hover:border-slate-700 transition">
+                const renderKanbanCard = (j) => `
+                    <div class="glass-card p-3 rounded-xl border border-slate-800 space-y-2">
                         <div class="flex items-center justify-between">
                             <span class="font-mono text-xs font-bold text-blue-400">${j.id}</span>
-                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border ${prioBadge}">${j.priority}</span>
+                            <span class="text-[10px] px-2 py-0.5 rounded font-bold ${j.priority === 'Critical' ? 'bg-rose-950 text-rose-300 border border-rose-800' : 'bg-slate-800 text-slate-300'}">${j.priority}</span>
                         </div>
-                        <div>
-                            <h4 class="font-bold text-white text-xs">${j.equipmentName}</h4>
-                            <p class="text-[11px] text-slate-400 mt-0.5 line-clamp-2" title="${j.description}">${j.description}</p>
-                        </div>
-                        <div class="flex items-center justify-between text-[11px] pt-1 border-t border-slate-800/60">
-                            <span class="text-slate-300 flex items-center"><i class="fa-solid fa-user-gear text-blue-400 mr-1"></i>${j.assignedTo}</span>
-                            <span class="font-mono text-amber-400 font-semibold"><i class="fa-solid fa-stopwatch mr-1"></i>${elapsedFormatted}</span>
-                        </div>
-                        <div class="flex items-center justify-between pt-1">
-                            ${categoryBadge}
-                            <button onclick="openCompleteModal('${j.id}')" class="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-semibold transition">
-                                Resolve
-                            </button>
+                        <h4 class="font-bold text-white text-xs">${j.equipmentName}</h4>
+                        <p class="text-[11px] text-slate-400 line-clamp-2">${j.description}</p>
+                        <div class="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px]">
+                            <span class="text-slate-300"><i class="fa-solid fa-user-gear mr-1 text-blue-400"></i>${j.assignedTo}</span>
+                            <button onclick="openCompleteModal('${j.id}')" class="text-emerald-400 hover:text-emerald-300 font-semibold">Resolve</button>
                         </div>
                     </div>
                 `;
-            };
 
-            colAssigned.innerHTML = assigned.length ? assigned.map(renderCard).join('') : '<div class="text-xs text-slate-500 text-center py-6">No assigned jobs</div>';
-            colInProgress.innerHTML = inProgress.length ? inProgress.map(renderCard).join('') : '<div class="text-xs text-slate-500 text-center py-6">No jobs in progress</div>';
-            colPending.innerHTML = pending.length ? pending.map(renderCard).join('') : '<div class="text-xs text-slate-500 text-center py-6">No jobs pending parts</div>';
+                colAssigned.innerHTML = assignedJobs.map(renderKanbanCard).join('') || `<div class="text-center py-8 text-slate-600 text-xs">No assigned orders</div>`;
+                colInProgress.innerHTML = inProgressJobs.map(renderKanbanCard).join('') || `<div class="text-center py-8 text-slate-600 text-xs">No active progress</div>`;
+                colPending.innerHTML = pendingJobs.map(renderKanbanCard).join('') || `<div class="text-center py-8 text-slate-600 text-xs">No pending parts</div>`;
+            }
         }
 
-        function resetWeekendOtFilters() {
-            const dateInput = document.getElementById('filter-weekend-ot-date');
-            const statusInput = document.getElementById('filter-weekend-ot-status');
-            const techInput = document.getElementById('filter-weekend-ot-tech');
-            if (dateInput) dateInput.value = '';
-            if (statusInput) statusInput.value = 'ALL';
-            if (techInput) techInput.value = 'ALL';
-            renderWeekendOtJobs();
+        function filterActiveJobs() { renderActiveJobs(); }
+        function resetActiveFilters() {
+            const search = document.getElementById('search-active');
+            const cat = document.getElementById('filter-active-category');
+            const prio = document.getElementById('filter-active-priority');
+            const status = document.getElementById('filter-active-status');
+            const tech = document.getElementById('filter-active-tech');
+            if (search) search.value = '';
+            if (cat) cat.value = 'ALL';
+            if (prio) prio.value = 'ALL';
+            if (status) status.value = 'ALL';
+            if (tech) tech.value = 'ALL';
+            renderActiveJobs();
+        }
+
+        function deleteActiveJob(jobId) {
+            const job = activeJobs.find(j => j.id === jobId);
+            if (!job) return;
+
+            deletedLogs.unshift({
+                deletedLogId: `DEL-${Math.floor(1000 + Math.random() * 9000)}`,
+                itemType: 'Active Work Order',
+                originalItem: job,
+                deletedAtFormatted: `${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (${new Date().toLocaleDateString()})`,
+                deletedAtIso: new Date().toISOString()
+            });
+
+            activeJobs = activeJobs.filter(j => j.id !== jobId);
+            
+            const otherActiveOnEquip = activeJobs.some(j => j.equipmentId === job.equipmentId);
+            if (!otherActiveOnEquip) {
+                const equip = equipmentList.find(e => e.id === job.equipmentId);
+                if (equip) equip.status = 'Operational';
+            }
+
+            saveToCloudAndLocal();
+            refreshUI();
+            showToast(`Cancelled & moved work order ${jobId} to Deleted History Log`, 'info');
         }
 
         function renderWeekendOtJobs() {
             const tbody = document.getElementById('weekend-ot-tbody');
-            const dateFilter = document.getElementById('filter-weekend-ot-date')?.value;
-            const statusFilter = document.getElementById('filter-weekend-ot-status')?.value || 'ALL';
-            const techFilter = document.getElementById('filter-weekend-ot-tech')?.value || 'ALL';
+            const dateVal = document.getElementById('filter-weekend-ot-date')?.value || '';
+            const statusVal = document.getElementById('filter-weekend-ot-status')?.value || 'ALL';
+            const techVal = document.getElementById('filter-weekend-ot-tech')?.value || 'ALL';
 
             if (!tbody) return;
 
             const filtered = weekendOtJobs.filter(ot => {
-                const matchDate = !dateFilter || ot.weekendDate === dateFilter;
-                const matchStatus = statusFilter === 'ALL' || ot.status === statusFilter;
-                const matchTech = techFilter === 'ALL' || ot.leadTech === techFilter || (ot.supportTechs && ot.supportTechs.includes(techFilter));
+                const matchDate = !dateVal || ot.weekendDate === dateVal;
+                const matchStatus = statusVal === 'ALL' || ot.status === statusVal;
+                const matchTech = techVal === 'ALL' || ot.leadTech === techVal || (ot.supportTechs || []).includes(techVal);
                 return matchDate && matchStatus && matchTech;
             });
 
             if (filtered.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="7" class="text-center py-8 text-slate-500 font-medium">
-                            <i class="fa-solid fa-calendar-xmark text-2xl mb-2 text-slate-600 block"></i>
-                            No weekend OT jobs planned for the selected filters.
-                        </td>
-                    </tr>
-                `;
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-500 font-medium">No weekend OT assignments found for this filter.</td></tr>`;
                 return;
             }
 
@@ -2246,9 +2293,7 @@ const firebaseConfig = {
                 if (ot.status === 'Completed') statusBadge = 'bg-emerald-950/80 text-emerald-300 border-emerald-800';
                 else if (ot.status === 'Deferred') statusBadge = 'bg-purple-950/80 text-purple-300 border-purple-800';
 
-                const supportList = ot.supportTechs && ot.supportTechs.length > 0 
-                    ? ot.supportTechs.map(st => `<span class="inline-block bg-slate-800 border border-slate-700 text-slate-300 px-1.5 py-0.5 rounded text-[10px] mr-1 mb-1">${st}</span>`).join('')
-                    : `<span class="text-slate-500 text-[10px]">No helper team</span>`;
+                const supportStr = (ot.supportTechs && ot.supportTechs.length > 0) ? ot.supportTechs.join(', ') : 'None assigned';
 
                 return `
                     <tr class="hover:bg-slate-800/30 transition">
@@ -2256,33 +2301,24 @@ const firebaseConfig = {
                             <div class="font-bold text-amber-400 font-mono text-xs">${ot.id}</div>
                             <div class="text-slate-200 font-semibold">${ot.equipmentName}</div>
                         </td>
+                        <td class="py-3 px-4 font-mono text-slate-300">
+                            <div>${ot.weekendDate} (${ot.shiftType})</div>
+                            <div class="text-[11px] text-amber-400 font-bold">${ot.shiftHours} hrs planned</div>
+                        </td>
+                        <td class="py-3 px-4 max-w-xs text-slate-300 truncate" title="${ot.jobScope}">${ot.jobScope}</td>
+                        <td class="py-3 px-4 text-slate-200 font-semibold"><i class="fa-solid fa-user-gear text-amber-400 mr-1.5"></i>${ot.leadTech}</td>
+                        <td class="py-3 px-4 text-slate-400 text-[11px] max-w-xs truncate" title="${supportStr}">${supportStr}</td>
                         <td class="py-3 px-4">
-                            <div class="font-semibold text-slate-200">${ot.shiftType} (${ot.weekendDate})</div>
-                            <div class="text-[11px] font-mono text-amber-400"><i class="fa-regular fa-clock mr-1"></i>${ot.shiftHours} hrs planned</div>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border ${statusBadge}">${ot.status}</span>
                         </td>
-                        <td class="py-3 px-4 max-w-xs text-slate-300 line-clamp-2" title="${ot.jobScope}">
-                            ${ot.jobScope}
-                        </td>
-                        <td class="py-3 px-4 text-slate-200 font-semibold">
-                            <i class="fa-solid fa-user-shield text-amber-400 mr-1.5"></i>${ot.leadTech}
-                        </td>
-                        <td class="py-3 px-4 max-w-xs">
-                            <div class="flex flex-wrap">${supportList}</div>
-                        </td>
-                        <td class="py-3 px-4">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${statusBadge}">
-                                ${ot.status}
-                            </span>
-                            ${ot.actualHours > 0 ? `<div class="text-[10px] text-emerald-400 font-mono mt-1">${ot.actualHours} hrs logged</div>` : ''}
-                        </td>
-                        <td class="py-3 px-4 text-right space-x-2">
-                            <button onclick="openReviewWeekendOtModal('${ot.id}')" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded text-[11px] transition shadow" title="Review status on Monday">
-                                <i class="fa-solid fa-clipboard-check mr-1"></i> Review
+                        <td class="py-3 px-4 text-right space-x-2 whitespace-nowrap">
+                            <button onclick="openReviewWeekendOtModal('${ot.id}')" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded text-[11px] transition shadow">
+                                <i class="fa-solid fa-clipboard-check mr-1"></i> Monday Review
                             </button>
-                            <button onclick="rolloverOtToActiveJob('${ot.id}')" class="p-1 text-blue-400 hover:text-blue-300" title="Rollover / Convert to Active Work Order">
+                            <button onclick="rolloverOtToActiveJob('${ot.id}')" class="p-1 text-slate-400 hover:text-blue-400 transition" title="Rollover to Active Work Order">
                                 <i class="fa-solid fa-arrow-right-to-bracket"></i>
                             </button>
-                            <button onclick="deleteWeekendOtJob('${ot.id}')" class="p-1 text-slate-400 hover:text-rose-400 transition" title="Delete OT Job">
+                            <button onclick="deleteWeekendOtJob('${ot.id}')" class="p-1 text-slate-400 hover:text-rose-400 transition" title="Delete OT Schedule">
                                 <i class="fa-solid fa-trash-can"></i>
                             </button>
                         </td>
@@ -2291,120 +2327,357 @@ const firebaseConfig = {
             }).join('');
         }
 
-        function renderTechnicianWorkload() {
-            const grid = document.getElementById('tech-workload-grid');
-            const searchVal = (document.getElementById('search-tech-workload')?.value || '').toLowerCase();
-            const statusFilter = document.getElementById('filter-tech-workload-status')?.value || 'ALL';
+        function filterWeekendOtJobs() { renderWeekendOtJobs(); }
+        function resetWeekendOtFilters() {
+            const date = document.getElementById('filter-weekend-ot-date');
+            const status = document.getElementById('filter-weekend-ot-status');
+            const tech = document.getElementById('filter-weekend-ot-tech');
+            if (date) date.value = '';
+            if (status) status.value = 'ALL';
+            if (tech) tech.value = 'ALL';
+            renderWeekendOtJobs();
+        }
 
-            if (!grid) return;
+        function deleteWeekendOtJob(otId) {
+            const ot = weekendOtJobs.find(o => o.id === otId);
+            if (!ot) return;
 
-            const filteredTechs = technicianList.filter(t => {
-                if (t === 'Unassigned') return false;
-                const matchSearch = t.toLowerCase().includes(searchVal);
-                
-                const assignedActive = activeJobs.filter(j => j.assignedTo === t);
-                if (statusFilter === 'ASSIGNED_ONLY') return matchSearch && assignedActive.length > 0;
-                if (statusFilter === 'FREE_ONLY') return matchSearch && assignedActive.length === 0;
-                return matchSearch;
+            deletedLogs.unshift({
+                deletedLogId: `DEL-${Math.floor(1000 + Math.random() * 9000)}`,
+                itemType: 'Weekend OT Job',
+                originalItem: ot,
+                deletedAtFormatted: `${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (${new Date().toLocaleDateString()})`,
+                deletedAtIso: new Date().toISOString()
             });
 
-            if (filteredTechs.length === 0) {
-                grid.innerHTML = `
-                    <div class="col-span-full glass-card p-8 rounded-xl text-center text-slate-500">
-                        <i class="fa-solid fa-user-slash text-3xl mb-2 text-slate-600 block"></i>
-                        No technicians found matching search filter.
-                    </div>
-                `;
+            weekendOtJobs = weekendOtJobs.filter(o => o.id !== otId);
+            saveToCloudAndLocal();
+            refreshUI();
+            showToast('Weekend OT Job moved to Deleted History Log.', 'info');
+        }
+
+        function renderCompletedJobs() {
+            const tbody = document.getElementById('completed-jobs-tbody');
+            const searchVal = (document.getElementById('search-completed')?.value || '').toLowerCase();
+            if (!tbody) return;
+
+            const filtered = completedJobs.filter(j => 
+                j.id.toLowerCase().includes(searchVal) ||
+                j.equipmentName.toLowerCase().includes(searchVal) ||
+                j.technician.toLowerCase().includes(searchVal) ||
+                j.resolution.toLowerCase().includes(searchVal)
+            );
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-500 font-medium">No completed maintenance records found.</td></tr>`;
                 return;
             }
 
-            grid.innerHTML = filteredTechs.map(tech => {
-                const assignedActive = activeJobs.filter(j => j.assignedTo === tech);
-                const assignedPM = pmSchedules.filter(p => p.assignedTech === tech);
-                const leadOt = weekendOtJobs.filter(o => o.leadTech === tech && o.status === 'Planned');
-                const supportOt = weekendOtJobs.filter(o => o.supportTechs && o.supportTechs.includes(tech) && o.status === 'Planned');
-                const resolvedCount = completedJobs.filter(j => j.technician === tech).length;
+            tbody.innerHTML = filtered.map(j => `
+                <tr class="hover:bg-slate-800/30 transition">
+                    <td class="py-3 px-4">
+                        <div class="font-bold text-emerald-400 font-mono text-xs">${j.id}</div>
+                        <div class="text-slate-200 font-semibold">${j.equipmentName}</div>
+                    </td>
+                    <td class="py-3 px-4 text-slate-300">
+                        <i class="fa-solid fa-user-gear text-blue-400 mr-1.5"></i>${j.technician}
+                    </td>
+                    <td class="py-3 px-4 text-slate-400 text-[11px] font-mono">${j.completedTime}</td>
+                    <td class="py-3 px-4">
+                        <span class="font-mono text-amber-400 font-bold bg-amber-950/40 border border-amber-800/40 px-2 py-0.5 rounded text-[11px]">
+                            ${formatElapsed(j.downtimeMins)}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="font-mono text-emerald-400 font-bold bg-emerald-950/40 border border-emerald-800/40 px-2 py-0.5 rounded text-[11px]">
+                            Rs. ${(j.costRs || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 max-w-sm text-slate-300 truncate" title="${j.resolution}">${j.resolution}</td>
+                    <td class="py-3 px-4 text-right space-x-2 whitespace-nowrap">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-800">
+                            RESOLVED
+                        </span>
+                        <button onclick="deleteCompletedJob('${j.id}')" class="p-1 text-slate-400 hover:text-rose-400 transition" title="Delete Log Record">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
 
-                const isOccupied = assignedActive.length > 0;
-                const escapedTech = tech.replace(/'/g, "\\'");
+        function filterCompletedJobs() { renderCompletedJobs(); }
 
-                let activeListHtml = assignedActive.map(j => `
-                    <div class="bg-factory-900 p-2.5 rounded-lg border border-slate-800 space-y-1">
-                        <div class="flex items-center justify-between">
-                            <span class="font-mono text-[11px] font-bold text-blue-400">${j.id}</span>
-                            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded ${j.priority === 'Critical' ? 'bg-rose-950 text-rose-300 border border-rose-800' : 'bg-slate-800 text-slate-300'}">${j.priority}</span>
-                        </div>
-                        <div class="text-xs font-bold text-white">${j.equipmentName}</div>
-                        <p class="text-[11px] text-slate-400 truncate">${j.description}</p>
-                    </div>
-                `).join('');
+        function deleteCompletedJob(jobId) {
+            const job = completedJobs.find(j => j.id === jobId);
+            if (!job) return;
 
-                if (assignedActive.length === 0) {
-                    activeListHtml = `<div class="text-[11px] text-slate-500 italic py-1">No active work orders. Technician is available.</div>`;
-                }
+            deletedLogs.unshift({
+                deletedLogId: `DEL-${Math.floor(1000 + Math.random() * 9000)}`,
+                itemType: 'Completed Log',
+                originalItem: job,
+                deletedAtFormatted: `${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (${new Date().toLocaleDateString()})`,
+                deletedAtIso: new Date().toISOString()
+            });
 
-                let pmListHtml = assignedPM.map(p => `
-                    <div class="text-[11px] text-slate-300 flex items-center justify-between py-1 border-b border-slate-800/60">
-                        <span><i class="fa-solid fa-calendar-check text-purple-400 mr-1"></i>${p.equipmentName} (${p.frequency})</span>
-                        <span class="font-mono text-slate-400 text-[10px]">${p.nextDueDate}</span>
-                    </div>
-                `).join('');
+            completedJobs = completedJobs.filter(j => j.id !== jobId);
+            saveToCloudAndLocal();
+            refreshUI();
+            showToast(`Deleted record ${jobId} and archived in Deleted History Log`, 'info');
+        }
 
-                let otSummaryHtml = '';
-                if (leadOt.length > 0 || supportOt.length > 0) {
-                    otSummaryHtml = `
-                        <div class="pt-2 border-t border-slate-800 text-[11px] text-amber-300">
-                            <i class="fa-solid fa-calendar-week mr-1"></i>
-                            <strong>Weekend OT:</strong> ${leadOt.length} Lead | ${supportOt.length} Helper
-                        </div>
-                    `;
+        function confirmClearHistoryLogs() {
+            if (completedJobs.length === 0) return;
+
+            const nowFormatted = `${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (${new Date().toLocaleDateString()})`;
+            completedJobs.forEach(job => {
+                deletedLogs.unshift({
+                    deletedLogId: `DEL-${Math.floor(1000 + Math.random() * 9000)}`,
+                    itemType: 'Completed Log',
+                    originalItem: job,
+                    deletedAtFormatted: nowFormatted,
+                    deletedAtIso: new Date().toISOString()
+                });
+            });
+
+            completedJobs = [];
+            saveToCloudAndLocal();
+            closeClearHistoryModal();
+            refreshUI();
+            showToast('All completed history logs moved to Deleted History Log.', 'success');
+        }
+
+        function renderDeletedLogs() {
+            const tbody = document.getElementById('deleted-logs-tbody');
+            const searchVal = (document.getElementById('search-deleted-logs')?.value || '').toLowerCase();
+            const typeVal = document.getElementById('filter-deleted-type')?.value || 'ALL';
+
+            if (!tbody) return;
+
+            const filtered = deletedLogs.filter(d => {
+                const orig = d.originalItem || {};
+                const matchSearch = d.deletedLogId.toLowerCase().includes(searchVal) ||
+                                    (orig.id || '').toLowerCase().includes(searchVal) ||
+                                    (orig.equipmentName || '').toLowerCase().includes(searchVal) ||
+                                    (orig.technician || orig.assignedTo || orig.leadTech || '').toLowerCase().includes(searchVal) ||
+                                    (orig.resolution || orig.description || orig.jobScope || '').toLowerCase().includes(searchVal);
+                const matchType = typeVal === 'ALL' || d.itemType === typeVal;
+                return matchSearch && matchType;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-500 font-medium"><i class="fa-solid fa-trash-can-slash text-2xl mb-2 text-slate-600 block"></i>No deleted items in history log.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(d => {
+                const orig = d.originalItem || {};
+                let typeBadge = 'bg-slate-800 text-slate-300 border-slate-700';
+                if (d.itemType === 'Completed Log') typeBadge = 'bg-emerald-950/80 text-emerald-300 border-emerald-800';
+                else if (d.itemType === 'Active Work Order') typeBadge = 'bg-blue-950/80 text-blue-300 border-blue-800';
+                else if (d.itemType === 'Weekend OT Job') typeBadge = 'bg-amber-950/80 text-amber-300 border-amber-800';
+                else if (d.itemType === 'PM Schedule') typeBadge = 'bg-purple-950/80 text-purple-300 border-purple-800';
+
+                const techName = orig.technician || orig.assignedTo || orig.leadTech || 'Unassigned';
+                const scopeText = orig.resolution || orig.description || orig.jobScope || orig.taskDescription || '-';
+
+                return `
+                    <tr class="hover:bg-slate-800/30 transition">
+                        <td class="py-3 px-4">
+                            <div class="font-bold text-rose-400 font-mono text-xs">${d.deletedLogId}</div>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border mt-0.5 ${typeBadge}">${d.itemType}</span>
+                        </td>
+                        <td class="py-3 px-4">
+                            <div class="font-bold text-white font-mono text-xs text-blue-400">${orig.id || '-'}</div>
+                            <div class="text-slate-200 font-semibold">${orig.equipmentName || '-'}</div>
+                        </td>
+                        <td class="py-3 px-4 text-slate-300"><i class="fa-solid fa-user-gear text-blue-400 mr-1.5"></i>${techName}</td>
+                        <td class="py-3 px-4 max-w-xs text-slate-300 truncate" title="${scopeText}">${scopeText}</td>
+                        <td class="py-3 px-4 font-mono text-slate-400 text-[11px]">${d.deletedAtFormatted}</td>
+                        <td class="py-3 px-4 text-right space-x-2 whitespace-nowrap">
+                            <button onclick="restoreDeletedRecord('${d.deletedLogId}')" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded text-[11px] transition shadow" title="Restore back to active application">
+                                <i class="fa-solid fa-rotate-left mr-1"></i> Restore
+                            </button>
+                            <button onclick="purgeDeletedRecord('${d.deletedLogId}')" class="p-1 text-slate-400 hover:text-rose-400 transition" title="Delete Permanently">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function resetDeletedLogFilters() {
+            const search = document.getElementById('search-deleted-logs');
+            const typeSelect = document.getElementById('filter-deleted-type');
+            if (search) search.value = '';
+            if (typeSelect) typeSelect.value = 'ALL';
+            renderDeletedLogs();
+        }
+
+        function restoreDeletedRecord(deletedLogId) {
+            const entryIndex = deletedLogs.findIndex(d => d.deletedLogId === deletedLogId);
+            if (entryIndex === -1) return;
+
+            const entry = deletedLogs[entryIndex];
+            const orig = entry.originalItem;
+
+            if (entry.itemType === 'Completed Log') {
+                completedJobs.unshift(orig);
+            } else if (entry.itemType === 'Active Work Order') {
+                activeJobs.unshift(orig);
+            } else if (entry.itemType === 'Weekend OT Job') {
+                weekendOtJobs.unshift(orig);
+            } else if (entry.itemType === 'PM Schedule') {
+                pmSchedules.unshift(orig);
+            }
+
+            deletedLogs.splice(entryIndex, 1);
+            saveToCloudAndLocal();
+            refreshUI();
+            showToast(`Restored ${orig.id || entry.deletedLogId} back to system!`, 'success');
+        }
+
+        function purgeDeletedRecord(deletedLogId) {
+            deletedLogs = deletedLogs.filter(d => d.deletedLogId !== deletedLogId);
+            saveToCloudAndLocal();
+            refreshUI();
+            showToast('Record permanently purged from deleted log.', 'info');
+        }
+
+        function confirmPurgeAllDeletedLogs() {
+            deletedLogs = [];
+            saveToCloudAndLocal();
+            closePurgeDeletedLogsModal();
+            refreshUI();
+            showToast('All items in Deleted History Log permanently purged.', 'success');
+        }
+
+        function renderPMSchedules() {
+            const tbody = document.getElementById('pm-schedules-tbody');
+            if (!tbody) return;
+
+            if (pmSchedules.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-500">No preventive maintenance tasks scheduled.</td></tr>`;
+                return;
+            }
+
+            const todayStr = new Date().toISOString().slice(0, 10);
+
+            tbody.innerHTML = pmSchedules.map(pm => {
+                const isOverdue = pm.nextDueDate < todayStr;
+                return `
+                    <tr class="hover:bg-slate-800/30 transition">
+                        <td class="py-3 px-4">
+                            <div class="font-bold text-purple-400 font-mono text-xs">${pm.id}</div>
+                            <div class="text-slate-200 font-semibold">${pm.equipmentName}</div>
+                        </td>
+                        <td class="py-3 px-4 font-medium text-slate-300">${pm.frequency}</td>
+                        <td class="py-3 px-4 max-w-xs text-slate-300 truncate" title="${pm.taskDescription}">${pm.taskDescription}</td>
+                        <td class="py-3 px-4 text-slate-300"><i class="fa-solid fa-user-gear text-blue-400 mr-1"></i>${pm.assignedTech}</td>
+                        <td class="py-3 px-4 font-mono ${isOverdue ? 'text-rose-400 font-bold' : 'text-slate-300'}">${pm.nextDueDate}</td>
+                        <td class="py-3 px-4">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isOverdue ? 'bg-rose-950 text-rose-300 border border-rose-800' : 'bg-slate-800 text-slate-300'}">
+                                ${isOverdue ? 'OVERDUE' : 'UPCOMING'}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 text-right space-x-2">
+                            <button onclick="executePMNow('${pm.id}')" class="px-2.5 py-1 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded text-[11px] transition shadow">
+                                <i class="fa-solid fa-bolt mr-1"></i> Dispatch Order
+                            </button>
+                            <button onclick="deletePMSchedule('${pm.id}')" class="text-slate-400 hover:text-rose-400 transition" title="Delete Schedule">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function executePMNow(pmId) {
+            const pm = pmSchedules.find(p => p.id === pmId);
+            if (!pm) return;
+
+            const newJob = {
+                id: `JOB-${Math.floor(1000 + Math.random() * 9000)}`,
+                equipmentId: pm.equipmentId,
+                equipmentName: pm.equipmentName,
+                category: 'Routine',
+                priority: 'Low',
+                assignedTo: pm.assignedTech,
+                status: 'In Progress',
+                startTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                createdIso: new Date().toISOString(),
+                description: `Routine PM: ${pm.taskDescription}`
+            };
+
+            const equip = equipmentList.find(e => e.id === pm.equipmentId);
+            if (equip && equip.id !== 'EQ-000') equip.status = 'Maintenance';
+
+            activeJobs.unshift(newJob);
+            pm.lastCompleted = new Date().toISOString().slice(0, 10);
+            
+            saveToCloudAndLocal();
+            switchTab('active');
+            refreshUI();
+            showToast(`Dispatched PM Work Order ${newJob.id}`, 'success');
+        }
+
+        function deletePMSchedule(pmId) {
+            const pm = pmSchedules.find(p => p.id === pmId);
+            if (!pm) return;
+
+            deletedLogs.unshift({
+                deletedLogId: `DEL-${Math.floor(1000 + Math.random() * 9000)}`,
+                itemType: 'PM Schedule',
+                originalItem: pm,
+                deletedAtFormatted: `${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (${new Date().toLocaleDateString()})`,
+                deletedAtIso: new Date().toISOString()
+            });
+
+            pmSchedules = pmSchedules.filter(p => p.id !== pmId);
+            saveToCloudAndLocal();
+            refreshUI();
+            showToast('PM Schedule moved to Deleted History Log.', 'info');
+        }
+
+        function renderEquipmentGrid() {
+            const grid = document.getElementById('equipment-grid');
+            const zoneFilter = document.getElementById('filter-equipment-zone')?.value || 'ALL';
+            if (!grid) return;
+
+            const filtered = zoneFilter === 'ALL' ? equipmentList : equipmentList.filter(e => e.zone === zoneFilter);
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-10 text-slate-500">No machinery found in this section.</div>`;
+                return;
+            }
+
+            grid.innerHTML = filtered.map(eq => {
+                let statusBadge = 'bg-emerald-950/80 text-emerald-400 border-emerald-800/80';
+                let borderBar = 'border-l-emerald-500';
+                if (eq.status === 'Fault') {
+                    statusBadge = 'bg-rose-950/80 text-rose-400 border-rose-800/80 pulse-red';
+                    borderBar = 'border-l-rose-500';
+                } else if (eq.status === 'Maintenance') {
+                    statusBadge = 'bg-amber-950/80 text-amber-400 border-amber-800/80';
+                    borderBar = 'border-l-amber-500';
                 }
 
                 return `
-                    <div class="glass-card p-4 rounded-xl border border-slate-800 flex flex-col justify-between space-y-3">
+                    <div class="glass-card p-4 rounded-xl border-l-4 ${borderBar} flex flex-col justify-between space-y-3">
                         <div>
-                            <div class="flex items-center justify-between pb-2 border-b border-slate-800 mb-3">
-                                <div class="flex items-center space-x-2">
-                                    <div class="w-8 h-8 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center font-bold text-xs border border-blue-500/30">
-                                        <i class="fa-solid fa-user-gear"></i>
-                                    </div>
-                                    <div>
-                                        <h3 class="font-bold text-white text-xs">${tech}</h3>
-                                        <span class="text-[10px] ${isOccupied ? 'text-amber-400 font-semibold' : 'text-emerald-400 font-semibold'}">
-                                            <i class="fa-solid fa-circle text-[8px] mr-1"></i>${isOccupied ? `${assignedActive.length} Active Job(s)` : 'Available'}
-                                        </span>
-                                    </div>
-                                </div>
-                                <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700">
-                                    ${resolvedCount} Resolved
-                                </span>
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="font-mono text-[11px] text-blue-400 font-bold">${eq.id}</span>
+                                <span class="px-2 py-0.5 text-[10px] rounded-full font-semibold border ${statusBadge}">${eq.status}</span>
                             </div>
-
-                            <div class="space-y-2">
-                                <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Active Assignments</div>
-                                <div class="space-y-1.5 max-h-36 overflow-y-auto pr-1">
-                                    ${activeListHtml}
-                                </div>
-                            </div>
-
-                            ${assignedPM.length > 0 ? `
-                                <div class="mt-3">
-                                    <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1">Scheduled PM Tasks</div>
-                                    ${pmListHtml}
-                                </div>
-                            ` : ''}
-
-                            ${otSummaryHtml}
+                            <h4 class="font-bold text-white text-xs">${eq.name}</h4>
+                            <p class="text-[11px] text-slate-400"><i class="fa-solid fa-location-dot mr-1"></i>${eq.zone}</p>
                         </div>
-
-                        <div class="pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-semibold">
-                            <button onclick="filterActiveJobsByTech('${escapedTech}')" class="text-blue-400 hover:text-blue-300 flex items-center space-x-1">
-                                <span>View Active Jobs</span>
-                                <i class="fa-solid fa-arrow-right text-[10px]"></i>
-                            </button>
-                            <button onclick="quickDispatchForTech('${escapedTech}')" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-[11px] shadow transition flex items-center space-x-1">
-                                <i class="fa-solid fa-plus text-[9px]"></i>
-                                <span>Assign Job</span>
+                        <div class="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px]">
+                            <span class="text-slate-500">Last Service: ${eq.lastService}</span>
+                            <button onclick="openQuickDispatch('${eq.id}')" class="text-blue-400 hover:text-blue-300 font-semibold flex items-center">
+                                Dispatch <i class="fa-solid fa-plus ml-1 text-[10px]"></i>
                             </button>
                         </div>
                     </div>
@@ -2412,17 +2685,208 @@ const firebaseConfig = {
             }).join('');
         }
 
-        function filterActiveJobsByTech(techName) {
-            switchTab('active');
-            const techFilter = document.getElementById('filter-active-tech');
-            if (techFilter) techFilter.value = techName;
-            renderActiveJobs();
+        function openQuickDispatch(equipId) {
+            const searchInput = document.getElementById('new-job-equipment-search');
+            if (searchInput) searchInput.value = '';
+            populateEquipmentDropdowns();
+            const select = document.getElementById('new-job-equipment');
+            if (select) select.value = equipId;
+            toggleNewJobModal();
         }
 
-        function quickDispatchForTech(techName) {
-            const techSelect = document.getElementById('new-job-tech');
-            if (techSelect) techSelect.value = techName;
-            toggleNewJobModal();
+        function populateEquipmentDropdowns() {
+            const selects = [
+                document.getElementById('new-job-equipment'),
+                document.getElementById('pm-equipment'),
+                document.getElementById('weekend-ot-equipment')
+            ];
+
+            const zoneSelect = document.getElementById('filter-equipment-zone');
+            if (zoneSelect) {
+                const zones = Array.from(new Set(equipmentList.map(e => e.zone)));
+                zoneSelect.innerHTML = `<option value="ALL">All Sections / Zones</option>` + zones.map(z => `<option value="${z}">${z}</option>`).join('');
+            }
+
+            selects.forEach(select => {
+                if (!select) return;
+                select.innerHTML = equipmentList.map(e => `<option value="${e.id}">${e.name} (${e.zone}) [${e.id}]</option>`).join('');
+            });
+        }
+
+        function filterNewJobEquipment(searchTerm) {
+            const select = document.getElementById('new-job-equipment');
+            if (!select) return;
+            const term = (searchTerm || '').toLowerCase();
+            const filtered = equipmentList.filter(e => e.name.toLowerCase().includes(term) || e.id.toLowerCase().includes(term) || e.zone.toLowerCase().includes(term));
+            select.innerHTML = filtered.map(e => `<option value="${e.id}">${e.name} (${e.zone}) [${e.id}]</option>`).join('');
+        }
+
+        function populateTechnicianDropdowns() {
+            const selects = [
+                document.getElementById('new-job-tech'),
+                document.getElementById('pm-tech'),
+                document.getElementById('weekend-ot-lead-tech'),
+                document.getElementById('filter-active-tech'),
+                document.getElementById('filter-weekend-ot-tech')
+            ];
+
+            selects.forEach(select => {
+                if (!select) return;
+                const isFilter = select.id.startsWith('filter-');
+                const defaultOpt = isFilter ? `<option value="ALL">All Technicians</option>` : '';
+                select.innerHTML = defaultOpt + technicianList.filter(t => t !== 'Unassigned').map(t => `<option value="${t}">${t}</option>`).join('');
+            });
+        }
+
+        function renderSupportTechCheckboxes() {
+            const container = document.getElementById('weekend-ot-support-checkboxes');
+            if (!container) return;
+
+            container.innerHTML = technicianList
+                .filter(t => t !== 'Unassigned')
+                .map(t => `
+                    <label class="flex items-center space-x-2 text-slate-300 cursor-pointer hover:text-white">
+                        <input type="checkbox" name="ot-support-tech" value="${t}" class="rounded bg-factory-800 border-slate-700 text-amber-500 focus:ring-amber-500">
+                        <span class="truncate">${t}</span>
+                    </label>
+                `).join('');
+        }
+
+        function updateAllMachineViews() {
+            populateEquipmentDropdowns();
+            populateTechnicianDropdowns();
+            renderEquipmentGrid();
+        }
+
+        function renderTechnicianWorkload() {
+            const grid = document.getElementById('tech-workload-grid');
+            const searchVal = (document.getElementById('search-tech-workload')?.value || '').toLowerCase();
+            const filterStatus = document.getElementById('filter-tech-workload-status')?.value || 'ALL';
+
+            if (!grid) return;
+
+            const techs = technicianList.filter(t => t !== 'Unassigned');
+
+            const techData = techs.map(t => {
+                const assignedActive = activeJobs.filter(j => j.assignedTo === t);
+                const assignedPM = pmSchedules.filter(p => p.assignedTech === t);
+                const assignedOT = weekendOtJobs.filter(o => o.leadTech === t || (o.supportTechs || []).includes(t));
+                return { tech: t, active: assignedActive, pm: assignedPM, ot: assignedOT };
+            });
+
+            const filtered = techData.filter(item => {
+                const matchSearch = item.tech.toLowerCase().includes(searchVal);
+                const hasJobs = (item.active.length + item.pm.length + item.ot.length) > 0;
+                if (filterStatus === 'ASSIGNED_ONLY') return matchSearch && hasJobs;
+                if (filterStatus === 'FREE_ONLY') return matchSearch && !hasJobs;
+                return matchSearch;
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-10 text-slate-500">No technicians found for this filter.</div>`;
+                return;
+            }
+
+            grid.innerHTML = filtered.map(item => {
+                const totalAllocations = item.active.length + item.pm.length + item.ot.length;
+                const isBusy = totalAllocations > 0;
+
+                return `
+                    <div class="glass-card p-4 rounded-xl border border-slate-800 space-y-3">
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+                            <div class="flex items-center space-x-2">
+                                <div class="p-2 ${isBusy ? 'bg-blue-600/20 text-blue-400' : 'bg-slate-800 text-slate-500'} rounded-lg">
+                                    <i class="fa-solid fa-user-gear text-sm"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-white text-xs">${item.tech}</h4>
+                                    <span class="text-[10px] ${isBusy ? 'text-blue-400 font-semibold' : 'text-slate-500'}">${totalAllocations} active task allocations</span>
+                                </div>
+                            </div>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isBusy ? 'bg-blue-950 text-blue-300 border border-blue-800' : 'bg-emerald-950 text-emerald-300 border border-emerald-800'}">
+                                ${isBusy ? 'BUSY' : 'AVAILABLE'}
+                            </span>
+                        </div>
+
+                        <div class="space-y-1.5 text-[11px]">
+                            <div class="flex justify-between text-slate-400">
+                                <span>Active Work Orders:</span>
+                                <span class="font-bold text-slate-200">${item.active.length}</span>
+                            </div>
+                            <div class="flex justify-between text-slate-400">
+                                <span>PM Routines:</span>
+                                <span class="font-bold text-slate-200">${item.pm.length}</span>
+                            </div>
+                            <div class="flex justify-between text-slate-400">
+                                <span>Weekend OT Plans:</span>
+                                <span class="font-bold text-slate-200">${item.ot.length}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderAnalyticsTables() {
+            const techTbody = document.getElementById('tech-analytics-tbody');
+            const machineTbody = document.getElementById('machine-analytics-tbody');
+
+            if (techTbody) {
+                const techMap = {};
+                technicianList.forEach(t => { if (t !== 'Unassigned') techMap[t] = { count: 0, downtime: 0, cost: 0 }; });
+
+                completedJobs.forEach(j => {
+                    if (j.technician && techMap[j.technician]) {
+                        techMap[j.technician].count++;
+                        techMap[j.technician].downtime += (j.downtimeMins || 0);
+                        techMap[j.technician].cost += (j.costRs || 0);
+                    }
+                });
+
+                const sortedTechs = Object.keys(techMap).sort((a, b) => techMap[b].count - techMap[a].count);
+
+                techTbody.innerHTML = sortedTechs.map(t => {
+                    const stats = techMap[t];
+                    const mttr = stats.count > 0 ? Math.round(stats.downtime / stats.count) : 0;
+                    return `
+                        <tr class="hover:bg-slate-800/30 transition">
+                            <td class="py-2.5 px-3 font-semibold text-white">${t}</td>
+                            <td class="py-2.5 px-3 text-center font-bold text-blue-400">${stats.count}</td>
+                            <td class="py-2.5 px-3 text-right font-mono text-amber-400">${formatElapsed(stats.downtime)}</td>
+                            <td class="py-2.5 px-3 text-right font-mono text-emerald-400">Rs. ${stats.cost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                            <td class="py-2.5 px-3 text-right font-mono text-emerald-400">${mttr}m</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            if (machineTbody) {
+                const machineMap = {};
+                equipmentList.forEach(eq => machineMap[eq.name] = { zone: eq.zone, count: 0, downtime: 0, cost: 0 });
+
+                completedJobs.forEach(j => {
+                    if (machineMap[j.equipmentName]) {
+                        machineMap[j.equipmentName].count++;
+                        machineMap[j.equipmentName].downtime += (j.downtimeMins || 0);
+                        machineMap[j.equipmentName].cost += (j.costRs || 0);
+                    }
+                });
+
+                const sortedMachines = Object.keys(machineMap).sort((a, b) => machineMap[b].downtime - machineMap[a].downtime);
+
+                machineTbody.innerHTML = sortedMachines.map(m => {
+                    const stats = machineMap[m];
+                    return `
+                        <tr class="hover:bg-slate-800/30 transition">
+                            <td class="py-2.5 px-3 font-semibold text-white">${m}</td>
+                            <td class="py-2.5 px-3 text-slate-400">${stats.zone}</td>
+                            <td class="py-2.5 px-3 text-center font-bold text-rose-400">${stats.count}</td>
+                            <td class="py-2.5 px-3 text-right font-mono text-amber-400">${formatElapsed(stats.downtime)}</td>
+                            <td class="py-2.5 px-3 text-right font-mono text-emerald-400">Rs. ${stats.cost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
         }
 
         function updateKPICards() {
@@ -2430,6 +2894,7 @@ const firebaseConfig = {
             const tabActiveEl = document.getElementById('tab-active-badge');
             const completedEl = document.getElementById('kpi-completed-count');
             const tabCompletedEl = document.getElementById('tab-completed-badge');
+            const tabDeletedEl = document.getElementById('tab-deleted-history-badge');
             const criticalEl = document.getElementById('kpi-critical-count');
             const downtimeEl = document.getElementById('kpi-downtime');
             
@@ -2446,6 +2911,7 @@ const firebaseConfig = {
             if (tabActiveEl) tabActiveEl.innerText = activeJobs.length;
             if (completedEl) completedEl.innerText = completedJobs.length;
             if (tabCompletedEl) tabCompletedEl.innerText = completedJobs.length;
+            if (tabDeletedEl) tabDeletedEl.innerText = deletedLogs.length;
 
             if (pmEl) pmEl.innerText = pmSchedules.length;
             if (tabPmEl) tabPmEl.innerText = pmSchedules.length;
@@ -2465,13 +2931,201 @@ const firebaseConfig = {
             if (criticalEl) criticalEl.innerText = criticals;
 
             const totalDowntimeMins = completedJobs.reduce((acc, curr) => acc + (curr.downtimeMins || 0), 0);
-            const hrs = Math.floor(totalDowntimeMins / 60);
-            const mins = totalDowntimeMins % 60;
-            if (downtimeEl) downtimeEl.innerText = `${hrs}h ${mins}m`;
+            if (downtimeEl) downtimeEl.innerText = formatElapsed(totalDowntimeMins);
 
             const totalCostRs = completedJobs.reduce((acc, curr) => acc + (curr.costRs || 0), 0);
             const kpiTotalCostEl = document.getElementById('kpi-total-cost');
             if (kpiTotalCostEl) kpiTotalCostEl.innerText = `Rs. ${totalCostRs.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        }
+
+        function initCharts() {
+            if (typeof Chart === 'undefined') return;
+
+            const canvas1 = document.getElementById('chart-tech-performance');
+            if (canvas1) {
+                if (techPerformanceChartInstance) techPerformanceChartInstance.destroy();
+                const ctx1 = canvas1.getContext('2d');
+                techPerformanceChartInstance = new Chart(ctx1, {
+                    type: 'bar',
+                    data: getTechChartData(),
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                            y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                        },
+                        plugins: { legend: { position: 'top', labels: { color: '#94a3b8', font: { size: 11 } } } }
+                    }
+                });
+            }
+
+            const canvas2 = document.getElementById('chart-machine-downtime');
+            if (canvas2) {
+                if (machineDowntimeChartInstance) machineDowntimeChartInstance.destroy();
+                const ctx2 = canvas2.getContext('2d');
+                machineDowntimeChartInstance = new Chart(ctx2, {
+                    type: 'bar',
+                    data: getMachineChartData(),
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                            y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                        },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            }
+        }
+
+        function getTechChartData() {
+            const techMap = {};
+            technicianList.slice(0, 8).forEach(t => { if(t !== 'Unassigned') techMap[t] = 0; });
+            completedJobs.forEach(j => {
+                if (j.technician && techMap[j.technician] !== undefined) {
+                    techMap[j.technician] += (j.downtimeMins || 0);
+                }
+            });
+
+            return {
+                labels: Object.keys(techMap).map(name => name.split(' ')[0]),
+                datasets: [{
+                    label: 'Downtime Resolved (Minutes)',
+                    data: Object.values(techMap),
+                    backgroundColor: '#3b82f6',
+                    borderRadius: 6
+                }]
+            };
+        }
+
+        function getMachineChartData() {
+            const machineMap = {};
+            equipmentList.slice(0, 6).forEach(eq => machineMap[eq.name] = 0);
+            completedJobs.forEach(j => {
+                if (machineMap[j.equipmentName] !== undefined) {
+                    machineMap[j.equipmentName] += Math.round((j.downtimeMins || 0) / 60 * 10) / 10;
+                }
+            });
+
+            return {
+                labels: Object.keys(machineMap),
+                datasets: [{
+                    label: 'Downtime (Hours)',
+                    data: Object.values(machineMap),
+                    backgroundColor: '#f59e0b',
+                    borderRadius: 6
+                }]
+            };
+        }
+
+        function updateCharts() {
+            if (techPerformanceChartInstance) {
+                techPerformanceChartInstance.data = getTechChartData();
+                techPerformanceChartInstance.update();
+            }
+            if (machineDowntimeChartInstance) {
+                machineDowntimeChartInstance.data = getMachineChartData();
+                machineDowntimeChartInstance.update();
+            }
+        }
+
+        function handleCreateJob(event) {
+            event.preventDefault();
+            const equipId = document.getElementById('new-job-equipment').value;
+            const category = document.getElementById('new-job-category').value;
+            const priority = document.getElementById('new-job-priority').value;
+            const tech = document.getElementById('new-job-tech').value;
+            const desc = document.getElementById('new-job-desc').value;
+
+            const equip = equipmentList.find(e => e.id === equipId);
+            if (!equip) return;
+
+            const newJob = {
+                id: `JOB-${Math.floor(1000 + Math.random() * 9000)}`,
+                equipmentId: equip.id,
+                equipmentName: equip.name,
+                category: category,
+                priority: priority,
+                assignedTo: tech,
+                status: 'In Progress',
+                startTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                createdIso: new Date().toISOString(),
+                description: desc
+            };
+
+            if (category === 'Breakdown' && equip.id !== 'EQ-000') {
+                if (priority === 'Critical' || priority === 'High') {
+                    equip.status = 'Fault';
+                } else {
+                    equip.status = 'Maintenance';
+                }
+            }
+
+            activeJobs.unshift(newJob);
+            saveToCloudAndLocal();
+            
+            document.getElementById('form-new-job').reset();
+            toggleNewJobModal();
+            
+            refreshUI();
+            showToast(`Dispatched ${newJob.id} (${category}) for ${tech}`, 'success');
+        }
+
+        function openCompleteModal(jobId) {
+            const job = activeJobs.find(j => j.id === jobId);
+            if (!job) return;
+
+            selectedJobForCompletion = job;
+            const liveMins = calculateLiveElapsedMins(job.createdIso);
+
+            document.getElementById('complete-job-id-display').innerText = `${job.id} - ${job.equipmentName}`;
+            document.getElementById('complete-downtime').value = liveMins;
+            document.getElementById('complete-cost').value = '0';
+            document.getElementById('complete-resolution').value = '';
+
+            toggleCompleteJobModal();
+        }
+
+        function handleCompleteJob(event) {
+            event.preventDefault();
+            if (!selectedJobForCompletion) return;
+
+            const downtimeVal = document.getElementById('complete-downtime').value;
+            const costVal = parseFloat(document.getElementById('complete-cost').value) || 0;
+            const resolutionText = document.getElementById('complete-resolution').value;
+
+            activeJobs = activeJobs.filter(j => j.id !== selectedJobForCompletion.id);
+
+            const completedRecord = {
+                id: selectedJobForCompletion.id,
+                equipmentId: selectedJobForCompletion.equipmentId,
+                equipmentName: selectedJobForCompletion.equipmentName,
+                category: selectedJobForCompletion.category || 'Breakdown',
+                technician: selectedJobForCompletion.assignedTo,
+                completedTime: `${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (${new Date().toLocaleDateString()})`,
+                downtimeMins: parseInt(downtimeVal) || 0,
+                costRs: costVal,
+                resolution: resolutionText,
+                priority: selectedJobForCompletion.priority
+            };
+
+            completedJobs.unshift(completedRecord);
+
+            const otherActiveOnEquip = activeJobs.some(j => j.equipmentId === selectedJobForCompletion.equipmentId && j.category === 'Breakdown');
+            if (!otherActiveOnEquip && selectedJobForCompletion.equipmentId !== 'EQ-000') {
+                const equip = equipmentList.find(e => e.id === selectedJobForCompletion.equipmentId);
+                if (equip) equip.status = 'Operational';
+            }
+
+            saveToCloudAndLocal();
+            toggleCompleteJobModal();
+
+            refreshUI();
+            showToast(`Resolved ${selectedJobForCompletion.id} (Cost: Rs. ${costVal.toLocaleString()})!`, 'success');
+            selectedJobForCompletion = null;
         }
 
         function updateWeekendOtEstimatedHours(shiftVal) {
@@ -2581,13 +3235,6 @@ const firebaseConfig = {
             showToast(`Converted OT Job ${ot.id} to Active Work Order ${newJob.id}`, 'info');
         }
 
-        function deleteWeekendOtJob(otId) {
-            weekendOtJobs = weekendOtJobs.filter(o => o.id !== otId);
-            saveToCloudAndLocal();
-            refreshUI();
-            showToast('Weekend OT Job deleted.', 'info');
-        }
-
         function setUpcomingWeekendFilter() {
             const nextSat = getNextSaturdayDate();
             const dateInput = document.getElementById('filter-weekend-ot-date');
@@ -2611,180 +3258,6 @@ const firebaseConfig = {
                 saveToCloudAndLocal();
                 renderActiveJobs();
             }
-        }
-
-        function handleCreateJob(event) {
-            event.preventDefault();
-            const equipId = document.getElementById('new-job-equipment').value;
-            const category = document.getElementById('new-job-category').value;
-            const priority = document.getElementById('new-job-priority').value;
-            const tech = document.getElementById('new-job-tech').value;
-            const desc = document.getElementById('new-job-desc').value;
-
-            const equip = equipmentList.find(e => e.id === equipId);
-            if (!equip) return;
-
-            const newJob = {
-                id: `JOB-${Math.floor(1000 + Math.random() * 9000)}`,
-                equipmentId: equip.id,
-                equipmentName: equip.name,
-                category: category,
-                priority: priority,
-                assignedTo: tech,
-                status: 'In Progress',
-                startTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                createdIso: new Date().toISOString(),
-                description: desc
-            };
-
-            if (category === 'Breakdown' && equip.id !== 'EQ-000') {
-                if (priority === 'Critical' || priority === 'High') {
-                    equip.status = 'Fault';
-                } else {
-                    equip.status = 'Maintenance';
-                }
-            }
-
-            activeJobs.unshift(newJob);
-            saveToCloudAndLocal();
-            
-            document.getElementById('form-new-job').reset();
-            toggleNewJobModal();
-            
-            refreshUI();
-            showToast(`Dispatched ${newJob.id} (${category}) for ${tech}`, 'success');
-        }
-
-        function openCompleteModal(jobId) {
-            const job = activeJobs.find(j => j.id === jobId);
-            if (!job) return;
-
-            selectedJobForCompletion = job;
-            const liveMins = calculateLiveElapsedMins(job.createdIso);
-
-            document.getElementById('complete-job-id-display').innerText = `${job.id} - ${job.equipmentName}`;
-            document.getElementById('complete-downtime').value = liveMins;
-            document.getElementById('complete-cost').value = '0';
-            document.getElementById('complete-resolution').value = '';
-
-            toggleCompleteJobModal();
-        }
-
-        function handleCompleteJob(event) {
-            event.preventDefault();
-            if (!selectedJobForCompletion) return;
-
-            const downtimeVal = document.getElementById('complete-downtime').value;
-            const costVal = parseFloat(document.getElementById('complete-cost').value) || 0;
-            const resolutionText = document.getElementById('complete-resolution').value;
-
-            activeJobs = activeJobs.filter(j => j.id !== selectedJobForCompletion.id);
-
-            const completedRecord = {
-                id: selectedJobForCompletion.id,
-                equipmentId: selectedJobForCompletion.equipmentId,
-                equipmentName: selectedJobForCompletion.equipmentName,
-                category: selectedJobForCompletion.category || 'Breakdown',
-                technician: selectedJobForCompletion.assignedTo,
-                completedTime: `${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (${new Date().toLocaleDateString()})`,
-                downtimeMins: parseInt(downtimeVal) || 0,
-                costRs: costVal,
-                resolution: resolutionText,
-                priority: selectedJobForCompletion.priority
-            };
-
-            completedJobs.unshift(completedRecord);
-
-            const otherActiveOnEquip = activeJobs.some(j => j.equipmentId === selectedJobForCompletion.equipmentId && j.category === 'Breakdown');
-            if (!otherActiveOnEquip && selectedJobForCompletion.equipmentId !== 'EQ-000') {
-                const equip = equipmentList.find(e => e.id === selectedJobForCompletion.equipmentId);
-                if (equip) equip.status = 'Operational';
-            }
-
-            saveToCloudAndLocal();
-            toggleCompleteJobModal();
-
-            refreshUI();
-            showToast(`Resolved ${selectedJobForCompletion.id} (Cost: Rs. ${costVal.toLocaleString()})!`, 'success');
-            selectedJobForCompletion = null;
-        }
-
-        function deleteActiveJob(jobId) {
-            const job = activeJobs.find(j => j.id === jobId);
-            if (!job) return;
-
-            activeJobs = activeJobs.filter(j => j.id !== jobId);
-            
-            const otherActiveOnEquip = activeJobs.some(j => j.equipmentId === job.equipmentId);
-            if (!otherActiveOnEquip) {
-                const equip = equipmentList.find(e => e.id === job.equipmentId);
-                if (equip) equip.status = 'Operational';
-            }
-
-            saveToCloudAndLocal();
-            refreshUI();
-            showToast(`Cancelled work order ${jobId}`, 'info');
-        }
-
-        function filterCompletedJobs() {
-            renderCompletedJobs();
-        }
-
-        function renderCompletedJobs() {
-            const tbody = document.getElementById('completed-jobs-tbody');
-            const searchVal = (document.getElementById('search-completed')?.value || '').toLowerCase();
-            if (!tbody) return;
-
-            const filtered = completedJobs.filter(j => 
-                j.id.toLowerCase().includes(searchVal) ||
-                j.equipmentName.toLowerCase().includes(searchVal) ||
-                j.technician.toLowerCase().includes(searchVal) ||
-                j.resolution.toLowerCase().includes(searchVal)
-            );
-
-            if (filtered.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="7" class="text-center py-8 text-slate-500 font-medium">
-                            No completed maintenance records found.
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            tbody.innerHTML = filtered.map(j => `
-                <tr class="hover:bg-slate-800/30 transition">
-                    <td class="py-3 px-4">
-                        <div class="font-bold text-emerald-400 font-mono text-xs">${j.id}</div>
-                        <div class="text-slate-200 font-semibold">${j.equipmentName}</div>
-                    </td>
-                    <td class="py-3 px-4 text-slate-300">
-                        <i class="fa-solid fa-user-gear text-blue-400 mr-1.5"></i>${j.technician}
-                    </td>
-                    <td class="py-3 px-4 text-slate-400 text-[11px] font-mono">
-                        ${j.completedTime}
-                    </td>
-                    <td class="py-3 px-4">
-                        <span class="font-mono text-amber-400 font-bold bg-amber-950/40 border border-amber-800/40 px-2 py-0.5 rounded text-[11px]">
-                            ${formatElapsed(j.downtimeMins)}
-                        </span>
-                    </td>
-                    <td class="py-3 px-4">
-                        <span class="font-mono text-emerald-400 font-bold bg-emerald-950/40 border border-emerald-800/40 px-2 py-0.5 rounded text-[11px]">
-                            Rs. ${(j.costRs || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                        </span>
-                    </td>
-                    <td class="py-3 px-4 max-w-sm text-slate-300 truncate" title="${j.resolution}">
-                        ${j.resolution}
-                    </td>
-                    <td class="py-3 px-4 text-right">
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-800">
-                            RESOLVED
-                        </span>
-                    </td>
-                </tr>
-            `).join('');
         }
 
         function handleCreatePM(event) {
@@ -2817,292 +3290,6 @@ const firebaseConfig = {
 
             refreshUI();
             showToast(`Scheduled PM task for ${equip.name}`, 'success');
-        }
-
-        function renderPMSchedules() {
-            const tbody = document.getElementById('pm-schedules-tbody');
-            if (!tbody) return;
-
-            if (pmSchedules.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-500">No preventive maintenance tasks scheduled.</td></tr>`;
-                return;
-            }
-
-            const todayStr = new Date().toISOString().slice(0, 10);
-
-            tbody.innerHTML = pmSchedules.map(pm => {
-                const isOverdue = pm.nextDueDate < todayStr;
-                return `
-                    <tr class="hover:bg-slate-800/30 transition">
-                        <td class="py-3 px-4">
-                            <div class="font-bold text-purple-400 font-mono text-xs">${pm.id}</div>
-                            <div class="text-slate-200 font-semibold">${pm.equipmentName}</div>
-                        </td>
-                        <td class="py-3 px-4 font-medium text-slate-300">${pm.frequency}</td>
-                        <td class="py-3 px-4 max-w-xs text-slate-300 truncate" title="${pm.taskDescription}">${pm.taskDescription}</td>
-                        <td class="py-3 px-4 text-slate-300"><i class="fa-solid fa-user-gear text-blue-400 mr-1"></i>${pm.assignedTech}</td>
-                        <td class="py-3 px-4 font-mono ${isOverdue ? 'text-rose-400 font-bold' : 'text-slate-300'}">${pm.nextDueDate}</td>
-                        <td class="py-3 px-4">
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isOverdue ? 'bg-rose-950 text-rose-300 border border-rose-800' : 'bg-slate-800 text-slate-300'}">
-                                ${isOverdue ? 'OVERDUE' : 'UPCOMING'}
-                            </span>
-                        </td>
-                        <td class="py-3 px-4 text-right space-x-2">
-                            <button onclick="executePMNow('${pm.id}')" class="px-2.5 py-1 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded text-[11px] transition shadow">
-                                <i class="fa-solid fa-bolt mr-1"></i> Dispatch Order
-                            </button>
-                            <button onclick="deletePMSchedule('${pm.id}')" class="text-slate-400 hover:text-rose-400 transition" title="Delete Schedule">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-        }
-
-        function executePMNow(pmId) {
-            const pm = pmSchedules.find(p => p.id === pmId);
-            if (!pm) return;
-
-            const newJob = {
-                id: `JOB-${Math.floor(1000 + Math.random() * 9000)}`,
-                equipmentId: pm.equipmentId,
-                equipmentName: pm.equipmentName,
-                category: 'Routine',
-                priority: 'Low',
-                assignedTo: pm.assignedTech,
-                status: 'In Progress',
-                startTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                createdIso: new Date().toISOString(),
-                description: `Routine PM: ${pm.taskDescription}`
-            };
-
-            const equip = equipmentList.find(e => e.id === pm.equipmentId);
-            if (equip && equip.id !== 'EQ-000') equip.status = 'Maintenance';
-
-            activeJobs.unshift(newJob);
-            pm.lastCompleted = new Date().toISOString().slice(0, 10);
-            
-            saveToCloudAndLocal();
-            switchTab('active');
-            refreshUI();
-            showToast(`Dispatched PM Work Order ${newJob.id}`, 'success');
-        }
-
-        function deletePMSchedule(pmId) {
-            pmSchedules = pmSchedules.filter(p => p.id !== pmId);
-            saveToCloudAndLocal();
-            refreshUI();
-            showToast('PM Schedule deleted.', 'info');
-        }
-
-        function renderEquipmentGrid() {
-            const grid = document.getElementById('equipment-grid');
-            const zoneFilter = document.getElementById('filter-equipment-zone')?.value || 'ALL';
-            if (!grid) return;
-
-            const filtered = zoneFilter === 'ALL' ? equipmentList : equipmentList.filter(e => e.zone === zoneFilter);
-
-            if (filtered.length === 0) {
-                grid.innerHTML = `<div class="col-span-full text-center py-10 text-slate-500">No machinery found in this section.</div>`;
-                return;
-            }
-
-            grid.innerHTML = filtered.map(eq => {
-                let statusBadge = 'bg-emerald-950/80 text-emerald-400 border-emerald-800/80';
-                let borderBar = 'border-l-emerald-500';
-                if (eq.status === 'Fault') {
-                    statusBadge = 'bg-rose-950/80 text-rose-400 border-rose-800/80 pulse-red';
-                    borderBar = 'border-l-rose-500';
-                } else if (eq.status === 'Maintenance') {
-                    statusBadge = 'bg-amber-950/80 text-amber-400 border-amber-800/80';
-                    borderBar = 'border-l-amber-500';
-                }
-
-                return `
-                    <div class="glass-card p-4 rounded-xl border-l-4 ${borderBar} flex flex-col justify-between space-y-3">
-                        <div>
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="font-mono text-[11px] text-blue-400 font-bold">${eq.id}</span>
-                                <span class="px-2 py-0.5 text-[10px] rounded-full font-semibold border ${statusBadge}">${eq.status}</span>
-                            </div>
-                            <h4 class="font-bold text-white text-xs">${eq.name}</h4>
-                            <p class="text-[11px] text-slate-400"><i class="fa-solid fa-location-dot mr-1"></i>${eq.zone}</p>
-                        </div>
-                        <div class="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px]">
-                            <span class="text-slate-500">Last Service: ${eq.lastService}</span>
-                            <button onclick="openQuickDispatch('${eq.id}')" class="text-blue-400 hover:text-blue-300 font-semibold flex items-center">
-                                Dispatch <i class="fa-solid fa-plus ml-1 text-[10px]"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function openQuickDispatch(equipId) {
-            const searchInput = document.getElementById('new-job-equipment-search');
-            if (searchInput) searchInput.value = '';
-            populateEquipmentDropdowns();
-            const select = document.getElementById('new-job-equipment');
-            if (select) select.value = equipId;
-            toggleNewJobModal();
-        }
-
-        function renderAnalyticsTables() {
-            const techTbody = document.getElementById('tech-analytics-tbody');
-            const machineTbody = document.getElementById('machine-analytics-tbody');
-
-            if (techTbody) {
-                const techMap = {};
-                technicianList.forEach(t => { if (t !== 'Unassigned') techMap[t] = { count: 0, downtime: 0, cost: 0 }; });
-
-                completedJobs.forEach(j => {
-                    if (j.technician && techMap[j.technician]) {
-                        techMap[j.technician].count++;
-                        techMap[j.technician].downtime += (j.downtimeMins || 0);
-                        techMap[j.technician].cost += (j.costRs || 0);
-                    }
-                });
-
-                const sortedTechs = Object.keys(techMap).sort((a, b) => techMap[b].count - techMap[a].count);
-
-                techTbody.innerHTML = sortedTechs.map(t => {
-                    const stats = techMap[t];
-                    const mttr = stats.count > 0 ? Math.round(stats.downtime / stats.count) : 0;
-                    return `
-                        <tr class="hover:bg-slate-800/30 transition">
-                            <td class="py-2.5 px-3 font-semibold text-white">${t}</td>
-                            <td class="py-2.5 px-3 text-center font-bold text-blue-400">${stats.count}</td>
-                            <td class="py-2.5 px-3 text-right font-mono text-amber-400">${formatElapsed(stats.downtime)}</td>
-                            <td class="py-2.5 px-3 text-right font-mono text-emerald-400">Rs. ${stats.cost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                            <td class="py-2.5 px-3 text-right font-mono text-emerald-400">${mttr}m</td>
-                        </tr>
-                    `;
-                }).join('');
-            }
-
-            if (machineTbody) {
-                const machineMap = {};
-                equipmentList.forEach(eq => machineMap[eq.name] = { zone: eq.zone, count: 0, downtime: 0, cost: 0 });
-
-                completedJobs.forEach(j => {
-                    if (machineMap[j.equipmentName]) {
-                        machineMap[j.equipmentName].count++;
-                        machineMap[j.equipmentName].downtime += (j.downtimeMins || 0);
-                        machineMap[j.equipmentName].cost += (j.costRs || 0);
-                    }
-                });
-
-                const sortedMachines = Object.keys(machineMap).sort((a, b) => machineMap[b].downtime - machineMap[a].downtime);
-
-                machineTbody.innerHTML = sortedMachines.map(m => {
-                    const stats = machineMap[m];
-                    return `
-                        <tr class="hover:bg-slate-800/30 transition">
-                            <td class="py-2.5 px-3 font-semibold text-white">${m}</td>
-                            <td class="py-2.5 px-3 text-slate-400">${stats.zone}</td>
-                            <td class="py-2.5 px-3 text-center font-bold text-rose-400">${stats.count}</td>
-                            <td class="py-2.5 px-3 text-right font-mono text-amber-400">${formatElapsed(stats.downtime)}</td>
-                            <td class="py-2.5 px-3 text-right font-mono text-emerald-400">Rs. ${stats.cost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                        </tr>
-                    `;
-                }).join('');
-            }
-        }
-
-        function initCharts() {
-            if (typeof Chart === 'undefined') return;
-
-            const canvas1 = document.getElementById('chart-tech-performance');
-            if (canvas1) {
-                if (techPerformanceChartInstance) techPerformanceChartInstance.destroy();
-                const ctx1 = canvas1.getContext('2d');
-                techPerformanceChartInstance = new Chart(ctx1, {
-                    type: 'bar',
-                    data: getTechChartData(),
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                            y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
-                        },
-                        plugins: { legend: { position: 'top', labels: { color: '#94a3b8', font: { size: 11 } } } }
-                    }
-                });
-            }
-
-            const canvas2 = document.getElementById('chart-machine-downtime');
-            if (canvas2) {
-                if (machineDowntimeChartInstance) machineDowntimeChartInstance.destroy();
-                const ctx2 = canvas2.getContext('2d');
-                machineDowntimeChartInstance = new Chart(ctx2, {
-                    type: 'bar',
-                    data: getMachineChartData(),
-                    options: {
-                        indexAxis: 'y',
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                            y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
-                        },
-                        plugins: { legend: { display: false } }
-                    }
-                });
-            }
-        }
-
-        function getTechChartData() {
-            const techMap = {};
-            technicianList.slice(0, 8).forEach(t => { if(t !== 'Unassigned') techMap[t] = 0; });
-            completedJobs.forEach(j => {
-                if (j.technician && techMap[j.technician] !== undefined) {
-                    techMap[j.technician] += (j.downtimeMins || 0);
-                }
-            });
-
-            return {
-                labels: Object.keys(techMap).map(name => name.split(' ')[0]),
-                datasets: [{
-                    label: 'Downtime Resolved (Minutes)',
-                    data: Object.values(techMap),
-                    backgroundColor: '#3b82f6',
-                    borderRadius: 6
-                }]
-            };
-        }
-
-        function getMachineChartData() {
-            const machineMap = {};
-            equipmentList.slice(0, 6).forEach(eq => machineMap[eq.name] = 0);
-            completedJobs.forEach(j => {
-                if (machineMap[j.equipmentName] !== undefined) {
-                    machineMap[j.equipmentName] += Math.round((j.downtimeMins || 0) / 60 * 10) / 10;
-                }
-            });
-
-            return {
-                labels: Object.keys(machineMap),
-                datasets: [{
-                    label: 'Downtime (Hours)',
-                    data: Object.values(machineMap),
-                    backgroundColor: '#f59e0b',
-                    borderRadius: 6
-                }]
-            };
-        }
-
-        function updateCharts() {
-            if (techPerformanceChartInstance) {
-                techPerformanceChartInstance.data = getTechChartData();
-                techPerformanceChartInstance.update();
-            }
-            if (machineDowntimeChartInstance) {
-                machineDowntimeChartInstance.data = getMachineChartData();
-                machineDowntimeChartInstance.update();
-            }
         }
 
         function triggerDownloadCSV(filename, csvContent) {
@@ -3157,6 +3344,22 @@ const firebaseConfig = {
             showToast("Exported completed log to CSV!", "success");
         }
 
+        function exportDeletedLogsCSV() {
+            if (deletedLogs.length === 0) {
+                showToast("No deleted history logs to export.", "info");
+                return;
+            }
+            let csv = "Deleted Log ID,Item Type,Original ID,Equipment Name,Technician/Assigned,Deleted Timestamp,Scope/Details\n";
+            deletedLogs.forEach(d => {
+                const orig = d.originalItem || {};
+                const tech = orig.technician || orig.assignedTo || orig.leadTech || 'Unassigned';
+                const scope = orig.resolution || orig.description || orig.jobScope || orig.taskDescription || '';
+                csv += `"${d.deletedLogId}","${d.itemType}","${orig.id || ''}","${orig.equipmentName || ''}","${tech}","${d.deletedAtFormatted}","${scope.replace(/"/g, '""')}"\n`;
+            });
+            triggerDownloadCSV(`deleted_history_log_${new Date().toISOString().slice(0,10)}.csv`, csv);
+            showToast("Exported Deleted History Log to CSV!", "success");
+        }
+
         function exportEquipmentCSV() {
             if (equipmentList.length === 0) {
                 showToast("No machinery roster to export.", "info");
@@ -3179,7 +3382,8 @@ const firebaseConfig = {
                 activeJobs: activeJobs,
                 completedJobs: completedJobs,
                 pmSchedules: pmSchedules,
-                weekendOtJobs: weekendOtJobs
+                weekendOtJobs: weekendOtJobs,
+                deletedLogs: deletedLogs
             };
             const jsonStr = JSON.stringify(data, null, 2);
             const blob = new Blob([jsonStr], { type: 'application/json' });
@@ -3207,6 +3411,7 @@ const firebaseConfig = {
                     if (parsed.completedJobs) completedJobs = parsed.completedJobs;
                     if (parsed.pmSchedules) pmSchedules = parsed.pmSchedules;
                     if (parsed.weekendOtJobs) weekendOtJobs = parsed.weekendOtJobs;
+                    if (parsed.deletedLogs) deletedLogs = parsed.deletedLogs;
 
                     saveToCloudAndLocal();
                     refreshUI();
@@ -3343,7 +3548,7 @@ const firebaseConfig = {
         function removeMachine(id) {
             equipmentList = equipmentList.filter(e => e.id !== id);
             saveToCloudAndLocal();
-            updateAllMachineViews();
+            refreshUI();
             showToast("Machine removed from roster.", "info");
         }
 
@@ -3400,7 +3605,7 @@ const firebaseConfig = {
         function removeTechnician(techName) {
             technicianList = technicianList.filter(t => t !== techName);
             saveToCloudAndLocal();
-            updateAllMachineViews();
+            refreshUI();
             showToast(`Removed ${techName} from roster.`, "info");
         }
 
@@ -3441,7 +3646,7 @@ const firebaseConfig = {
         document.addEventListener('DOMContentLoaded', function() {
             loadFromLocalStorage();
             updateLiveClock();
-            setInterval(updateLiveClock, 30000);
+            setInterval(updateLiveClock, 1000);
             
             refreshUI();
             initCharts();
