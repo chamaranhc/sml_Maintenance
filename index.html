@@ -101,8 +101,19 @@
                         <p class="text-[11px] text-slate-400 font-medium">Smart Maintenance Operating System</p>
                     </div>
                 </div>
+
                 <div class="flex md:hidden items-center space-x-2">
-                    <button onclick="toggleNewJobModal()" class="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg transition">
+                    <!-- Mobile Database Quick Sync Icon -->
+                    <button onclick="toggleFirebaseModal()" class="p-2 text-xs bg-factory-900 border border-slate-700 text-blue-400 hover:text-blue-300 rounded-lg flex items-center justify-center transition" title="Database Sync Settings">
+                        <i class="fa-solid fa-database text-sm"></i>
+                    </button>
+                    <!-- Mobile Menu Tools Trigger -->
+                    <button onclick="toggleMobileActionsMenu()" class="px-2.5 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-bars text-sm text-blue-400"></i>
+                        <span class="font-semibold text-[11px]">Tools</span>
+                    </button>
+                    <!-- Mobile New Work Order Button -->
+                    <button onclick="toggleNewJobModal()" class="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg transition flex items-center shadow-md">
                         <i class="fa-solid fa-plus mr-1"></i> New Job
                     </button>
                 </div>
@@ -131,10 +142,6 @@
                 <button onclick="toggleFirebaseModal()" class="px-3 py-2 text-xs bg-slate-800 hover:bg-slate-700 text-blue-300 font-medium rounded-lg border border-slate-700 transition flex items-center space-x-2" title="Manage Database Connectivity & Sync Settings">
                     <i class="fa-solid fa-database text-blue-400"></i>
                     <span>Database Sync</span>
-                </button>
-                <button onclick="triggerSimulatedAlert()" class="px-3 py-2 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium rounded-lg border border-slate-700 transition flex items-center space-x-2">
-                    <i class="fa-solid fa-bolt text-amber-400"></i>
-                    <span>Simulate Incident</span>
                 </button>
                 <button onclick="toggleManageMachinesModal()" class="px-3 py-2 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium rounded-lg border border-slate-700 transition flex items-center space-x-2">
                     <i class="fa-solid fa-sliders text-blue-400"></i>
@@ -244,7 +251,7 @@
         </section>
 
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-3">
-            <div class="flex flex-wrap gap-1 sm:gap-2 bg-factory-800 p-1 rounded-xl border border-slate-800 self-start sm:self-auto">
+            <div class="flex overflow-x-auto whitespace-nowrap scrollbar-none gap-1 sm:gap-2 bg-factory-800 p-1 rounded-xl border border-slate-800 max-w-full pb-1 sm:pb-1">
                 <button onclick="switchTab('active')" id="tab-btn-active" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white transition flex items-center space-x-2">
                     <i class="fa-solid fa-spinner"></i>
                     <span>Active Jobs (<span id="tab-active-badge">0</span>)</span>
@@ -1202,24 +1209,100 @@ const firebaseConfig = {
         </div>
     </div>
 
-    <!-- MODAL 9: Clear Data Confirmation (Requires Password admin123) -->
+    <!-- MODAL 9: Clear Data Confirmation -->
     <div id="modal-clear-confirm" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="glass-card w-full max-w-sm rounded-2xl border border-rose-900/80 shadow-2xl p-6 relative text-center">
-            <div class="w-12 h-12 bg-rose-500/20 text-rose-400 rounded-2xl flex items-center justify-center mx-auto mb-3 border border-rose-500/30">
-                <i class="fa-solid fa-lock text-xl"></i>
-            </div>
-            <h3 class="text-base font-bold text-white">Clear All Dashboard Data?</h3>
-            <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">This action will permanently delete all work orders, logs, weekend OT schedules, and PM schedules. Enter admin password to proceed.</p>
+        <div class="glass-card w-full max-w-md rounded-2xl border border-rose-500/40 shadow-2xl p-6 relative">
+            <button onclick="closeClearDataConfirmationModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-base">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
             
-            <div class="mt-4 text-left">
-                <label class="block text-slate-300 font-semibold text-xs mb-1">Admin Password</label>
-                <input type="password" id="clear-data-password" placeholder="Enter password (default: admin123)" onkeydown="if(event.key === 'Enter') confirmClearAllData()" class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-rose-500">
-                <p id="clear-password-error" class="text-rose-400 text-[11px] mt-1.5 hidden"><i class="fa-solid fa-circle-exclamation mr-1"></i> Incorrect password. Access denied.</p>
+            <div class="flex items-center space-x-3 mb-5">
+                <div class="p-3 bg-rose-600/20 text-rose-400 rounded-xl border border-rose-500/30">
+                    <i class="fa-solid fa-triangle-exclamation text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white">Confirm System Data Reset</h3>
+                    <p class="text-xs text-slate-400">Clear active work orders, completed logs, and OT schedules</p>
+                </div>
             </div>
 
-            <div class="flex items-center justify-center space-x-3 mt-5">
-                <button onclick="closeClearDataConfirmationModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-lg transition">Cancel</button>
-                <button onclick="confirmClearAllData()" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs rounded-lg shadow-lg shadow-rose-600/30 transition">Verify & Clear Data</button>
+            <div class="space-y-4 text-xs">
+                <p class="text-slate-300 leading-relaxed">
+                    This action will clear all active work orders, completed logs, PM schedules, and weekend OT plans. Machinery and technician rosters will be preserved.
+                </p>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Enter Admin Password to Authorize</label>
+                    <input type="password" id="clear-data-password" onkeyup="if(event.key === 'Enter') confirmClearAllData()" placeholder="Enter admin password..." class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-rose-500 font-mono">
+                    <p id="clear-password-error" class="text-rose-400 text-[11px] mt-1.5 hidden font-semibold">
+                        <i class="fa-solid fa-circle-xmark mr-1"></i> Incorrect password. Please try again.
+                    </p>
+                </div>
+
+                <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-800">
+                    <button type="button" onclick="closeClearDataConfirmationModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-lg transition">Cancel</button>
+                    <button type="button" onclick="confirmClearAllData()" class="px-5 py-2 bg-rose-600 hover:bg-rose-500 text-white font-semibold rounded-lg shadow-lg shadow-rose-600/30 transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-trash-can"></i>
+                        <span>Confirm Clear Data</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MOBILE ACTIONS MENU DRAWER FOR MOBILE PHONES -->
+    <div id="mobile-actions-menu" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="glass-card w-full max-w-md rounded-t-2xl sm:rounded-2xl border border-slate-700 shadow-2xl p-5 relative space-y-3">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div class="flex items-center space-x-2.5">
+                    <div class="p-2 bg-blue-600/20 text-blue-400 rounded-xl border border-blue-500/30">
+                        <i class="fa-solid fa-sliders text-sm"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-white">System Actions & Tools</h3>
+                        <p class="text-[11px] text-slate-400">Mobile System Management Menu</p>
+                    </div>
+                </div>
+                <button onclick="toggleMobileActionsMenu()" class="text-slate-400 hover:text-white p-1 text-base">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2.5 pt-1 text-xs">
+                <!-- Database Sync -->
+                <button onclick="toggleMobileActionsMenu(); toggleFirebaseModal();" class="p-3 bg-slate-800/90 hover:bg-slate-700 text-slate-200 rounded-xl border border-slate-700 flex flex-col items-center justify-center text-center space-y-1.5 transition">
+                    <i class="fa-solid fa-database text-lg text-blue-400"></i>
+                    <span class="font-semibold text-xs">Database Sync</span>
+                    <span class="text-[10px] text-slate-400">Cloud & Local DB</span>
+                </button>
+
+                <!-- Manage Roster & Machines -->
+                <button onclick="toggleMobileActionsMenu(); toggleManageMachinesModal();" class="p-3 bg-slate-800/90 hover:bg-slate-700 text-slate-200 rounded-xl border border-slate-700 flex flex-col items-center justify-center text-center space-y-1.5 transition">
+                    <i class="fa-solid fa-sliders text-lg text-blue-400"></i>
+                    <span class="font-semibold text-xs">Manage Roster</span>
+                    <span class="text-[10px] text-slate-400">Machines & Techs</span>
+                </button>
+
+                <!-- Backup & Restore -->
+                <button onclick="toggleMobileActionsMenu(); toggleBackupModal();" class="p-3 bg-slate-800/90 hover:bg-slate-700 text-slate-200 rounded-xl border border-slate-700 flex flex-col items-center justify-center text-center space-y-1.5 transition">
+                    <i class="fa-solid fa-file-export text-lg text-purple-400"></i>
+                    <span class="font-semibold text-xs">Backup & Restore</span>
+                    <span class="text-[10px] text-slate-400">JSON Data Export</span>
+                </button>
+
+                <!-- Clear Data -->
+                <button onclick="toggleMobileActionsMenu(); openClearDataConfirmationModal();" class="p-3 bg-slate-800/90 hover:bg-rose-950/40 text-slate-200 rounded-xl border border-slate-700 hover:border-rose-800 flex flex-col items-center justify-center text-center space-y-1.5 transition">
+                    <i class="fa-solid fa-trash-can text-lg text-rose-400"></i>
+                    <span class="font-semibold text-xs text-rose-300">Clear System Data</span>
+                    <span class="text-[10px] text-slate-400">Protected by Admin Password</span>
+                </button>
+            </div>
+
+            <div class="pt-2">
+                <button onclick="toggleMobileActionsMenu(); toggleNewJobModal();" class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-xs flex items-center justify-center space-x-2 shadow-lg shadow-blue-600/30 transition">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Create New Work Order</span>
+                </button>
             </div>
         </div>
     </div>
@@ -1229,7 +1312,7 @@ const firebaseConfig = {
 
     <script>
         const STORAGE_KEY = 'sml_maintenance_dashboard_data_v4';
-        const ADMIN_CLEAR_PASSWORD = 'admin123';
+        const ADMIN_CLEAR_PASSWORD = 'Chama123';
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'sml-global-plant';
 
         // Embedded default Firebase config fallback (Optional)
@@ -1829,6 +1912,7 @@ const firebaseConfig = {
             }
         }
         function toggleCompleteJobModal() { document.getElementById('modal-complete-job')?.classList.toggle('hidden'); }
+        function toggleMobileActionsMenu() { document.getElementById('mobile-actions-menu')?.classList.toggle('hidden'); }
         function toggleNewPMModal() { document.getElementById('modal-new-pm')?.classList.toggle('hidden'); }
         function toggleNewWeekendOtModal() { document.getElementById('modal-new-weekend-ot')?.classList.toggle('hidden'); }
         function toggleReviewWeekendOtModal() { document.getElementById('modal-review-weekend-ot')?.classList.toggle('hidden'); }
@@ -3019,41 +3103,6 @@ const firebaseConfig = {
                 machineDowntimeChartInstance.data = getMachineChartData();
                 machineDowntimeChartInstance.update();
             }
-        }
-
-        function triggerSimulatedAlert() {
-            if (equipmentList.length === 0) {
-                showToast('No equipment configured to trigger incident.', 'danger');
-                return;
-            }
-            const randomEquip = equipmentList[Math.floor(Math.random() * equipmentList.length)];
-            const issues = [
-                'Hydraulic seal blowout detected',
-                'Spindle thermal overheating high limit',
-                'Emergency E-Stop triggered on line',
-                'PLC Communication timeout error'
-            ];
-            const issue = issues[Math.floor(Math.random() * issues.length)];
-            const newId = `JOB-${Math.floor(3000 + Math.random() * 9000)}`;
-            
-            activeJobs.unshift({
-                id: newId,
-                equipmentId: randomEquip.id,
-                equipmentName: randomEquip.name,
-                category: 'Breakdown',
-                priority: 'Critical',
-                assignedTo: 'Unassigned',
-                status: 'Assigned',
-                startTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                createdIso: new Date().toISOString(),
-                description: issue
-            });
-
-            if (randomEquip.id !== 'EQ-000') randomEquip.status = 'Fault';
-
-            saveToCloudAndLocal();
-            showToast(`EMERGENCY: ${issue} on ${randomEquip.name}!`, 'danger');
-            refreshUI();
         }
 
         function triggerDownloadCSV(filename, csvContent) {
