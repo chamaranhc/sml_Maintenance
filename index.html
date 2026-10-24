@@ -2225,9 +2225,18 @@
                             </span>
                         </td>
                         <td class="py-3 px-4">
-                            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${job.status === 'Pending Verification' ? 'bg-amber-950 text-amber-300 border border-amber-800' : 'bg-slate-800 text-slate-200'}">
-                                ${job.status}
-                            </span>
+                            ${(currentSessionUser && currentSessionUser.role !== 'PRODUCTION') ? `
+                                <select onchange="updateActiveJobStatus('${job.id}', this.value)" class="bg-factory-900 border border-slate-700 rounded px-2 py-1 text-[11px] font-bold ${job.status === 'Pending Verification' ? 'text-amber-300 border-amber-800' : job.status === 'In Progress' ? 'text-blue-300 border-blue-800' : job.status === 'Pending Parts' ? 'text-purple-300 border-purple-800' : 'text-slate-200'} focus:outline-none focus:border-blue-500">
+                                    <option value="Assigned" ${job.status === 'Assigned' || job.status === 'Unassigned' ? 'selected' : ''}>Assigned</option>
+                                    <option value="In Progress" ${job.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                                    <option value="Pending Parts" ${job.status === 'Pending Parts' ? 'selected' : ''}>Pending Parts</option>
+                                    <option value="Pending Verification" ${job.status === 'Pending Verification' ? 'selected' : ''}>Pending Verification</option>
+                                </select>
+                            ` : `
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold ${job.status === 'Pending Verification' ? 'bg-amber-950 text-amber-300 border border-amber-800' : 'bg-slate-800 text-slate-200'}">
+                                    ${job.status}
+                                </span>
+                            `}
                         </td>
                         <td class="py-3 px-4">
                             <select onchange="updateActiveJobTech('${job.id}', this.value)" class="bg-factory-900 border border-slate-700 rounded px-2 py-1 text-[11px] text-slate-200 focus:outline-none focus:border-blue-500 max-w-[160px] truncate" ${currentSessionUser && currentSessionUser.role === 'PRODUCTION' ? 'disabled' : ''}>
@@ -2277,6 +2286,8 @@
                 if (j.priority === 'Critical') prioBadge = 'bg-rose-950/80 text-rose-300 border-rose-800/80 pulse-red';
                 else if (j.priority === 'High') prioBadge = 'bg-amber-950/80 text-amber-300 border-amber-800/80';
 
+                const techOptions = technicianList.map(t => `<option value="${t}" ${j.assignedTo === t ? 'selected' : ''}>${t}</option>`).join('');
+
                 let btnHtml = '';
                 if (j.status === 'Pending Verification') {
                     if (currentSessionUser && currentSessionUser.role === 'PRODUCTION') {
@@ -2288,6 +2299,8 @@
                     btnHtml = `<button onclick="openCompleteModal('${j.id}')" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-[10px] font-semibold transition">Resolve</button>`;
                 }
 
+                const isMaintOrAdmin = !currentSessionUser || currentSessionUser.role !== 'PRODUCTION';
+
                 return `
                     <div class="bg-factory-900/90 p-3 rounded-xl border border-slate-800 space-y-2 shadow-sm">
                         <div class="flex items-center justify-between">
@@ -2298,12 +2311,29 @@
                             <h4 class="font-bold text-white text-xs">${j.equipmentName}</h4>
                             <p class="text-[11px] text-slate-400 mt-0.5 line-clamp-2">${j.description}</p>
                         </div>
-                        <div class="flex items-center justify-between text-[11px] pt-1 border-t border-slate-800/60">
-                            <span class="text-slate-300"><i class="fa-solid fa-user-gear text-blue-400 mr-1"></i>${j.assignedTo}</span>
-                            <span class="font-mono text-amber-400 font-semibold"><i class="fa-solid fa-stopwatch mr-1"></i>${elapsedFormatted}</span>
+                        <div class="space-y-1.5 pt-1 border-t border-slate-800/60">
+                            <div class="flex items-center justify-between text-[11px]">
+                                <span class="text-slate-400 text-[10px]">Tech:</span>
+                                ${isMaintOrAdmin ? `
+                                    <select onchange="updateActiveJobTech('${j.id}', this.value)" class="bg-factory-800 border border-slate-700 rounded px-1.5 py-0.5 text-[10px] text-slate-200 focus:outline-none focus:border-blue-500 max-w-[140px] truncate">
+                                        ${techOptions}
+                                    </select>
+                                ` : `<span class="text-slate-300 font-semibold"><i class="fa-solid fa-user-gear text-blue-400 mr-1"></i>${j.assignedTo}</span>`}
+                            </div>
+                            <div class="flex items-center justify-between text-[11px]">
+                                <span class="text-slate-400 text-[10px]">Status:</span>
+                                ${isMaintOrAdmin ? `
+                                    <select onchange="updateActiveJobStatus('${j.id}', this.value)" class="bg-factory-800 border border-slate-700 rounded px-1.5 py-0.5 text-[10px] text-slate-200 focus:outline-none focus:border-blue-500">
+                                        <option value="Assigned" ${j.status === 'Assigned' || j.status === 'Unassigned' ? 'selected' : ''}>Assigned</option>
+                                        <option value="In Progress" ${j.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                                        <option value="Pending Parts" ${j.status === 'Pending Parts' ? 'selected' : ''}>Pending Parts</option>
+                                        <option value="Pending Verification" ${j.status === 'Pending Verification' ? 'selected' : ''}>Pending Verification</option>
+                                    </select>
+                                ` : `<span class="font-bold text-slate-300">${j.status}</span>`}
+                            </div>
                         </div>
-                        <div class="flex items-center justify-between pt-1">
-                            ${categoryBadge}
+                        <div class="flex items-center justify-between text-[11px] pt-1 border-t border-slate-800/60">
+                            <span class="font-mono text-amber-400 font-semibold"><i class="fa-solid fa-stopwatch mr-1"></i>${elapsedFormatted}</span>
                             ${btnHtml}
                         </div>
                     </div>
@@ -2317,6 +2347,42 @@
         }
 
         /* ================= WORK ORDER CREATION & VERIFICATION ================= */
+        function updateActiveJobTech(jobId, newTech) {
+            if (currentSessionUser && currentSessionUser.role === 'PRODUCTION') {
+                showToast("Only Maintenance or Management can reassign technicians.", "danger");
+                return;
+            }
+            const job = activeJobs.find(j => j.id === jobId);
+            if (!job) return;
+
+            job.assignedTo = newTech;
+            if (job.status === 'Unassigned' && newTech !== 'Unassigned') {
+                job.status = 'Assigned';
+            } else if (newTech === 'Unassigned') {
+                job.status = 'Unassigned';
+            }
+
+            saveToCloudAndLocal();
+            refreshUI();
+            showToast(`Updated technician for ${job.id} to ${newTech}`, 'success');
+        }
+
+        function updateActiveJobStatus(jobId, newStatus) {
+            if (currentSessionUser && currentSessionUser.role === 'PRODUCTION') {
+                showToast("Only Maintenance or Management can update job status.", "danger");
+                return;
+            }
+            const job = activeJobs.find(j => j.id === jobId);
+            if (!job) return;
+
+            const oldStatus = job.status;
+            job.status = newStatus;
+
+            saveToCloudAndLocal();
+            refreshUI();
+            showToast(`Status for ${job.id} updated to '${newStatus}'`, 'info');
+        }
+
         function handleCreateJob(event) {
             event.preventDefault();
             const equipId = document.getElementById('new-job-equipment').value;
