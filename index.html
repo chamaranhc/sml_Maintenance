@@ -2179,7 +2179,7 @@
             }
 
             tbody.innerHTML = filtered.map(job => {
-                const liveMins = calculateLiveElapsedMins(job.createdIso);
+                const liveMins = calculateLiveElapsedMins(job);
                 const elapsedFormatted = formatElapsed(liveMins);
                 const categoryBadge = getCategoryBadge(job.category || 'Breakdown');
                 const deptBadge = getDeptBadge(job.createdDept || 'Production');
@@ -2193,14 +2193,19 @@
 
                 let actionButtonHtml = '';
                 if (job.status === 'Pending Verification') {
-                    if (currentSessionUser && currentSessionUser.role === 'PRODUCTION') {
+                    if (!currentSessionUser || currentSessionUser.role === 'PRODUCTION' || currentSessionUser.role === 'MANAGEMENT') {
                         actionButtonHtml = `
-                            <button onclick="verifyJobCompletion('${job.id}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded text-[11px] transition shadow">
-                                <i class="fa-solid fa-check-double mr-1"></i> Verify & Close
-                            </button>
+                            <div class="flex items-center space-x-1.5 justify-end">
+                                <button onclick="verifyJobCompletion('${job.id}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded text-[11px] transition shadow flex items-center" title="Accept & Close Ticket">
+                                    <i class="fa-solid fa-check-double mr-1"></i> Verify & Close
+                                </button>
+                                <button onclick="rejectJobResolution('${job.id}')" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white font-semibold rounded text-[11px] transition shadow flex items-center" title="Reject fix & restart downtime timer">
+                                    <i class="fa-solid fa-rotate-left mr-1"></i> Not Resolved
+                                </button>
+                            </div>
                         `;
                     } else {
-                        actionButtonHtml = `<span class="text-[10px] text-amber-400 font-semibold">Awaiting Prod Verification</span>`;
+                        actionButtonHtml = `<span class="text-[10px] text-amber-400 font-semibold bg-amber-950/60 border border-amber-800 px-2 py-0.5 rounded"><i class="fa-solid fa-clock mr-1"></i>Awaiting Prod Verification</span>`;
                     }
                 } else {
                     actionButtonHtml = `
@@ -2209,6 +2214,19 @@
                         </button>
                     `;
                 }
+
+                const isStopped = job.status === 'Pending Verification';
+                const timerHtml = isStopped ? `
+                    <span class="inline-flex items-center space-x-1 font-mono text-purple-300 bg-purple-950/60 border border-purple-800/80 px-2 py-0.5 rounded text-[11px]" title="Timer stopped pending Production verification">
+                        <i class="fa-solid fa-pause text-[10px] text-purple-400"></i>
+                        <span>${elapsedFormatted} (Stopped)</span>
+                    </span>
+                ` : `
+                    <span class="inline-flex items-center space-x-1.5 font-mono text-amber-400 bg-amber-950/40 border border-amber-800/40 px-2 py-0.5 rounded text-[11px]">
+                        <i class="fa-solid fa-stopwatch text-[10px]"></i>
+                        <span>${elapsedFormatted}</span>
+                    </span>
+                `;
 
                 return `
                     <tr class="hover:bg-slate-800/30 transition">
@@ -2244,14 +2262,11 @@
                             </select>
                         </td>
                         <td class="py-3 px-4">
-                            <span class="inline-flex items-center space-x-1.5 font-mono text-amber-400 bg-amber-950/40 border border-amber-800/40 px-2 py-0.5 rounded text-[11px]">
-                                <i class="fa-solid fa-stopwatch text-[10px]"></i>
-                                <span>${elapsedFormatted}</span>
-                            </span>
+                            ${timerHtml}
                         </td>
                         <td class="py-3 px-4 text-right space-x-2">
                             ${actionButtonHtml}
-                            <button onclick="deleteActiveJob('${job.id}')" class="p-1 text-slate-400 hover:text-rose-400 transition" title="Cancel Ticket">
+                            <button onclick="deleteActiveJob('${job.id}')" class="p-1 text-slate-400 hover:text-rose-400 transition ml-1" title="Cancel Ticket">
                                 <i class="fa-solid fa-trash-can"></i>
                             </button>
                         </td>
@@ -2279,7 +2294,7 @@
             document.getElementById('kanban-count-pending-verify').innerText = pendingVerify.length;
 
             const renderCard = (j) => {
-                const liveMins = calculateLiveElapsedMins(j.createdIso);
+                const liveMins = calculateLiveElapsedMins(j);
                 const elapsedFormatted = formatElapsed(liveMins);
                 const categoryBadge = getCategoryBadge(j.category || 'Breakdown');
                 let prioBadge = 'bg-slate-800 text-slate-300 border-slate-700';
@@ -2290,8 +2305,13 @@
 
                 let btnHtml = '';
                 if (j.status === 'Pending Verification') {
-                    if (currentSessionUser && currentSessionUser.role === 'PRODUCTION') {
-                        btnHtml = `<button onclick="verifyJobCompletion('${j.id}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-semibold transition">Verify & Close</button>`;
+                    if (!currentSessionUser || currentSessionUser.role === 'PRODUCTION' || currentSessionUser.role === 'MANAGEMENT') {
+                        btnHtml = `
+                            <div class="flex items-center space-x-1">
+                                <button onclick="verifyJobCompletion('${j.id}')" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-semibold transition" title="Verify & Close">Verify</button>
+                                <button onclick="rejectJobResolution('${j.id}')" class="px-2 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded text-[10px] font-semibold transition" title="Not Resolved - Resume Timer">Not Resolved</button>
+                            </div>
+                        `;
                     } else {
                         btnHtml = `<span class="text-[10px] text-amber-400 font-semibold">Awaiting Prod</span>`;
                     }
@@ -2300,6 +2320,10 @@
                 }
 
                 const isMaintOrAdmin = !currentSessionUser || currentSessionUser.role !== 'PRODUCTION';
+                const isStopped = j.status === 'Pending Verification';
+                const timerDisplay = isStopped 
+                    ? `<span class="font-mono text-purple-300 font-semibold text-[10px]"><i class="fa-solid fa-pause mr-1 text-purple-400"></i>${elapsedFormatted} (Stopped)</span>`
+                    : `<span class="font-mono text-amber-400 font-semibold"><i class="fa-solid fa-stopwatch mr-1"></i>${elapsedFormatted}</span>`;
 
                 return `
                     <div class="bg-factory-900/90 p-3 rounded-xl border border-slate-800 space-y-2 shadow-sm">
@@ -2333,7 +2357,7 @@
                             </div>
                         </div>
                         <div class="flex items-center justify-between text-[11px] pt-1 border-t border-slate-800/60">
-                            <span class="font-mono text-amber-400 font-semibold"><i class="fa-solid fa-stopwatch mr-1"></i>${elapsedFormatted}</span>
+                            ${timerDisplay}
                             ${btnHtml}
                         </div>
                     </div>
@@ -2434,7 +2458,7 @@
             if (!job) return;
 
             selectedJobForCompletion = job;
-            const liveMins = calculateLiveElapsedMins(job.createdIso);
+            const liveMins = calculateLiveElapsedMins(job);
 
             document.getElementById('complete-job-id-display').innerText = `${job.id} - ${job.equipmentName}`;
             document.getElementById('complete-downtime').value = liveMins;
@@ -2442,6 +2466,109 @@
             document.getElementById('complete-resolution').value = '';
 
             toggleCompleteJobModal();
+        }
+
+        function handleCompleteJob(event) {
+            event.preventDefault();
+            if (!selectedJobForCompletion) return;
+
+            const downtimeVal = document.getElementById('complete-downtime').value;
+            const costVal = parseFloat(document.getElementById('complete-cost').value) || 0;
+            const resolutionText = document.getElementById('complete-resolution').value;
+
+            selectedJobForCompletion.status = 'Pending Verification';
+            selectedJobForCompletion.downtimeMins = parseInt(downtimeVal) || 0;
+            selectedJobForCompletion.costRs = costVal;
+            selectedJobForCompletion.resolution = resolutionText;
+            selectedJobForCompletion.resolvedIso = new Date().toISOString();
+            selectedJobForCompletion.completedIso = new Date().toISOString();
+
+            const equip = equipmentList.find(e => e.id === selectedJobForCompletion.equipmentId);
+            if (equip && selectedJobForCompletion.equipmentId !== 'EQ-000') {
+                equip.lastService = new Date().toISOString().slice(0, 10);
+            }
+
+            saveToCloudAndLocal();
+            toggleCompleteJobModal();
+
+            refreshUI();
+            showToast(`Work order ${selectedJobForCompletion.id} resolved by Maintenance. Downtime timer stopped pending Production verification.`, 'success');
+            selectedJobForCompletion = null;
+        }
+
+        function verifyJobCompletion(jobId) {
+            if (currentSessionUser && currentSessionUser.role !== 'PRODUCTION') {
+                showToast("Access Restricted: Only Production department can verify and close work orders.", "danger");
+                return;
+            }
+
+            const jobIndex = activeJobs.findIndex(j => j.id === jobId);
+            if (jobIndex === -1) return;
+
+            const job = activeJobs[jobIndex];
+            activeJobs.splice(jobIndex, 1);
+
+            const fixedDateStr = new Date().toISOString().slice(0, 10);
+            const finalDowntime = typeof job.downtimeMins === 'number' ? job.downtimeMins : calculateLiveElapsedMins(job);
+
+            const completedRecord = {
+                id: job.id,
+                equipmentId: job.equipmentId,
+                equipmentName: job.equipmentName,
+                createdDept: job.createdDept || 'Production',
+                category: job.category || 'Breakdown',
+                technician: job.assignedTo,
+                completedTime: `${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (${new Date().toLocaleDateString()})`,
+                downtimeMins: finalDowntime,
+                costRs: job.costRs || 0,
+                resolution: job.resolution || 'Completed and verified by Production.',
+                verifiedBy: currentSessionUser ? currentSessionUser.name : 'Production Supervisor',
+                createdIso: job.createdIso,
+                completedIso: job.completedIso || new Date().toISOString()
+            };
+
+            completedJobs.unshift(completedRecord);
+
+            const equip = equipmentList.find(e => e.id === job.equipmentId);
+            if (equip && job.equipmentId !== 'EQ-000') {
+                const otherActiveOnEquip = activeJobs.some(j => j.equipmentId === job.equipmentId && (j.category === 'Breakdown' || j.status !== 'Pending Verification'));
+                if (!otherActiveOnEquip) {
+                    equip.status = 'Operational';
+                }
+                equip.lastService = fixedDateStr;
+            }
+
+            saveToCloudAndLocal();
+            refreshUI();
+            showToast(`Verified & Closed Work Order ${job.id}! Machine last breakdown fixed date updated to ${fixedDateStr}.`, 'success');
+        }
+
+        function rejectJobResolution(jobId) {
+            if (currentSessionUser && currentSessionUser.role !== 'PRODUCTION') {
+                showToast("Access Restricted: Only Production department can reject job resolutions.", "danger");
+                return;
+            }
+
+            const job = activeJobs.find(j => j.id === jobId);
+            if (!job) return;
+
+            const now = Date.now();
+            const resolvedTime = job.resolvedIso ? new Date(job.resolvedIso).getTime() : now;
+            const timeInVerificationMs = Math.max(0, now - resolvedTime);
+
+            job.pausedMs = (job.pausedMs || 0) + timeInVerificationMs;
+            job.resolvedIso = null;
+            job.status = 'In Progress';
+            delete job.downtimeMins;
+
+            const equip = equipmentList.find(e => e.id === job.equipmentId);
+            if (equip && equip.id !== 'EQ-000') {
+                equip.status = (job.priority === 'Critical' || job.priority === 'High') ? 'Fault' : 'Maintenance';
+            }
+
+            saveToCloudAndLocal();
+            refreshUI();
+            showToast(`Work Order ${job.id} marked NOT RESOLVED by Production. Downtime timer restarted.`, 'info');
         }
 
         function handleCompleteJob(event) {
@@ -3548,12 +3675,32 @@
         }
 
         /* ================= UTILITY HELPERS ================= */
-        function calculateLiveElapsedMins(isoString) {
-            if (!isoString) return 0;
-            const start = new Date(isoString);
-            const end = new Date();
-            if (isNaN(start.getTime()) || end <= start) return 0;
-            return Math.max(0, Math.floor((end - start) / 60000));
+        function calculateLiveElapsedMins(jobOrIso) {
+            if (!jobOrIso) return 0;
+            if (typeof jobOrIso === 'string') {
+                const start = new Date(jobOrIso);
+                const end = new Date();
+                if (isNaN(start.getTime()) || end <= start) return 0;
+                return Math.max(0, Math.floor((end - start) / 60000));
+            }
+            const job = jobOrIso;
+            if (job.status === 'Pending Verification') {
+                if (typeof job.downtimeMins === 'number' && job.downtimeMins >= 0) {
+                    return job.downtimeMins;
+                }
+                if (job.resolvedIso && job.createdIso) {
+                    const start = new Date(job.createdIso).getTime();
+                    const res = new Date(job.resolvedIso).getTime();
+                    const paused = job.pausedMs || 0;
+                    return Math.max(0, Math.floor((res - start - paused) / 60000));
+                }
+            }
+            if (!job.createdIso) return job.downtimeMins || 0;
+            const start = new Date(job.createdIso).getTime();
+            const now = Date.now();
+            const paused = job.pausedMs || 0;
+            if (isNaN(start) || now <= start) return 0;
+            return Math.max(0, Math.floor((now - start - paused) / 60000));
         }
 
         function formatElapsed(mins) {
