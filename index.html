@@ -965,20 +965,26 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-slate-300 font-semibold mb-1">Priority Level</label>
-                        <select id="new-job-priority" required class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-blue-500">
-                            <option value="Low">Low - Normal Project</option>
-                            <option value="Medium" selected>Medium - Planned Task</option>
-                            <option value="High">High - High Output Impact</option>
-                            <option value="Critical">Critical - Machine Down</option>
-                        </select>
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Priority Level</label>
+                    <select id="new-job-priority" required class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="Low">Low - Normal Project</option>
+                        <option value="Medium" selected>Medium - Planned Task</option>
+                        <option value="High">High - High Output Impact</option>
+                        <option value="Critical">Critical - Machine Down</option>
+                    </select>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-slate-300 font-semibold">Assign Technician(s) <span id="tech-assign-permission-hint" class="text-[10px] text-amber-400 font-normal"></span></label>
+                        <div class="space-x-2 text-[10px]">
+                            <button type="button" onclick="selectAllNewJobTechs(true)" class="text-blue-400 hover:underline font-semibold">Select All</button>
+                            <button type="button" onclick="selectAllNewJobTechs(false)" class="text-slate-400 hover:underline">Clear</button>
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-slate-300 font-semibold mb-1">Assign Technician <span id="tech-assign-permission-hint" class="text-[10px] text-amber-400 font-normal"></span></label>
-                        <select id="new-job-tech" required class="w-full bg-factory-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-blue-500"></select>
-                    </div>
+                    <div id="new-job-tech-checkboxes" class="bg-factory-900 border border-slate-700 rounded-lg p-3 max-h-36 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]"></div>
+                    <p class="text-[10px] text-slate-500 mt-1">Select one or multiple technicians to dispatch for this work order.</p>
                 </div>
 
                 <div>
@@ -1276,7 +1282,7 @@
 
             <div id="import-view-paste" class="space-y-3 text-xs overflow-y-auto pr-1">
                 <p class="text-slate-300">Copy your columns from Excel and paste them into the text box below. Format: <code class="bg-slate-800 text-blue-300 px-1 py-0.5 rounded">Machine Name [Tab/Comma] Section [Tab/Comma] Machine ID</code></p>
-                <textarea id="excel-paste-input" rows="6" placeholder="Example Excel Copy Paste:&#10;CNC Milling Center A	Machining Bay	EQ-101&#10;500T Hydraulic Press	Stamping Dept	EQ-102&#10;Robotic Weld Cell 4	Assembly Line 1	EQ-103" class="w-full bg-factory-900 border border-slate-700 rounded-lg p-3 text-slate-200 font-mono text-xs focus:outline-none focus:border-blue-500"></textarea>
+                <textarea id="excel-paste-input" rows="6" placeholder="Example Excel Copy Paste:&#10;CNC Milling Center A&#09;Machining Bay&#09;EQ-101&#10;500T Hydraulic Press&#09;Stamping Dept&#09;EQ-102&#10;Robotic Weld Cell 4&#09;Assembly Line 1&#09;EQ-103" class="w-full bg-factory-900 border border-slate-700 rounded-lg p-3 text-slate-200 font-mono text-xs focus:outline-none focus:border-blue-500"></textarea>
                 
                 <div class="flex items-center justify-between">
                     <label class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 cursor-pointer font-medium">
@@ -1624,10 +1630,56 @@
         </div>
     </div>
 
+    <!-- MODAL 13: Multi-Technician Edit for Work Orders -->
+    <div id="modal-edit-job-techs" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-md rounded-2xl border border-blue-500/40 shadow-2xl p-6 relative">
+            <button onclick="toggleEditJobTechsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-base">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="p-3 bg-blue-600/20 text-blue-400 rounded-xl border border-blue-500/30">
+                    <i class="fa-solid fa-users-gear text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white">Assign Technicians</h3>
+                    <p id="edit-job-techs-subtitle" class="text-xs text-slate-400">Assign multiple technicians to work order</p>
+                </div>
+            </div>
+
+            <form id="form-edit-job-techs" onsubmit="handleSaveJobTechs(event)" class="space-y-4 text-xs">
+                <div class="flex items-center justify-between">
+                    <span class="text-slate-300 font-semibold">Assigned Technicians:</span>
+                    <div class="space-x-2 text-[10px]">
+                        <button type="button" onclick="selectAllEditJobTechs(true)" class="text-blue-400 hover:underline font-semibold">Select All</button>
+                        <button type="button" onclick="selectAllEditJobTechs(false)" class="text-slate-400 hover:underline">Clear</button>
+                    </div>
+                </div>
+
+                <div id="edit-job-tech-checkboxes" class="bg-factory-900 border border-slate-700 rounded-lg p-3 max-h-48 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]"></div>
+
+                <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-800">
+                    <button type="button" onclick="toggleEditJobTechsModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-lg transition">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg shadow-lg shadow-blue-600/30 transition">Save Assignments</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Toast Notification Container -->
     <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
     <script>
+        // String escaping helper for safe inline JS event parameters
+        function escapeJsStr(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/\\/g, '\\\\')
+                .replace(/'/g, "\\'")
+                .replace(/"/g, '&quot;')
+                .replace(/\n/g, '\\n');
+        }
+
         // Storage Helper Wrappers
         function getSafeStorage(key) {
             try { return localStorage.getItem(key); } catch (e) { return null; }
@@ -1761,6 +1813,7 @@
         let selectedJobForCompletion = null;
         let selectedWeekendOtForReview = null;
         let selectedMachineHistoryId = null;
+        let editingJobTechsId = null;
 
         let activeViewMode = 'table';
         let techPerformanceChartInstance = null;
@@ -1859,7 +1912,7 @@
         }
 
         function handleUserLogin(e) {
-            e.preventDefault();
+            if (e && e.preventDefault) e.preventDefault();
             const usernameInput = document.getElementById('login-username')?.value.trim().toLowerCase();
             const passwordInput = document.getElementById('login-password')?.value.trim();
             const errBox = document.getElementById('login-error-msg');
@@ -1926,7 +1979,6 @@
 
             const originBadge = document.getElementById('new-job-origin-dept-badge');
             const techHint = document.getElementById('tech-assign-permission-hint');
-            const jobTechSelect = document.getElementById('new-job-tech');
 
             if (originBadge) {
                 originBadge.innerText = currentSessionUser.dept;
@@ -1937,13 +1989,10 @@
 
             if (currentSessionUser.role === 'PRODUCTION') {
                 if (techHint) techHint.innerText = "(Maintenance Dept assigns)";
-                if (jobTechSelect) {
-                    jobTechSelect.value = 'Unassigned';
-                    jobTechSelect.disabled = true;
-                }
+                document.querySelectorAll('input[name="new-job-tech"]').forEach(cb => cb.disabled = true);
             } else {
                 if (techHint) techHint.innerText = "";
-                if (jobTechSelect) jobTechSelect.disabled = false;
+                document.querySelectorAll('input[name="new-job-tech"]').forEach(cb => cb.disabled = false);
             }
 
             const btnPlanOT = document.getElementById('btn-plan-weekend-ot');
@@ -1978,94 +2027,29 @@
             refreshUI();
         }
 
-        /* ================= REFRESH UI & VIEWS ================= */
-        function recalculateMachineStatuses() {
-            equipmentList.forEach(equip => {
-                if (equip.id === 'EQ-000') return;
-                
-                // Find active work orders assigned to this machine
-                const activeForEquip = activeJobs.filter(j => j.equipmentId === equip.id);
-                
-                if (activeForEquip.length > 0) {
-                    const hasCriticalOrHighBreakdown = activeForEquip.some(j => 
-                        (j.category === 'Breakdown' || !j.category) && (j.priority === 'Critical' || j.priority === 'High')
-                    );
-                    if (hasCriticalOrHighBreakdown) {
-                        equip.status = 'Fault';
-                    } else {
-                        equip.status = 'Maintenance';
-                    }
-                    // Reset manual override flag when active work order takes precedence
-                    equip.manualOverride = false;
-                } else if (!equip.manualOverride) {
-                    // Default to Operational if no active jobs exist and no manual override set
-                    equip.status = 'Operational';
-                }
-            });
-        }
-
-        function refreshUI() {
-            recalculateMachineStatuses();
-            updateAllMachineViews();
-            renderActiveJobs();
-            renderWeekendOtJobs();
-            renderCompletedJobs();
-            renderPMSchedules();
-            updateKPICards();
-            renderAnalyticsTables();
-            updateManagementDashboard();
-            updateCharts();
-            renderTechnicianWorkload();
-        }
-
-        function updateAllMachineViews() {
-            populateEquipmentDropdowns();
-            populateSectionFilterDropdown();
-            populateTechnicianDropdowns();
-            renderEquipmentGrid();
-            renderRosterTable();
-            renderTechnicianRoster();
-        }
-
-        function populateEquipmentDropdowns() {
-            const jobSearch = document.getElementById('new-job-equipment-search')?.value || '';
-            const pmSearch = document.getElementById('pm-equipment-search')?.value || '';
-            const otSearch = document.getElementById('weekend-ot-equipment-search')?.value || '';
-
-            filterEquipmentSelect('new-job-equipment', jobSearch);
-            filterEquipmentSelect('pm-equipment', pmSearch);
-            filterEquipmentSelect('weekend-ot-equipment', otSearch);
-        }
-
-        function filterEquipmentSelect(selectId, query) {
-            const selectEl = document.getElementById(selectId);
-            if (!selectEl) return;
-
-            const q = (query || '').toLowerCase().trim();
-            const filtered = q 
-                ? equipmentList.filter(eq => 
-                    eq.id.toLowerCase().includes(q) || 
-                    eq.name.toLowerCase().includes(q) || 
-                    eq.zone.toLowerCase().includes(q)
-                  )
-                : equipmentList;
-
-            selectEl.innerHTML = filtered.length > 0 
-                ? filtered.map(eq => `<option value="${eq.id}">${eq.id} - ${eq.name} (${eq.zone})</option>`).join('')
-                : `<option value="" disabled>No matching machinery found</option>`;
-        }
-
-        function filterNewJobEquipment(query) { filterEquipmentSelect('new-job-equipment', query); }
-        function filterPmEquipment(query) { filterEquipmentSelect('pm-equipment', query); }
-        function filterWeekendOtEquipment(query) { filterEquipmentSelect('weekend-ot-equipment', query); }
-
-        function populateSectionFilterDropdown() {
-            const select = document.getElementById('filter-equipment-zone');
-            if (select) {
-                const sections = Array.from(new Set(equipmentList.map(e => e.zone)));
-                select.innerHTML = '<option value="ALL">All Sections / Zones</option>' + 
-                    sections.map(sec => `<option value="${sec}">${sec}</option>`).join('');
+        /* ================= MULTI-TECHNICIAN HELPER FUNCTIONS ================= */
+        function getJobTechs(job) {
+            if (!job) return ['Unassigned'];
+            let techs = [];
+            if (Array.isArray(job.assignedTo)) {
+                techs = job.assignedTo;
+            } else if (typeof job.assignedTo === 'string' && job.assignedTo.trim()) {
+                techs = job.assignedTo.split(',').map(s => s.trim());
+            } else if (Array.isArray(job.technician)) {
+                techs = job.technician;
+            } else if (typeof job.technician === 'string' && job.technician.trim()) {
+                techs = job.technician.split(',').map(s => s.trim());
             }
+            techs = techs.filter(Boolean);
+            return techs.length > 0 ? techs : ['Unassigned'];
+        }
+
+        function selectAllNewJobTechs(select) {
+            document.querySelectorAll('input[name="new-job-tech"]').forEach(cb => cb.checked = select);
+        }
+
+        function selectAllEditJobTechs(select) {
+            document.querySelectorAll('input[name="edit-job-tech"]').forEach(cb => cb.checked = select);
         }
 
         function populateTechnicianDropdowns() {
@@ -2075,9 +2059,20 @@
             const filterActiveTech = document.getElementById('filter-active-tech');
             const filterOtTech = document.getElementById('filter-weekend-ot-tech');
 
-            const jobTechSelect = document.getElementById('new-job-tech');
+            const newJobTechCheckboxes = document.getElementById('new-job-tech-checkboxes');
             const optionsHtml = technicianList.map(t => `<option value="${t}">${t}</option>`).join('');
-            if (jobTechSelect) jobTechSelect.innerHTML = optionsHtml;
+            
+            if (newJobTechCheckboxes) {
+                newJobTechCheckboxes.innerHTML = technicianList
+                    .filter(t => t !== 'Unassigned')
+                    .map(t => `
+                        <label class="flex items-center space-x-2 text-slate-300 hover:text-white cursor-pointer p-1 rounded hover:bg-slate-800/60">
+                            <input type="checkbox" name="new-job-tech" value="${t}" class="rounded border-slate-700 bg-factory-900 text-blue-500 focus:ring-blue-500">
+                            <span class="truncate">${t}</span>
+                        </label>
+                    `).join('');
+            }
+
             if (selectPM) selectPM.innerHTML = optionsHtml;
             if (selectOtLead) selectOtLead.innerHTML = optionsHtml;
 
@@ -2164,6 +2159,83 @@
             renderActiveJobs();
         }
 
+        function updateActiveJobStatus(jobId, newStatus) {
+            const job = activeJobs.find(j => j.id === jobId);
+            if (!job) return;
+
+            const oldStatus = job.status;
+            job.status = newStatus;
+
+            if (newStatus === 'Pending Verification') {
+                job.resolvedIso = new Date().toISOString();
+                job.downtimeMins = calculateLiveElapsedMins(job);
+            } else if (oldStatus === 'Pending Verification') {
+                const now = Date.now();
+                const resolvedTime = job.resolvedIso ? new Date(job.resolvedIso).getTime() : now;
+                const timeInVerificationMs = Math.max(0, now - resolvedTime);
+                job.pausedMs = (job.pausedMs || 0) + timeInVerificationMs;
+                job.resolvedIso = null;
+                delete job.downtimeMins;
+            }
+
+            recalculateMachineStatuses();
+            saveToCloudAndLocal();
+            refreshUI();
+            showToast(`Updated ${job.id} status to ${newStatus}`, 'info');
+        }
+
+        function openCompleteModal(jobId) {
+            const job = activeJobs.find(j => j.id === jobId);
+            if (!job) return;
+
+            selectedJobForCompletion = job;
+            const displayEl = document.getElementById('complete-job-id-display');
+            if (displayEl) displayEl.innerText = `${job.id} - ${job.equipmentName}`;
+
+            const liveMins = calculateLiveElapsedMins(job);
+            const downtimeInput = document.getElementById('complete-downtime');
+            if (downtimeInput) downtimeInput.value = liveMins;
+
+            const costInput = document.getElementById('complete-cost');
+            if (costInput) costInput.value = '0';
+
+            const resInput = document.getElementById('complete-resolution');
+            if (resInput) resInput.value = '';
+
+            toggleCompleteJobModal();
+        }
+
+        function handleCompleteJob(event) {
+            if (event && event.preventDefault) event.preventDefault();
+            if (!selectedJobForCompletion) return;
+
+            const downtimeVal = parseInt(document.getElementById('complete-downtime').value, 10) || 0;
+            const costVal = parseFloat(document.getElementById('complete-cost').value) || 0;
+            const resolutionVal = document.getElementById('complete-resolution').value.trim();
+
+            selectedJobForCompletion.downtimeMins = downtimeVal;
+            selectedJobForCompletion.costRs = costVal;
+            selectedJobForCompletion.resolution = resolutionVal;
+            selectedJobForCompletion.resolvedIso = new Date().toISOString();
+            selectedJobForCompletion.status = 'Pending Verification';
+
+            recalculateMachineStatuses();
+            saveToCloudAndLocal();
+            toggleCompleteJobModal();
+            refreshUI();
+            showToast(`Work Order ${selectedJobForCompletion.id} resolved & submitted for Production verification.`, 'success');
+            selectedJobForCompletion = null;
+        }
+
+        function handleJobCategorySelect(category) {
+            const prioritySelect = document.getElementById('new-job-priority');
+            if (!prioritySelect) return;
+            if (category === 'Breakdown') prioritySelect.value = 'Critical';
+            else if (category === 'Fabrication') prioritySelect.value = 'Medium';
+            else if (category === 'Modification') prioritySelect.value = 'Medium';
+            else if (category === 'Routine') prioritySelect.value = 'Low';
+        }
+
         function renderActiveJobs() {
             const tbody = document.getElementById('active-jobs-tbody');
             const searchVal = (document.getElementById('search-active')?.value || '').toLowerCase();
@@ -2174,15 +2246,16 @@
             const techVal = document.getElementById('filter-active-tech')?.value || 'ALL';
 
             const filtered = activeJobs.filter(j => {
+                const techs = getJobTechs(j);
                 const matchSearch = j.id.toLowerCase().includes(searchVal) || 
                                     j.equipmentName.toLowerCase().includes(searchVal) || 
-                                    j.assignedTo.toLowerCase().includes(searchVal) ||
+                                    techs.some(t => t.toLowerCase().includes(searchVal)) ||
                                     j.description.toLowerCase().includes(searchVal);
                 const matchPrio = prioVal === 'ALL' || j.priority === prioVal;
                 const matchStatus = statusVal === 'ALL' || j.status === statusVal;
                 const matchDept = deptVal === 'ALL' || (j.createdDept || 'Production') === deptVal;
                 const matchCat = catVal === 'ALL' || (j.category || 'Breakdown') === catVal;
-                const matchTech = techVal === 'ALL' || j.assignedTo === techVal;
+                const matchTech = techVal === 'ALL' || techs.includes(techVal);
                 return matchSearch && matchPrio && matchStatus && matchDept && matchCat && matchTech;
             });
 
@@ -2205,6 +2278,7 @@
             }
 
             tbody.innerHTML = filtered.map(job => {
+                const safeJobId = escapeJsStr(job.id);
                 const liveMins = calculateLiveElapsedMins(job);
                 const elapsedFormatted = formatElapsed(liveMins);
                 const categoryBadge = getCategoryBadge(job.category || 'Breakdown');
@@ -2215,17 +2289,18 @@
                 else if (job.priority === 'High') prioBadge = 'bg-amber-950/80 text-amber-300 border-amber-800/80';
                 else if (job.priority === 'Medium') prioBadge = 'bg-blue-950/80 text-blue-300 border-blue-800/80';
 
-                const techOptions = technicianList.map(t => `<option value="${t}" ${job.assignedTo === t ? 'selected' : ''}>${t}</option>`).join('');
+                const jobTechs = getJobTechs(job);
+                const techBadgesHtml = jobTechs.map(t => `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold ${t === 'Unassigned' ? 'bg-slate-800 text-slate-400 border border-slate-700' : 'bg-blue-950/80 text-blue-300 border border-blue-800'}"><i class="fa-solid fa-user-gear text-[9px] mr-1"></i>${t}</span>`).join(' ');
 
                 let actionButtonHtml = '';
                 if (job.status === 'Pending Verification') {
                     if (!currentSessionUser || currentSessionUser.role === 'PRODUCTION' || currentSessionUser.role === 'MANAGEMENT') {
                         actionButtonHtml = `
                             <div class="flex items-center space-x-1.5 justify-end">
-                                <button onclick="verifyJobCompletion('${job.id}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded text-[11px] transition shadow flex items-center" title="Accept & Close Ticket">
+                                <button onclick="verifyJobCompletion('${safeJobId}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded text-[11px] transition shadow flex items-center" title="Accept & Close Ticket">
                                     <i class="fa-solid fa-check-double mr-1"></i> Verify & Close
                                 </button>
-                                <button onclick="rejectJobResolution('${job.id}')" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white font-semibold rounded text-[11px] transition shadow flex items-center" title="Reject fix & restart downtime timer">
+                                <button onclick="rejectJobResolution('${safeJobId}')" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white font-semibold rounded text-[11px] transition shadow flex items-center" title="Reject fix & restart downtime timer">
                                     <i class="fa-solid fa-rotate-left mr-1"></i> Not Resolved
                                 </button>
                             </div>
@@ -2235,7 +2310,7 @@
                     }
                 } else {
                     actionButtonHtml = `
-                        <button onclick="openCompleteModal('${job.id}')" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded text-[11px] transition shadow">
+                        <button onclick="openCompleteModal('${safeJobId}')" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded text-[11px] transition shadow">
                             <i class="fa-solid fa-check mr-1"></i> Resolve
                         </button>
                     `;
@@ -2270,7 +2345,7 @@
                         </td>
                         <td class="py-3 px-4">
                             ${(currentSessionUser && currentSessionUser.role !== 'PRODUCTION') ? `
-                                <select onchange="updateActiveJobStatus('${job.id}', this.value)" class="bg-factory-900 border border-slate-700 rounded px-2 py-1 text-[11px] font-bold ${job.status === 'Pending Verification' ? 'text-amber-300 border-amber-800' : job.status === 'In Progress' ? 'text-blue-300 border-blue-800' : job.status === 'Pending Parts' ? 'text-purple-300 border-purple-800' : 'text-slate-200'} focus:outline-none focus:border-blue-500">
+                                <select onchange="updateActiveJobStatus('${safeJobId}', this.value)" class="bg-factory-900 border border-slate-700 rounded px-2 py-1 text-[11px] font-bold ${job.status === 'Pending Verification' ? 'text-amber-300 border-amber-800' : job.status === 'In Progress' ? 'text-blue-300 border-blue-800' : job.status === 'Pending Parts' ? 'text-purple-300 border-purple-800' : 'text-slate-200'} focus:outline-none focus:border-blue-500">
                                     <option value="Assigned" ${job.status === 'Assigned' || job.status === 'Unassigned' ? 'selected' : ''}>Assigned</option>
                                     <option value="In Progress" ${job.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
                                     <option value="Pending Parts" ${job.status === 'Pending Parts' ? 'selected' : ''}>Pending Parts</option>
@@ -2283,16 +2358,21 @@
                             `}
                         </td>
                         <td class="py-3 px-4">
-                            <select onchange="updateActiveJobTech('${job.id}', this.value)" class="bg-factory-900 border border-slate-700 rounded px-2 py-1 text-[11px] text-slate-200 focus:outline-none focus:border-blue-500 max-w-[160px] truncate" ${currentSessionUser && currentSessionUser.role === 'PRODUCTION' ? 'disabled' : ''}>
-                                ${techOptions}
-                            </select>
+                            <div class="flex items-center space-x-1.5">
+                                <div class="flex flex-wrap gap-1 max-w-[200px]">${techBadgesHtml}</div>
+                                ${(!currentSessionUser || currentSessionUser.role !== 'PRODUCTION') ? `
+                                    <button onclick="openEditJobTechsModal('${safeJobId}')" class="p-1 text-slate-400 hover:text-blue-400 transition" title="Assign / Edit Technicians">
+                                        <i class="fa-solid fa-user-pen text-xs"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
                         </td>
                         <td class="py-3 px-4">
                             ${timerHtml}
                         </td>
                         <td class="py-3 px-4 text-right space-x-2">
                             ${actionButtonHtml}
-                            <button onclick="deleteActiveJob('${job.id}')" class="p-1 text-slate-400 hover:text-rose-400 transition ml-1" title="Cancel Ticket">
+                            <button onclick="deleteActiveJob('${safeJobId}')" class="p-1 text-slate-400 hover:text-rose-400 transition ml-1" title="Cancel Ticket">
                                 <i class="fa-solid fa-trash-can"></i>
                             </button>
                         </td>
@@ -2320,29 +2400,30 @@
             document.getElementById('kanban-count-pending-verify').innerText = pendingVerify.length;
 
             const renderCard = (j) => {
+                const safeJobId = escapeJsStr(j.id);
                 const liveMins = calculateLiveElapsedMins(j);
                 const elapsedFormatted = formatElapsed(liveMins);
-                const categoryBadge = getCategoryBadge(j.category || 'Breakdown');
                 let prioBadge = 'bg-slate-800 text-slate-300 border-slate-700';
                 if (j.priority === 'Critical') prioBadge = 'bg-rose-950/80 text-rose-300 border-rose-800/80 pulse-red';
                 else if (j.priority === 'High') prioBadge = 'bg-amber-950/80 text-amber-300 border-amber-800/80';
 
-                const techOptions = technicianList.map(t => `<option value="${t}" ${j.assignedTo === t ? 'selected' : ''}>${t}</option>`).join('');
+                const jobTechs = getJobTechs(j);
+                const techBadgesHtml = jobTechs.map(t => `<span class="inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold ${t === 'Unassigned' ? 'bg-slate-800 text-slate-400 border border-slate-700' : 'bg-blue-950/80 text-blue-300 border border-blue-800'}">${t}</span>`).join(' ');
 
                 let btnHtml = '';
                 if (j.status === 'Pending Verification') {
                     if (!currentSessionUser || currentSessionUser.role === 'PRODUCTION' || currentSessionUser.role === 'MANAGEMENT') {
                         btnHtml = `
                             <div class="flex items-center space-x-1">
-                                <button onclick="verifyJobCompletion('${j.id}')" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-semibold transition" title="Verify & Close">Verify</button>
-                                <button onclick="rejectJobResolution('${j.id}')" class="px-2 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded text-[10px] font-semibold transition" title="Not Resolved - Resume Timer">Not Resolved</button>
+                                <button onclick="verifyJobCompletion('${safeJobId}')" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-semibold transition" title="Verify & Close">Verify</button>
+                                <button onclick="rejectJobResolution('${safeJobId}')" class="px-2 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded text-[10px] font-semibold transition" title="Not Resolved - Resume Timer">Not Resolved</button>
                             </div>
                         `;
                     } else {
                         btnHtml = `<span class="text-[10px] text-amber-400 font-semibold">Awaiting Prod</span>`;
                     }
                 } else {
-                    btnHtml = `<button onclick="openCompleteModal('${j.id}')" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-[10px] font-semibold transition">Resolve</button>`;
+                    btnHtml = `<button onclick="openCompleteModal('${safeJobId}')" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-[10px] font-semibold transition">Resolve</button>`;
                 }
 
                 const isMaintOrAdmin = !currentSessionUser || currentSessionUser.role !== 'PRODUCTION';
@@ -2362,18 +2443,17 @@
                             <p class="text-[11px] text-slate-400 mt-0.5 line-clamp-2">${j.description}</p>
                         </div>
                         <div class="space-y-1.5 pt-1 border-t border-slate-800/60">
-                            <div class="flex items-center justify-between text-[11px]">
-                                <span class="text-slate-400 text-[10px]">Tech:</span>
-                                ${isMaintOrAdmin ? `
-                                    <select onchange="updateActiveJobTech('${j.id}', this.value)" class="bg-factory-800 border border-slate-700 rounded px-1.5 py-0.5 text-[10px] text-slate-200 focus:outline-none focus:border-blue-500 max-w-[140px] truncate">
-                                        ${techOptions}
-                                    </select>
-                                ` : `<span class="text-slate-300 font-semibold"><i class="fa-solid fa-user-gear text-blue-400 mr-1"></i>${j.assignedTo}</span>`}
+                            <div class="flex items-start justify-between text-[11px]">
+                                <span class="text-slate-400 text-[10px]">Techs:</span>
+                                <div class="flex flex-wrap gap-1 justify-end max-w-[150px]">
+                                    ${techBadgesHtml}
+                                    ${isMaintOrAdmin ? `<button onclick="openEditJobTechsModal('${safeJobId}')" class="text-blue-400 hover:underline text-[10px] ml-1"><i class="fa-solid fa-pen-to-square"></i></button>` : ''}
+                                </div>
                             </div>
                             <div class="flex items-center justify-between text-[11px]">
                                 <span class="text-slate-400 text-[10px]">Status:</span>
                                 ${isMaintOrAdmin ? `
-                                    <select onchange="updateActiveJobStatus('${j.id}', this.value)" class="bg-factory-800 border border-slate-700 rounded px-1.5 py-0.5 text-[10px] text-slate-200 focus:outline-none focus:border-blue-500">
+                                    <select onchange="updateActiveJobStatus('${safeJobId}', this.value)" class="bg-factory-800 border border-slate-700 rounded px-1.5 py-0.5 text-[10px] text-slate-200 focus:outline-none focus:border-blue-500">
                                         <option value="Assigned" ${j.status === 'Assigned' || j.status === 'Unassigned' ? 'selected' : ''}>Assigned</option>
                                         <option value="In Progress" ${j.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
                                         <option value="Pending Parts" ${j.status === 'Pending Parts' ? 'selected' : ''}>Pending Parts</option>
@@ -2396,8 +2476,12 @@
             colPendingVerify.innerHTML = pendingVerify.length ? pendingVerify.map(renderCard).join('') : '<div class="text-xs text-slate-500 text-center py-6">No jobs</div>';
         }
 
-        /* ================= WORK ORDER CREATION & VERIFICATION ================= */
-        function updateActiveJobTech(jobId, newTech) {
+        /* ================= WORK ORDER CREATION & MULTI-TECH MODAL ================= */
+        function toggleEditJobTechsModal() {
+            document.getElementById('modal-edit-job-techs')?.classList.toggle('hidden');
+        }
+
+        function openEditJobTechsModal(jobId) {
             if (currentSessionUser && currentSessionUser.role === 'PRODUCTION') {
                 showToast("Only Maintenance or Management can reassign technicians.", "danger");
                 return;
@@ -2405,47 +2489,70 @@
             const job = activeJobs.find(j => j.id === jobId);
             if (!job) return;
 
-            job.assignedTo = newTech;
-            if (job.status === 'Unassigned' && newTech !== 'Unassigned') {
+            editingJobTechsId = jobId;
+            const subtitle = document.getElementById('edit-job-techs-subtitle');
+            if (subtitle) subtitle.innerText = `Work Order: ${job.id} - ${job.equipmentName}`;
+            
+            const currentTechs = getJobTechs(job);
+            const container = document.getElementById('edit-job-tech-checkboxes');
+            if (container) {
+                container.innerHTML = technicianList
+                    .filter(t => t !== 'Unassigned')
+                    .map(t => {
+                        const isChecked = currentTechs.includes(t);
+                        return `
+                            <label class="flex items-center space-x-2 text-slate-300 hover:text-white cursor-pointer p-1 rounded hover:bg-slate-800/60">
+                                <input type="checkbox" name="edit-job-tech" value="${t}" ${isChecked ? 'checked' : ''} class="rounded border-slate-700 bg-factory-900 text-blue-500 focus:ring-blue-500">
+                                <span class="truncate">${t}</span>
+                            </label>
+                        `;
+                    }).join('');
+            }
+            toggleEditJobTechsModal();
+        }
+
+        function handleSaveJobTechs(event) {
+            if (event && event.preventDefault) event.preventDefault();
+            if (!editingJobTechsId) return;
+
+            const job = activeJobs.find(j => j.id === editingJobTechsId);
+            if (!job) return;
+
+            let selectedTechs = Array.from(document.querySelectorAll('input[name="edit-job-tech"]:checked')).map(cb => cb.value);
+            if (selectedTechs.length === 0) {
+                selectedTechs = ['Unassigned'];
+            }
+
+            job.assignedTo = selectedTechs;
+            if (job.status === 'Unassigned' && (selectedTechs.length > 1 || selectedTechs[0] !== 'Unassigned')) {
                 job.status = 'Assigned';
-            } else if (newTech === 'Unassigned') {
+            } else if (selectedTechs.length === 1 && selectedTechs[0] === 'Unassigned') {
                 job.status = 'Unassigned';
             }
 
             saveToCloudAndLocal();
+            toggleEditJobTechsModal();
             refreshUI();
-            showToast(`Updated technician for ${job.id} to ${newTech}`, 'success');
-        }
-
-        function updateActiveJobStatus(jobId, newStatus) {
-            if (currentSessionUser && currentSessionUser.role === 'PRODUCTION') {
-                showToast("Only Maintenance or Management can update job status.", "danger");
-                return;
-            }
-            const job = activeJobs.find(j => j.id === jobId);
-            if (!job) return;
-
-            const oldStatus = job.status;
-            job.status = newStatus;
-
-            saveToCloudAndLocal();
-            refreshUI();
-            showToast(`Status for ${job.id} updated to '${newStatus}'`, 'info');
+            showToast(`Updated assigned technicians for ${job.id}`, 'success');
+            editingJobTechsId = null;
         }
 
         function handleCreateJob(event) {
-            event.preventDefault();
+            if (event && event.preventDefault) event.preventDefault();
             const equipId = document.getElementById('new-job-equipment').value;
             const category = document.getElementById('new-job-category').value;
             const priority = document.getElementById('new-job-priority').value;
             const desc = document.getElementById('new-job-desc').value;
 
             const originDept = currentSessionUser ? currentSessionUser.dept : 'Production';
-            let tech = 'Unassigned';
+            let assignedTechs = [];
 
             if (currentSessionUser && currentSessionUser.role !== 'PRODUCTION') {
-                const techSel = document.getElementById('new-job-tech');
-                if (techSel) tech = techSel.value;
+                assignedTechs = Array.from(document.querySelectorAll('input[name="new-job-tech"]:checked')).map(cb => cb.value);
+            }
+
+            if (assignedTechs.length === 0) {
+                assignedTechs = ['Unassigned'];
             }
 
             const equip = equipmentList.find(e => e.id === equipId);
@@ -2458,8 +2565,8 @@
                 createdDept: originDept,
                 category: category,
                 priority: priority,
-                assignedTo: tech,
-                status: tech !== 'Unassigned' ? 'Assigned' : 'Unassigned',
+                assignedTo: assignedTechs,
+                status: assignedTechs.length === 1 && assignedTechs[0] === 'Unassigned' ? 'Unassigned' : 'Assigned',
                 startTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 createdIso: new Date().toISOString(),
                 description: desc
@@ -2473,51 +2580,7 @@
             toggleNewJobModal();
             
             refreshUI();
-            showToast(`Dispatched ${newJob.id} (${originDept} Dept)`, 'success');
-        }
-
-        function openCompleteModal(jobId) {
-            const job = activeJobs.find(j => j.id === jobId);
-            if (!job) return;
-
-            selectedJobForCompletion = job;
-            const liveMins = calculateLiveElapsedMins(job);
-
-            document.getElementById('complete-job-id-display').innerText = `${job.id} - ${job.equipmentName}`;
-            document.getElementById('complete-downtime').value = liveMins;
-            document.getElementById('complete-cost').value = '0';
-            document.getElementById('complete-resolution').value = '';
-
-            toggleCompleteJobModal();
-        }
-
-        function handleCompleteJob(event) {
-            event.preventDefault();
-            if (!selectedJobForCompletion) return;
-
-            const downtimeVal = document.getElementById('complete-downtime').value;
-            const costVal = parseFloat(document.getElementById('complete-cost').value) || 0;
-            const resolutionText = document.getElementById('complete-resolution').value;
-
-            selectedJobForCompletion.status = 'Pending Verification';
-            selectedJobForCompletion.downtimeMins = parseInt(downtimeVal) || 0;
-            selectedJobForCompletion.costRs = costVal;
-            selectedJobForCompletion.resolution = resolutionText;
-            selectedJobForCompletion.resolvedIso = new Date().toISOString();
-            selectedJobForCompletion.completedIso = new Date().toISOString();
-
-            const equip = equipmentList.find(e => e.id === selectedJobForCompletion.equipmentId);
-            if (equip && selectedJobForCompletion.equipmentId !== 'EQ-000') {
-                equip.lastService = new Date().toISOString().slice(0, 10);
-            }
-
-            recalculateMachineStatuses();
-            saveToCloudAndLocal();
-            toggleCompleteJobModal();
-
-            refreshUI();
-            showToast(`Work order ${selectedJobForCompletion.id} resolved by Maintenance. Downtime timer stopped pending Production verification.`, 'success');
-            selectedJobForCompletion = null;
+            showToast(`Dispatched ${newJob.id} (${originDept} Dept) to ${assignedTechs.length} technician(s)`, 'success');
         }
 
         function verifyJobCompletion(jobId) {
@@ -2534,6 +2597,7 @@
 
             const fixedDateStr = new Date().toISOString().slice(0, 10);
             const finalDowntime = typeof job.downtimeMins === 'number' ? job.downtimeMins : calculateLiveElapsedMins(job);
+            const techs = getJobTechs(job);
 
             const completedRecord = {
                 id: job.id,
@@ -2541,7 +2605,8 @@
                 equipmentName: job.equipmentName,
                 createdDept: job.createdDept || 'Production',
                 category: job.category || 'Breakdown',
-                technician: job.assignedTo,
+                technician: techs.join(', '),
+                assignedTo: techs,
                 completedTime: `${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (${new Date().toLocaleDateString()})`,
                 downtimeMins: finalDowntime,
                 costRs: job.costRs || 0,
@@ -2561,7 +2626,82 @@
             recalculateMachineStatuses();
             saveToCloudAndLocal();
             refreshUI();
-            showToast(`Verified & Closed Work Order ${job.id}! Machine last breakdown fixed date updated to ${fixedDateStr}.`, 'success');
+            showToast(`Verified & Closed Work Order ${job.id}!`, 'success');
+        }
+
+        function recalculateMachineStatuses() {
+            equipmentList.forEach(equip => {
+                if (equip.id === 'EQ-000') return;
+                const activeForEquip = activeJobs.filter(j => j.equipmentId === equip.id);
+                if (activeForEquip.length === 0) {
+                    if (!equip.manualOverride) {
+                        equip.status = 'Operational';
+                    }
+                } else {
+                    const hasCritical = activeForEquip.some(j => j.priority === 'Critical');
+                    const hasInProgress = activeForEquip.some(j => j.status === 'In Progress' || j.status === 'Assigned');
+                    if (hasCritical) {
+                        equip.status = 'Fault';
+                    } else if (hasInProgress) {
+                        equip.status = 'Maintenance';
+                    }
+                }
+            });
+        }
+
+        function populateEquipmentDropdowns(searchFilter = '', targetSelectId = null) {
+            const renderOptions = (filter = '') => {
+                const lower = filter.toLowerCase();
+                return equipmentList
+                    .filter(e => e.name.toLowerCase().includes(lower) || e.id.toLowerCase().includes(lower) || e.zone.toLowerCase().includes(lower))
+                    .map(e => `<option value="${e.id}">${e.id} - ${e.name} (${e.zone})</option>`)
+                    .join('');
+            };
+
+            if (!targetSelectId || targetSelectId === 'new-job-equipment') {
+                const sel = document.getElementById('new-job-equipment');
+                if (sel) sel.innerHTML = renderOptions(targetSelectId === 'new-job-equipment' ? searchFilter : '');
+            }
+            if (!targetSelectId || targetSelectId === 'pm-equipment') {
+                const sel = document.getElementById('pm-equipment');
+                if (sel) sel.innerHTML = renderOptions(targetSelectId === 'pm-equipment' ? searchFilter : '');
+            }
+            if (!targetSelectId || targetSelectId === 'weekend-ot-equipment') {
+                const sel = document.getElementById('weekend-ot-equipment');
+                if (sel) sel.innerHTML = renderOptions(targetSelectId === 'weekend-ot-equipment' ? searchFilter : '');
+            }
+        }
+
+        function filterNewJobEquipment(val) { populateEquipmentDropdowns(val, 'new-job-equipment'); }
+        function filterPmEquipment(val) { populateEquipmentDropdowns(val, 'pm-equipment'); }
+        function filterWeekendOtEquipment(val) { populateEquipmentDropdowns(val, 'weekend-ot-equipment'); }
+
+        function updateAllMachineViews() {
+            populateEquipmentDropdowns();
+            populateTechnicianDropdowns();
+            renderEquipmentGrid();
+            renderRosterTable();
+            renderTechnicianRoster();
+        }
+
+        function refreshUI() {
+            populateTechnicianDropdowns();
+            populateEquipmentDropdowns();
+            updateKPICards();
+            renderActiveJobs();
+            renderCompletedJobs();
+            renderPMSchedules();
+            renderWeekendOtJobs();
+            renderEquipmentGrid();
+            renderTechnicianWorkload();
+            renderRosterTable();
+            renderTechnicianRoster();
+            const mgmtContent = document.getElementById('tab-content-management');
+            if (mgmtContent && !mgmtContent.classList.contains('hidden')) {
+                renderAnalyticsTables();
+                updateManagementDashboard();
+                updateCharts();
+            }
         }
 
         function rejectJobResolution(jobId) {
@@ -2628,8 +2768,8 @@
             }
 
             tbody.innerHTML = filtered.map(j => {
+                const safeJobId = escapeJsStr(j.id);
                 const deptBadge = getDeptBadge(j.createdDept || 'Production');
-                const escapedJobId = j.id.replace(/'/g, "\\'");
                 return `
                     <tr class="hover:bg-slate-800/30 transition">
                         <td class="py-3 px-4">
@@ -2657,7 +2797,7 @@
                             ${j.resolution}
                         </td>
                         <td class="py-3 px-4 text-right space-x-2">
-                            <button onclick="deleteCompletedJob('${escapedJobId}')" class="p-1 text-slate-400 hover:text-rose-400 transition" title="Move to Delete Log"><i class="fa-solid fa-trash-can"></i></button>
+                            <button onclick="deleteCompletedJob('${safeJobId}')" class="p-1 text-slate-400 hover:text-rose-400 transition" title="Move to Delete Log"><i class="fa-solid fa-trash-can"></i></button>
                         </td>
                     </tr>
                 `;
@@ -2803,13 +2943,15 @@
                 technicianList.forEach(t => { if (t !== 'Unassigned') techMap[t] = { count: 0, downtime: 0, cost: 0 }; });
 
                 filteredCompleted.forEach(j => {
-                    if (j.technician) {
-                        const tName = j.technician;
-                        if (!techMap[tName]) techMap[tName] = { count: 0, downtime: 0, cost: 0 };
-                        techMap[tName].count++;
-                        techMap[tName].downtime += (j.downtimeMins || 0);
-                        techMap[tName].cost += (j.costRs || 0);
-                    }
+                    const techs = getJobTechs(j);
+                    techs.forEach(tName => {
+                        if (tName !== 'Unassigned') {
+                            if (!techMap[tName]) techMap[tName] = { count: 0, downtime: 0, cost: 0 };
+                            techMap[tName].count++;
+                            techMap[tName].downtime += (j.downtimeMins || 0);
+                            techMap[tName].cost += (j.costRs || 0);
+                        }
+                    });
                 });
 
                 const sortedTechs = Object.keys(techMap).sort((a, b) => techMap[b].count - techMap[a].count);
@@ -2864,7 +3006,10 @@
             technicianList.forEach(t => { if (t !== 'Unassigned') techMap[t] = 0; });
 
             filteredCompleted.forEach(j => {
-                if (j.technician) techMap[j.technician] = (techMap[j.technician] || 0) + (j.downtimeMins || 0);
+                const techs = getJobTechs(j);
+                techs.forEach(t => {
+                    if (t !== 'Unassigned') techMap[t] = (techMap[t] || 0) + (j.downtimeMins || 0);
+                });
             });
 
             const sortedTechs = Object.keys(techMap).sort((a, b) => techMap[b] - techMap[a]).slice(0, 7);
@@ -2979,6 +3124,7 @@
             }
 
             tbody.innerHTML = filtered.map(ot => {
+                const safeOtId = escapeJsStr(ot.id);
                 let statusBadge = 'bg-amber-950/80 text-amber-300 border-amber-800';
                 if (ot.status === 'Completed') statusBadge = 'bg-emerald-950/80 text-emerald-300 border-emerald-800';
                 else if (ot.status === 'Deferred') statusBadge = 'bg-purple-950/80 text-purple-300 border-purple-800';
@@ -3005,17 +3151,61 @@
                             ${ot.actualHours > 0 ? `<div class="text-[10px] text-emerald-400 font-mono mt-1">${ot.actualHours} hrs logged</div>` : ''}
                         </td>
                         <td class="py-3 px-4 text-right space-x-2">
-                            <button onclick="openReviewWeekendOtModal('${ot.id}')" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded text-[11px] transition shadow">Review</button>
-                            <button onclick="rolloverOtToActiveJob('${ot.id}')" class="p-1 text-blue-400 hover:text-blue-300" title="Convert to Active Work Order"><i class="fa-solid fa-arrow-right-to-bracket"></i></button>
-                            <button onclick="deleteWeekendOtJob('${ot.id}')" class="p-1 text-slate-400 hover:text-rose-400 transition" title="Delete OT Job"><i class="fa-solid fa-trash-can"></i></button>
+                            <button onclick="openReviewWeekendOtModal('${safeOtId}')" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded text-[11px] transition shadow">Review</button>
+                            <button onclick="rolloverOtToActiveJob('${safeOtId}')" class="p-1 text-blue-400 hover:text-blue-300" title="Convert to Active Work Order"><i class="fa-solid fa-arrow-right-to-bracket"></i></button>
+                            <button onclick="deleteWeekendOtJob('${safeOtId}')" class="p-1 text-slate-400 hover:text-rose-400 transition" title="Delete OT Job"><i class="fa-solid fa-trash-can"></i></button>
                         </td>
                     </tr>
                 `;
             }).join('');
         }
 
+        function updateWeekendOtEstimatedHours(shiftType) {
+            const hoursInput = document.getElementById('weekend-ot-hours');
+            if (!hoursInput) return;
+            if (shiftType === 'Saturday') hoursInput.value = '11.9';
+            else if (shiftType === 'Sunday') hoursInput.value = '9.9';
+            else if (shiftType === 'Both Days') hoursInput.value = '21.8';
+        }
+
+        function setUpcomingWeekendFilter() {
+            const now = new Date();
+            const dayOfWeek = now.getDay();
+            const distanceToSat = (6 - dayOfWeek + 7) % 7 || 7;
+            const nextSat = new Date(now.getFullYear(), now.getMonth(), now.getDate() + distanceToSat);
+            const dateStr = nextSat.toISOString().slice(0, 10);
+
+            const dateInput = document.getElementById('filter-weekend-ot-date');
+            if (dateInput) {
+                dateInput.value = dateStr;
+                renderWeekendOtJobs();
+            }
+        }
+
+        function resetWeekendOtFilters() {
+            const search = document.getElementById('search-weekend-ot');
+            const date = document.getElementById('filter-weekend-ot-date');
+            const status = document.getElementById('filter-weekend-ot-status');
+            const tech = document.getElementById('filter-weekend-ot-tech');
+            if (search) search.value = '';
+            if (date) date.value = '';
+            if (status) status.value = 'ALL';
+            if (tech) tech.value = 'ALL';
+            renderWeekendOtJobs();
+        }
+
+        function resetPMFilters() {
+            const search = document.getElementById('search-pm');
+            const freq = document.getElementById('filter-pm-freq');
+            const status = document.getElementById('filter-pm-status');
+            if (search) search.value = '';
+            if (freq) freq.value = 'ALL';
+            if (status) status.value = 'ALL';
+            renderPMSchedules();
+        }
+
         function handleCreateWeekendOt(e) {
-            e.preventDefault();
+            if (e && e.preventDefault) e.preventDefault();
             const equipId = document.getElementById('weekend-ot-equipment').value;
             const dateVal = document.getElementById('weekend-ot-date').value;
             const shiftType = document.getElementById('weekend-ot-shift').value;
@@ -3064,7 +3254,7 @@
         }
 
         function handleReviewWeekendOt(e) {
-            e.preventDefault();
+            if (e && e.preventDefault) e.preventDefault();
             if (!selectedWeekendOtForReview) return;
             selectedWeekendOtForReview.status = document.getElementById('review-ot-status').value;
             selectedWeekendOtForReview.actualHours = parseFloat(document.getElementById('review-ot-actual-hours').value) || 0;
@@ -3136,6 +3326,7 @@
             }
 
             tbody.innerHTML = filtered.map(pm => {
+                const safePmId = escapeJsStr(pm.id);
                 const isOverdue = pm.nextDueDate < todayStr;
                 return `
                     <tr class="hover:bg-slate-800/30 transition">
@@ -3153,8 +3344,8 @@
                             </span>
                         </td>
                         <td class="py-3 px-4 text-right space-x-2">
-                            <button onclick="executePMNow('${pm.id}')" class="px-2.5 py-1 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded text-[11px] transition shadow">Dispatch Order</button>
-                            <button onclick="deletePMSchedule('${pm.id}')" class="text-slate-400 hover:text-rose-400 transition" title="Delete Schedule"><i class="fa-solid fa-trash-can"></i></button>
+                            <button onclick="executePMNow('${safePmId}')" class="px-2.5 py-1 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded text-[11px] transition shadow">Dispatch Order</button>
+                            <button onclick="deletePMSchedule('${safePmId}')" class="text-slate-400 hover:text-rose-400 transition" title="Delete Schedule"><i class="fa-solid fa-trash-can"></i></button>
                         </td>
                     </tr>
                 `;
@@ -3162,7 +3353,7 @@
         }
 
         function handleCreatePM(event) {
-            event.preventDefault();
+            if (event && event.preventDefault) event.preventDefault();
             const equipId = document.getElementById('pm-equipment').value;
             const freq = document.getElementById('pm-frequency').value;
             const tech = document.getElementById('pm-tech').value;
@@ -3268,6 +3459,7 @@
             }
 
             grid.innerHTML = filtered.map(eq => {
+                const safeEqId = escapeJsStr(eq.id);
                 let statusBadge = 'bg-emerald-950/80 text-emerald-400 border-emerald-800/80';
                 let borderBar = 'border-l-emerald-500';
                 if (eq.status === 'Fault') {
@@ -3278,7 +3470,6 @@
                     borderBar = 'border-l-amber-500';
                 }
 
-                const escapedEqId = eq.id.replace(/'/g, "\\'");
                 const activeForEquip = activeJobs.filter(j => j.equipmentId === eq.id);
                 const activeWOBadge = activeForEquip.length > 0 
                     ? `<span class="px-1.5 py-0.5 text-[10px] rounded font-bold bg-blue-950 text-blue-300 border border-blue-800 flex items-center"><i class="fa-solid fa-wrench mr-1"></i>${activeForEquip.length} Active Ticket${activeForEquip.length > 1 ? 's' : ''}</span>`
@@ -3289,7 +3480,7 @@
                         <div>
                             <div class="flex items-center justify-between mb-1">
                                 <span class="font-mono text-[11px] text-blue-400 font-bold">${eq.id}</span>
-                                <select onchange="manuallyUpdateMachineStatus('${escapedEqId}', this.value)" class="px-2 py-0.5 text-[10px] rounded-full font-bold border ${statusBadge} focus:outline-none cursor-pointer bg-factory-900">
+                                <select onchange="manuallyUpdateMachineStatus('${safeEqId}', this.value)" class="px-2 py-0.5 text-[10px] rounded-full font-bold border ${statusBadge} focus:outline-none cursor-pointer bg-factory-900">
                                     <option value="Operational" ${eq.status === 'Operational' ? 'selected' : ''} class="bg-factory-900 text-emerald-400">Operational</option>
                                     <option value="Maintenance" ${eq.status === 'Maintenance' ? 'selected' : ''} class="bg-factory-900 text-amber-400">Maintenance</option>
                                     <option value="Fault" ${eq.status === 'Fault' ? 'selected' : ''} class="bg-factory-900 text-rose-400">Fault</option>
@@ -3304,10 +3495,10 @@
                                 <span class="text-slate-400 text-[10px]">Fixed: <strong class="text-slate-200 font-mono">${eq.lastService || 'None'}</strong></span>
                             </div>
                             <div class="flex items-center justify-between pt-1 border-t border-slate-800/60">
-                                <button onclick="openMachineHistoryModal('${escapedEqId}')" class="text-blue-400 hover:text-blue-300 font-semibold flex items-center">
+                                <button onclick="openMachineHistoryModal('${safeEqId}')" class="text-blue-400 hover:text-blue-300 font-semibold flex items-center">
                                     <i class="fa-solid fa-clock-rotate-left mr-1"></i> History
                                 </button>
-                                <button onclick="openQuickDispatch('${eq.id}')" class="text-emerald-400 hover:text-emerald-300 font-semibold flex items-center">
+                                <button onclick="openQuickDispatch('${safeEqId}')" class="text-emerald-400 hover:text-emerald-300 font-semibold flex items-center">
                                     Dispatch <i class="fa-solid fa-plus ml-1 text-[10px]"></i>
                                 </button>
                             </div>
@@ -3376,7 +3567,7 @@
             }
 
             const activeTbody = document.getElementById('machine-history-active-tbody');
-            const allActiveAndPm = [...machineActive.map(j => ({ type: 'Work Order', id: j.id, tech: j.assignedTo, statusOrFreq: j.status, desc: j.description })), ...machinePm.map(p => ({ type: 'PM Task', id: p.id, tech: p.assignedTech, statusOrFreq: p.frequency, desc: p.taskDescription }))];
+            const allActiveAndPm = [...machineActive.map(j => ({ type: 'Work Order', id: j.id, tech: Array.isArray(j.assignedTo) ? j.assignedTo.join(', ') : j.assignedTo, statusOrFreq: j.status, desc: j.description })), ...machinePm.map(p => ({ type: 'PM Task', id: p.id, tech: p.assignedTech, statusOrFreq: p.frequency, desc: p.taskDescription }))];
 
             if (activeTbody) {
                 activeTbody.innerHTML = allActiveAndPm.length === 0 ? `<tr><td colspan="4" class="text-center py-4 text-slate-500">No active work orders or PM schedules for this machine.</td></tr>` :
@@ -3403,7 +3594,7 @@
             const filteredTechs = technicianList.filter(t => {
                 if (t === 'Unassigned') return false;
                 const matchSearch = t.toLowerCase().includes(searchVal);
-                const assignedActive = activeJobs.filter(j => j.assignedTo === t);
+                const assignedActive = activeJobs.filter(j => getJobTechs(j).includes(t));
                 if (statusFilter === 'ASSIGNED_ONLY') return matchSearch && assignedActive.length > 0;
                 if (statusFilter === 'FREE_ONLY') return matchSearch && assignedActive.length === 0;
                 return matchSearch;
@@ -3415,12 +3606,12 @@
             }
 
             grid.innerHTML = filteredTechs.map(tech => {
-                const assignedActive = activeJobs.filter(j => j.assignedTo === tech);
+                const safeTech = escapeJsStr(tech);
+                const assignedActive = activeJobs.filter(j => getJobTechs(j).includes(tech));
                 const assignedPM = pmSchedules.filter(p => p.assignedTech === tech);
                 const leadOt = weekendOtJobs.filter(o => o.leadTech === tech && o.status === 'Planned');
-                const resolvedCount = completedJobs.filter(j => j.technician === tech).length;
+                const resolvedCount = completedJobs.filter(j => getJobTechs(j).includes(tech)).length;
                 const isOccupied = assignedActive.length > 0;
-                const escapedTech = tech.replace(/'/g, "\\'");
 
                 let activeListHtml = assignedActive.map(j => `
                     <div class="bg-factory-900 p-2.5 rounded-lg border border-slate-800 space-y-1">
@@ -3455,8 +3646,8 @@
                             </div>
                         </div>
                         <div class="pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-semibold">
-                            <button onclick="filterActiveJobsByTech('${escapedTech}')" class="text-blue-400 hover:text-blue-300 flex items-center space-x-1"><span>View Jobs</span><i class="fa-solid fa-arrow-right text-[10px]"></i></button>
-                            <button onclick="quickDispatchForTech('${escapedTech}')" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-[11px] shadow transition">Assign Job</button>
+                            <button onclick="filterActiveJobsByTech('${safeTech}')" class="text-blue-400 hover:text-blue-300 flex items-center space-x-1"><span>View Jobs</span><i class="fa-solid fa-arrow-right text-[10px]"></i></button>
+                            <button onclick="quickDispatchForTech('${safeTech}')" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-[11px] shadow transition">Assign Job</button>
                         </div>
                     </div>
                 `;
@@ -3509,17 +3700,20 @@
                 return;
             }
 
-            tbody.innerHTML = filtered.map(item => `
-                <tr class="hover:bg-slate-800/30 transition">
-                    <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950 text-amber-300 border border-amber-800">${item.itemType}</span></td>
-                    <td class="py-2.5 px-3 font-semibold text-white">${item.title}</td>
-                    <td class="py-2.5 px-3 text-slate-400 text-[11px] font-mono">${item.deletedAt}</td>
-                    <td class="py-2.5 px-3 text-slate-300 font-semibold">${item.deletedBy}</td>
-                    <td class="py-2.5 px-3 text-right">
-                        <button onclick="restoreDeletedItem('${item.logId}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-semibold text-[11px] transition shadow"><i class="fa-solid fa-rotate-left mr-1"></i> Restore</button>
-                    </td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = filtered.map(item => {
+                const safeLogId = escapeJsStr(item.logId);
+                return `
+                    <tr class="hover:bg-slate-800/30 transition">
+                        <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950 text-amber-300 border border-amber-800">${item.itemType}</span></td>
+                        <td class="py-2.5 px-3 font-semibold text-white">${item.title}</td>
+                        <td class="py-2.5 px-3 text-slate-400 text-[11px] font-mono">${item.deletedAt}</td>
+                        <td class="py-2.5 px-3 text-slate-300 font-semibold">${item.deletedBy}</td>
+                        <td class="py-2.5 px-3 text-right">
+                            <button onclick="restoreDeletedItem('${safeLogId}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-semibold text-[11px] transition shadow"><i class="fa-solid fa-rotate-left mr-1"></i> Restore</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         function restoreDeletedItem(logId) {
@@ -3656,30 +3850,25 @@
             lastDay.setHours(23, 59, 59, 999);
 
             while (currentDay <= lastDay) {
-                const dayOfWeek = currentDay.getDay(); // 0 = Sunday, 1 = Mon, ..., 6 = Sat
+                const dayOfWeek = currentDay.getDay();
 
-                // Exclude Sundays completely (dayOfWeek === 0)
                 if (dayOfWeek !== 0) {
                     const year = currentDay.getFullYear();
                     const month = currentDay.getMonth();
                     const date = currentDay.getDate();
 
-                    // Morning Shift Window: 07:20 AM to 12:30 PM
                     const shift1Start = new Date(year, month, date, 7, 20, 0, 0).getTime();
                     const shift1End = new Date(year, month, date, 12, 30, 0, 0).getTime();
 
-                    // Afternoon Shift Window: 01:00 PM (13:00) to 07:15 PM (19:15)
                     const shift2Start = new Date(year, month, date, 13, 0, 0, 0).getTime();
                     const shift2End = new Date(year, month, date, 19, 15, 0, 0).getTime();
 
-                    // Calculate overlap for Morning Shift
                     const o1Start = Math.max(start, shift1Start);
                     const o1End = Math.min(end, shift1End);
                     if (o1End > o1Start) {
                         totalWorkingMs += (o1End - o1Start);
                     }
 
-                    // Calculate overlap for Afternoon Shift (excludes 12:30 - 13:00 lunch)
                     const o2Start = Math.max(start, shift2Start);
                     const o2End = Math.min(end, shift2End);
                     if (o2End > o2Start) {
@@ -3687,7 +3876,6 @@
                     }
                 }
 
-                // Advance to next day
                 currentDay.setDate(currentDay.getDate() + 1);
             }
 
@@ -3851,20 +4039,23 @@
             if (countBadge) countBadge.innerText = equipmentList.length;
             if (!tbody) return;
 
-            tbody.innerHTML = equipmentList.map(e => `
-                <tr class="hover:bg-slate-800/40">
-                    <td class="py-2 px-3 font-mono text-blue-400 font-bold">${e.id}</td>
-                    <td class="py-2 px-3 font-semibold text-white">${e.name}</td>
-                    <td class="py-2 px-3 text-slate-400">${e.zone}</td>
-                    <td class="py-2 px-3 text-right">
-                        ${e.id === 'EQ-000' ? '<span class="text-slate-500 text-[10px]">Default</span>' : `
-                            <button onclick="removeMachine('${e.id}')" class="text-slate-400 hover:text-rose-400 transition" title="Delete Machine">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
-                        `}
-                    </td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = equipmentList.map(e => {
+                const safeId = escapeJsStr(e.id);
+                return `
+                    <tr class="hover:bg-slate-800/40">
+                        <td class="py-2 px-3 font-mono text-blue-400 font-bold">${e.id}</td>
+                        <td class="py-2 px-3 font-semibold text-white">${e.name}</td>
+                        <td class="py-2 px-3 text-slate-400">${e.zone}</td>
+                        <td class="py-2 px-3 text-right">
+                            ${e.id === 'EQ-000' ? '<span class="text-slate-500 text-[10px]">Default</span>' : `
+                                <button onclick="removeMachine('${safeId}')" class="text-slate-400 hover:text-rose-400 transition" title="Delete Machine">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            `}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         function removeMachine(id) {
@@ -3884,19 +4075,22 @@
 
             tbody.innerHTML = technicianList
                 .filter(t => t !== 'Unassigned')
-                .map((t, idx) => `
-                    <tr class="hover:bg-slate-800/40">
-                        <td class="py-2 px-3 font-mono text-slate-500">${idx + 1}</td>
-                        <td class="py-2 px-3 font-semibold text-white">
-                            <i class="fa-solid fa-user-gear text-blue-400 mr-2"></i>${t}
-                        </td>
-                        <td class="py-2 px-3 text-right">
-                            <button onclick="removeTechnician('${t.replace(/'/g, "\\'")}')" class="text-slate-400 hover:text-rose-400 transition" title="Remove Technician">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `).join('');
+                .map((t, idx) => {
+                    const safeTech = escapeJsStr(t);
+                    return `
+                        <tr class="hover:bg-slate-800/40">
+                            <td class="py-2 px-3 font-mono text-slate-500">${idx + 1}</td>
+                            <td class="py-2 px-3 font-semibold text-white">
+                                <i class="fa-solid fa-user-gear text-blue-400 mr-2"></i>${t}
+                            </td>
+                            <td class="py-2 px-3 text-right">
+                                <button onclick="removeTechnician('${safeTech}')" class="text-slate-400 hover:text-rose-400 transition" title="Remove Technician">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
         }
 
         function removeTechnician(techName) {
@@ -3908,7 +4102,7 @@
         }
 
         function handleAddTechnician(e) {
-            e.preventDefault();
+            if (e && e.preventDefault) e.preventDefault();
             const nameInput = document.getElementById('single-tech-name');
             const roleInput = document.getElementById('single-tech-role');
             const name = nameInput?.value.trim();
@@ -3929,7 +4123,7 @@
         }
 
         function handleSingleMachineSubmit(e) {
-            e.preventDefault();
+            if (e && e.preventDefault) e.preventDefault();
             const name = document.getElementById('single-m-name').value.trim();
             const zone = document.getElementById('single-m-zone').value.trim();
             const idVal = document.getElementById('single-m-id').value.trim();
@@ -4016,7 +4210,8 @@
         function exportActiveCSV() {
             let csv = "Ticket ID,Equipment ID,Equipment Name,Created Dept,Category,Priority,Status,Assigned Tech,Description\n";
             activeJobs.forEach(j => {
-                csv += `"${j.id}","${j.equipmentId}","${j.equipmentName}","${j.createdDept || 'Production'}","${j.category || 'Breakdown'}","${j.priority}","${j.status}","${j.assignedTo}","${j.description.replace(/"/g, '""')}"\n`;
+                const techs = getJobTechs(j).join(', ');
+                csv += `"${j.id}","${j.equipmentId}","${j.equipmentName}","${j.createdDept || 'Production'}","${j.category || 'Breakdown'}","${j.priority}","${j.status}","${techs}","${j.description.replace(/"/g, '""')}"\n`;
             });
             triggerDownloadCSV(`active_work_orders_${_todayDateStr}.csv`, csv);
             showToast("Exported active jobs CSV", "success");
@@ -4142,6 +4337,87 @@
             `;
             toggleExecutiveReportModal();
         }
+
+        // Expose functions globally on window object
+        window.handleUserLogin = handleUserLogin;
+        window.handleLogout = handleLogout;
+        window.togglePasswordVisibility = togglePasswordVisibility;
+        window.switchTab = switchTab;
+        window.toggleActiveView = toggleActiveView;
+        window.filterActiveJobs = filterActiveJobs;
+        window.resetActiveFilters = resetActiveFilters;
+        window.exportActiveCSV = exportActiveCSV;
+        window.openCompleteModal = openCompleteModal;
+        window.handleCompleteJob = handleCompleteJob;
+        window.toggleCompleteJobModal = toggleCompleteJobModal;
+        window.verifyJobCompletion = verifyJobCompletion;
+        window.rejectJobResolution = rejectJobResolution;
+        window.deleteActiveJob = deleteActiveJob;
+        window.openEditJobTechsModal = openEditJobTechsModal;
+        window.toggleEditJobTechsModal = toggleEditJobTechsModal;
+        window.handleSaveJobTechs = handleSaveJobTechs;
+        window.selectAllEditJobTechs = selectAllEditJobTechs;
+        window.selectAllNewJobTechs = selectAllNewJobTechs;
+        window.handleCreateJob = handleCreateJob;
+        window.toggleNewJobModal = toggleNewJobModal;
+        window.handleJobCategorySelect = handleJobCategorySelect;
+        window.filterNewJobEquipment = filterNewJobEquipment;
+        window.filterPmEquipment = filterPmEquipment;
+        window.filterWeekendOtEquipment = filterWeekendOtEquipment;
+        window.exportCompletedCSV = exportCompletedCSV;
+        window.filterCompletedJobs = filterCompletedJobs;
+        window.deleteCompletedJob = deleteCompletedJob;
+        window.handleMgmtTimeFilterChange = handleMgmtTimeFilterChange;
+        window.generateExecutiveReport = generateExecutiveReport;
+        window.renderWeekendOtJobs = renderWeekendOtJobs;
+        window.updateWeekendOtEstimatedHours = updateWeekendOtEstimatedHours;
+        window.setUpcomingWeekendFilter = setUpcomingWeekendFilter;
+        window.resetWeekendOtFilters = resetWeekendOtFilters;
+        window.resetPMFilters = resetPMFilters;
+        window.toggleNewWeekendOtModal = toggleNewWeekendOtModal;
+        window.handleCreateWeekendOt = handleCreateWeekendOt;
+        window.exportWeekendOtCSV = exportWeekendOtCSV;
+        window.openReviewWeekendOtModal = openReviewWeekendOtModal;
+        window.toggleReviewWeekendOtModal = toggleReviewWeekendOtModal;
+        window.handleReviewWeekendOt = handleReviewWeekendOt;
+        window.rolloverOtToActiveJob = rolloverOtToActiveJob;
+        window.deleteWeekendOtJob = deleteWeekendOtJob;
+        window.renderPMSchedules = renderPMSchedules;
+        window.toggleNewPMModal = toggleNewPMModal;
+        window.handleCreatePM = handleCreatePM;
+        window.executePMNow = executePMNow;
+        window.deletePMSchedule = deletePMSchedule;
+        window.manuallyUpdateMachineStatus = manuallyUpdateMachineStatus;
+        window.exportEquipmentCSV = exportEquipmentCSV;
+        window.openMachineHistoryModal = openMachineHistoryModal;
+        window.toggleMachineHistoryModal = toggleMachineHistoryModal;
+        window.openQuickDispatch = openQuickDispatch;
+        window.renderTechnicianWorkload = renderTechnicianWorkload;
+        window.filterActiveJobsByTech = filterActiveJobsByTech;
+        window.quickDispatchForTech = quickDispatchForTech;
+        window.toggleManageMachinesModal = toggleManageMachinesModal;
+        window.switchImportTab = switchImportTab;
+        window.processExcelPaste = processExcelPaste;
+        window.handleCSVFileUpload = handleCSVFileUpload;
+        window.handleSingleMachineSubmit = handleSingleMachineSubmit;
+        window.removeMachine = removeMachine;
+        window.handleAddTechnician = handleAddTechnician;
+        window.removeTechnician = removeTechnician;
+        window.toggleBackupModal = toggleBackupModal;
+        window.exportBackupJSON = exportBackupJSON;
+        window.importBackupJSON = importBackupJSON;
+        window.toggleFirebaseModal = toggleFirebaseModal;
+        window.saveCustomFirebaseConfig = saveCustomFirebaseConfig;
+        window.clearCustomFirebaseConfig = clearCustomFirebaseConfig;
+        window.forceCloudPush = forceCloudPush;
+        window.toggleDeleteLogModal = toggleDeleteLogModal;
+        window.renderDeleteLogTable = renderDeleteLogTable;
+        window.restoreDeletedItem = restoreDeletedItem;
+        window.clearDeleteLogPermanently = clearDeleteLogPermanently;
+        window.openClearDataConfirmationModal = openClearDataConfirmationModal;
+        window.closeClearDataConfirmationModal = closeClearDataConfirmationModal;
+        window.confirmClearAllData = confirmClearAllData;
+        window.toggleExecutiveReportModal = toggleExecutiveReportModal;
 
         /* ================= INITIALIZATION ================= */
         document.addEventListener('DOMContentLoaded', function() {
