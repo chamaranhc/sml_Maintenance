@@ -3675,32 +3675,97 @@
         }
 
         /* ================= UTILITY HELPERS ================= */
+        function calculateWorkingMinutes(startDate, endDate) {
+            let start = new Date(startDate).getTime();
+            let end = new Date(endDate).getTime();
+
+            if (isNaN(start) || isNaN(end) || end <= start) return 0;
+
+            let totalWorkingMs = 0;
+
+            let currentDay = new Date(start);
+            currentDay.setHours(0, 0, 0, 0);
+
+            const lastDay = new Date(end);
+            lastDay.setHours(23, 59, 59, 999);
+
+            while (currentDay <= lastDay) {
+                const dayOfWeek = currentDay.getDay(); // 0 = Sunday, 1 = Mon, ..., 6 = Sat
+
+                // Exclude Sundays completely (dayOfWeek === 0)
+                if (dayOfWeek !== 0) {
+                    const year = currentDay.getFullYear();
+                    const month = currentDay.getMonth();
+                    const date = currentDay.getDate();
+
+                    // Morning Shift Window: 07:20 AM to 12:30 PM
+                    const shift1Start = new Date(year, month, date, 7, 20, 0, 0).getTime();
+                    const shift1End = new Date(year, month, date, 12, 30, 0, 0).getTime();
+
+                    // Afternoon Shift Window: 01:00 PM (13:00) to 07:15 PM (19:15)
+                    const shift2Start = new Date(year, month, date, 13, 0, 0, 0).getTime();
+                    const shift2End = new Date(year, month, date, 19, 15, 0, 0).getTime();
+
+                    // Calculate overlap for Morning Shift
+                    const o1Start = Math.max(start, shift1Start);
+                    const o1End = Math.min(end, shift1End);
+                    if (o1End > o1Start) {
+                        totalWorkingMs += (o1End - o1Start);
+                    }
+
+                    // Calculate overlap for Afternoon Shift (excludes 12:30 - 13:00 lunch)
+                    const o2Start = Math.max(start, shift2Start);
+                    const o2End = Math.min(end, shift2End);
+                    if (o2End > o2Start) {
+                        totalWorkingMs += (o2End - o2Start);
+                    }
+                }
+
+                // Advance to next day
+                currentDay.setDate(currentDay.getDate() + 1);
+            }
+
+            return Math.floor(totalWorkingMs / 60000);
+        }
+
         function calculateLiveElapsedMins(jobOrIso) {
             if (!jobOrIso) return 0;
+
+            let startIso = null;
+            let endIso = null;
+            let pausedMs = 0;
+
             if (typeof jobOrIso === 'string') {
-                const start = new Date(jobOrIso);
-                const end = new Date();
-                if (isNaN(start.getTime()) || end <= start) return 0;
-                return Math.max(0, Math.floor((end - start) / 60000));
-            }
-            const job = jobOrIso;
-            if (job.status === 'Pending Verification') {
-                if (typeof job.downtimeMins === 'number' && job.downtimeMins >= 0) {
-                    return job.downtimeMins;
+                startIso = jobOrIso;
+                endIso = new Date().toISOString();
+            } else {
+                const job = jobOrIso;
+                if (job.status === 'Pending Verification') {
+                    if (typeof job.downtimeMins === 'number' && job.downtimeMins >= 0) {
+                        return job.downtimeMins;
+                    }
+                    if (job.resolvedIso && job.createdIso) {
+                        startIso = job.createdIso;
+                        endIso = job.resolvedIso;
+                        pausedMs = job.pausedMs || 0;
+                    } else {
+                        startIso = job.createdIso;
+                        endIso = new Date().toISOString();
+                        pausedMs = job.pausedMs || 0;
+                    }
+                } else if (job.createdIso) {
+                    startIso = job.createdIso;
+                    endIso = new Date().toISOString();
+                    pausedMs = job.pausedMs || 0;
+                } else {
+                    return job.downtimeMins || 0;
                 }
-                if (job.resolvedIso && job.createdIso) {
-                    const start = new Date(job.createdIso).getTime();
-                    const res = new Date(job.resolvedIso).getTime();
-                    const paused = job.pausedMs || 0;
-                    return Math.max(0, Math.floor((res - start - paused) / 60000));
-                }
             }
-            if (!job.createdIso) return job.downtimeMins || 0;
-            const start = new Date(job.createdIso).getTime();
-            const now = Date.now();
-            const paused = job.pausedMs || 0;
-            if (isNaN(start) || now <= start) return 0;
-            return Math.max(0, Math.floor((now - start - paused) / 60000));
+
+            if (!startIso) return 0;
+            const rawWorkingMins = calculateWorkingMinutes(startIso, endIso);
+            const pausedMins = Math.floor((pausedMs || 0) / 60000);
+            return Math.max(0, rawWorkingMins - pausedMins);
         }
 
         function formatElapsed(mins) {
