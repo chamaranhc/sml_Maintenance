@@ -1979,7 +1979,33 @@
         }
 
         /* ================= REFRESH UI & VIEWS ================= */
+        function recalculateMachineStatuses() {
+            equipmentList.forEach(equip => {
+                if (equip.id === 'EQ-000') return;
+                
+                // Find active work orders assigned to this machine
+                const activeForEquip = activeJobs.filter(j => j.equipmentId === equip.id);
+                
+                if (activeForEquip.length > 0) {
+                    const hasCriticalOrHighBreakdown = activeForEquip.some(j => 
+                        (j.category === 'Breakdown' || !j.category) && (j.priority === 'Critical' || j.priority === 'High')
+                    );
+                    if (hasCriticalOrHighBreakdown) {
+                        equip.status = 'Fault';
+                    } else {
+                        equip.status = 'Maintenance';
+                    }
+                    // Reset manual override flag when active work order takes precedence
+                    equip.manualOverride = false;
+                } else if (!equip.manualOverride) {
+                    // Default to Operational if no active jobs exist and no manual override set
+                    equip.status = 'Operational';
+                }
+            });
+        }
+
         function refreshUI() {
+            recalculateMachineStatuses();
             updateAllMachineViews();
             renderActiveJobs();
             renderWeekendOtJobs();
@@ -2439,11 +2465,8 @@
                 description: desc
             };
 
-            if (category === 'Breakdown' && equip.id !== 'EQ-000') {
-                equip.status = (priority === 'Critical' || priority === 'High') ? 'Fault' : 'Maintenance';
-            }
-
             activeJobs.unshift(newJob);
+            recalculateMachineStatuses();
             saveToCloudAndLocal();
             
             document.getElementById('form-new-job').reset();
@@ -2488,6 +2511,7 @@
                 equip.lastService = new Date().toISOString().slice(0, 10);
             }
 
+            recalculateMachineStatuses();
             saveToCloudAndLocal();
             toggleCompleteJobModal();
 
@@ -2531,13 +2555,10 @@
 
             const equip = equipmentList.find(e => e.id === job.equipmentId);
             if (equip && job.equipmentId !== 'EQ-000') {
-                const otherActiveOnEquip = activeJobs.some(j => j.equipmentId === job.equipmentId && (j.category === 'Breakdown' || j.status !== 'Pending Verification'));
-                if (!otherActiveOnEquip) {
-                    equip.status = 'Operational';
-                }
                 equip.lastService = fixedDateStr;
             }
 
+            recalculateMachineStatuses();
             saveToCloudAndLocal();
             refreshUI();
             showToast(`Verified & Closed Work Order ${job.id}! Machine last breakdown fixed date updated to ${fixedDateStr}.`, 'success');
@@ -2561,87 +2582,10 @@
             job.status = 'In Progress';
             delete job.downtimeMins;
 
-            const equip = equipmentList.find(e => e.id === job.equipmentId);
-            if (equip && equip.id !== 'EQ-000') {
-                equip.status = (job.priority === 'Critical' || job.priority === 'High') ? 'Fault' : 'Maintenance';
-            }
-
+            recalculateMachineStatuses();
             saveToCloudAndLocal();
             refreshUI();
             showToast(`Work Order ${job.id} marked NOT RESOLVED by Production. Downtime timer restarted.`, 'info');
-        }
-
-        function handleCompleteJob(event) {
-            event.preventDefault();
-            if (!selectedJobForCompletion) return;
-
-            const downtimeVal = document.getElementById('complete-downtime').value;
-            const costVal = parseFloat(document.getElementById('complete-cost').value) || 0;
-            const resolutionText = document.getElementById('complete-resolution').value;
-
-            selectedJobForCompletion.status = 'Pending Verification';
-            selectedJobForCompletion.downtimeMins = parseInt(downtimeVal) || 0;
-            selectedJobForCompletion.costRs = costVal;
-            selectedJobForCompletion.resolution = resolutionText;
-            selectedJobForCompletion.completedIso = new Date().toISOString();
-
-            const equip = equipmentList.find(e => e.id === selectedJobForCompletion.equipmentId);
-            if (equip && selectedJobForCompletion.equipmentId !== 'EQ-000') {
-                equip.lastService = new Date().toISOString().slice(0, 10);
-            }
-
-            saveToCloudAndLocal();
-            toggleCompleteJobModal();
-
-            refreshUI();
-            showToast(`Work order ${selectedJobForCompletion.id} resolved by Maintenance. Pending Production verification.`, 'success');
-            selectedJobForCompletion = null;
-        }
-
-        function verifyJobCompletion(jobId) {
-            if (currentSessionUser && currentSessionUser.role !== 'PRODUCTION') {
-                showToast("Access Restricted: Only Production department can verify and close work orders.", "danger");
-                return;
-            }
-
-            const jobIndex = activeJobs.findIndex(j => j.id === jobId);
-            if (jobIndex === -1) return;
-
-            const job = activeJobs[jobIndex];
-            activeJobs.splice(jobIndex, 1);
-
-            const fixedDateStr = new Date().toISOString().slice(0, 10);
-
-            const completedRecord = {
-                id: job.id,
-                equipmentId: job.equipmentId,
-                equipmentName: job.equipmentName,
-                createdDept: job.createdDept || 'Production',
-                category: job.category || 'Breakdown',
-                technician: job.assignedTo,
-                completedTime: `${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (${new Date().toLocaleDateString()})`,
-                downtimeMins: job.downtimeMins || 0,
-                costRs: job.costRs || 0,
-                resolution: job.resolution || 'Completed and verified by Production.',
-                verifiedBy: currentSessionUser ? currentSessionUser.name : 'Production Supervisor',
-                createdIso: job.createdIso,
-                completedIso: job.completedIso || new Date().toISOString()
-            };
-
-            completedJobs.unshift(completedRecord);
-
-            const equip = equipmentList.find(e => e.id === job.equipmentId);
-            if (equip && job.equipmentId !== 'EQ-000') {
-                const otherActiveOnEquip = activeJobs.some(j => j.equipmentId === job.equipmentId && (j.category === 'Breakdown' || j.status !== 'Pending Verification'));
-                if (!otherActiveOnEquip) {
-                    equip.status = 'Operational';
-                }
-                equip.lastService = fixedDateStr;
-            }
-
-            saveToCloudAndLocal();
-            refreshUI();
-            showToast(`Verified & Closed Work Order ${job.id}! Machine last breakdown fixed date updated to ${fixedDateStr}.`, 'success');
         }
 
         function deleteActiveJob(jobId) {
@@ -2650,13 +2594,8 @@
 
             moveToDeleteLog('WorkOrder', `${job.id} - ${job.equipmentName}`, job);
             activeJobs = activeJobs.filter(j => j.id !== jobId);
-            
-            const otherActiveOnEquip = activeJobs.some(j => j.equipmentId === job.equipmentId);
-            if (!otherActiveOnEquip) {
-                const equip = equipmentList.find(e => e.id === job.equipmentId);
-                if (equip) equip.status = 'Operational';
-            }
 
+            recalculateMachineStatuses();
             saveToCloudAndLocal();
             refreshUI();
             showToast(`Moved work order ${jobId} to Delete Log.`, 'info');
@@ -3300,6 +3239,22 @@
         }
 
         /* ================= MACHINERY MAP & MACHINE HISTORY ================= */
+        function manuallyUpdateMachineStatus(eqId, newStatus) {
+            const equip = equipmentList.find(e => e.id === eqId);
+            if (!equip) return;
+            equip.status = newStatus;
+            equip.manualOverride = (newStatus !== 'Operational');
+            saveToCloudAndLocal();
+            refreshUI();
+            showToast(`Machine ${equip.id} status updated to ${newStatus}`, 'info');
+        }
+
+        function openQuickDispatch(equipId) {
+            toggleNewJobModal();
+            const selectEl = document.getElementById('new-job-equipment');
+            if (selectEl) selectEl.value = equipId;
+        }
+
         function renderEquipmentGrid() {
             const grid = document.getElementById('equipment-grid');
             const zoneFilter = document.getElementById('filter-equipment-zone')?.value || 'ALL';
@@ -3324,20 +3279,31 @@
                 }
 
                 const escapedEqId = eq.id.replace(/'/g, "\\'");
+                const activeForEquip = activeJobs.filter(j => j.equipmentId === eq.id);
+                const activeWOBadge = activeForEquip.length > 0 
+                    ? `<span class="px-1.5 py-0.5 text-[10px] rounded font-bold bg-blue-950 text-blue-300 border border-blue-800 flex items-center"><i class="fa-solid fa-wrench mr-1"></i>${activeForEquip.length} Active Ticket${activeForEquip.length > 1 ? 's' : ''}</span>`
+                    : `<span class="px-1.5 py-0.5 text-[10px] rounded font-medium text-slate-500">No Open Tickets</span>`;
 
                 return `
                     <div class="glass-card p-4 rounded-xl border-l-4 ${borderBar} flex flex-col justify-between space-y-3">
                         <div>
                             <div class="flex items-center justify-between mb-1">
                                 <span class="font-mono text-[11px] text-blue-400 font-bold">${eq.id}</span>
-                                <span class="px-2 py-0.5 text-[10px] rounded-full font-semibold border ${statusBadge}">${eq.status}</span>
+                                <select onchange="manuallyUpdateMachineStatus('${escapedEqId}', this.value)" class="px-2 py-0.5 text-[10px] rounded-full font-bold border ${statusBadge} focus:outline-none cursor-pointer bg-factory-900">
+                                    <option value="Operational" ${eq.status === 'Operational' ? 'selected' : ''} class="bg-factory-900 text-emerald-400">Operational</option>
+                                    <option value="Maintenance" ${eq.status === 'Maintenance' ? 'selected' : ''} class="bg-factory-900 text-amber-400">Maintenance</option>
+                                    <option value="Fault" ${eq.status === 'Fault' ? 'selected' : ''} class="bg-factory-900 text-rose-400">Fault</option>
+                                </select>
                             </div>
                             <h4 class="font-bold text-white text-xs">${eq.name}</h4>
                             <p class="text-[11px] text-slate-400"><i class="fa-solid fa-location-dot mr-1"></i>${eq.zone}</p>
                         </div>
-                        <div class="pt-2 border-t border-slate-800 text-[11px] space-y-1.5">
-                            <div class="text-slate-400">Last Breakdown Fixed: <strong class="text-slate-200 font-mono">${eq.lastService || 'None'}</strong></div>
-                            <div class="flex items-center justify-between pt-1">
+                        <div class="pt-2 border-t border-slate-800 text-[11px] space-y-2">
+                            <div class="flex items-center justify-between">
+                                ${activeWOBadge}
+                                <span class="text-slate-400 text-[10px]">Fixed: <strong class="text-slate-200 font-mono">${eq.lastService || 'None'}</strong></span>
+                            </div>
+                            <div class="flex items-center justify-between pt-1 border-t border-slate-800/60">
                                 <button onclick="openMachineHistoryModal('${escapedEqId}')" class="text-blue-400 hover:text-blue-300 font-semibold flex items-center">
                                     <i class="fa-solid fa-clock-rotate-left mr-1"></i> History
                                 </button>
