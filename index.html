@@ -4852,16 +4852,19 @@
             initCloudSync();
             refreshUI();
 
-            // Real-Time Live Clock & Elapsed Timer Loop
+            // Real-Time Live Clock Loop (1 second)
             setInterval(() => {
                 const now = new Date();
                 const timeEl = document.getElementById('live-time');
                 if (timeEl) timeEl.innerText = now.toLocaleTimeString();
+            }, 1000);
 
+            // Active Jobs & Dashboard Re-render Loop (10 seconds)
+            setInterval(() => {
                 if (activeJobs.length > 0) {
                     renderActiveJobs();
                 }
-            }, 1000);
+            }, 10000);
         };
     </script>
 </body>
