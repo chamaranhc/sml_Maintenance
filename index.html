@@ -1417,7 +1417,7 @@
                 </div>
                 <div>
                     <h3 class="text-base font-bold text-white">Database Connectivity & Sync Setup</h3>
-                    <p class="text-xs text-slate-400">Firebase Cloud Database Synchronization (<code class="text-blue-300">sml-maintenance</code>)</p>
+                    <p class="text-xs text-slate-400">Firebase Cloud Database Synchronization (<code class="text-blue-300">sml-maintenance1</code>)</p>
                 </div>
             </div>
 
@@ -1427,7 +1427,7 @@
                     <i class="fa-solid fa-cloud-arrow-up text-blue-400"></i>
                     <span>Firebase Cloud Connected</span>
                 </div>
-                <p class="text-slate-300 text-[11px] leading-relaxed">Connected to project <code class="text-amber-300">sml-maintenance</code>. All updates sync in real time across sessions.</p>
+                <p class="text-slate-300 text-[11px] leading-relaxed">Connected to project <code class="text-amber-300">sml-maintenance1</code>. All updates sync in real time across sessions.</p>
             </div>
 
             <div class="p-3.5 bg-factory-900 border border-slate-800 rounded-xl space-y-2">
@@ -1696,13 +1696,13 @@
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'sml-global-plant';
 
         const DEFAULT_FIREBASE_CONFIG = {
-            apiKey: "AIzaSyAl4XJPBshYrhEiPOgedU2VOn9OLYuqnag",
-            authDomain: "sml-maintenance.firebaseapp.com",
-            projectId: "sml-maintenance",
-            storageBucket: "sml-maintenance.firebasestorage.app",
-            messagingSenderId: "489017963709",
-            appId: "1:489017963709:web:6a977ed91d06323fbf73d4",
-            measurementId: "G-EHBNST37KT"
+            apiKey: "AIzaSyB3W-c-QMlCQRtEtPEC4vH7GXYmMPf_UzE",
+            authDomain: "sml-maintenance1.firebaseapp.com",
+            projectId: "sml-maintenance1",
+            storageBucket: "sml-maintenance1.firebasestorage.app",
+            messagingSenderId: "58224613087",
+            appId: "1:58224613087:web:102226ca3f991dd50c3b6a",
+            measurementId: "G-43WW20LWCR"
         };
 
         const AUTH_USER_DATABASE = {
@@ -1866,7 +1866,7 @@
                         <i class="fa-solid ${isConnected ? 'fa-cloud-arrow-up text-emerald-400' : 'fa-triangle-exclamation text-amber-400'}"></i>
                         <span>${statusText}</span>
                     </div>
-                    <p class="text-slate-300 text-[11px] leading-relaxed">${details || 'Connected to project sml-maintenance. Real-time sync active.'}</p>
+                    <p class="text-slate-300 text-[11px] leading-relaxed">${details || 'Connected to project sml-maintenance1. Real-time sync active.'}</p>
                 `;
             }
         }
@@ -3875,574 +3875,636 @@
                         totalWorkingMs += (o2End - o2Start);
                     }
                 }
-
                 currentDay.setDate(currentDay.getDate() + 1);
             }
 
-            return Math.floor(totalWorkingMs / 60000);
+            return Math.floor(totalWorkingMs / (1000 * 60));
         }
 
-        function calculateLiveElapsedMins(jobOrIso) {
-            if (!jobOrIso) return 0;
-
-            let startIso = null;
-            let endIso = null;
-            let pausedMs = 0;
-
-            if (typeof jobOrIso === 'string') {
-                startIso = jobOrIso;
-                endIso = new Date().toISOString();
-            } else {
-                const job = jobOrIso;
-                if (job.status === 'Pending Verification') {
-                    if (typeof job.downtimeMins === 'number' && job.downtimeMins >= 0) {
-                        return job.downtimeMins;
-                    }
-                    if (job.resolvedIso && job.createdIso) {
-                        startIso = job.createdIso;
-                        endIso = job.resolvedIso;
-                        pausedMs = job.pausedMs || 0;
-                    } else {
-                        startIso = job.createdIso;
-                        endIso = new Date().toISOString();
-                        pausedMs = job.pausedMs || 0;
-                    }
-                } else if (job.createdIso) {
-                    startIso = job.createdIso;
-                    endIso = new Date().toISOString();
-                    pausedMs = job.pausedMs || 0;
-                } else {
-                    return job.downtimeMins || 0;
-                }
+        function calculateLiveElapsedMins(job) {
+            if (!job) return 0;
+            if (typeof job.downtimeMins === 'number' && job.status === 'Pending Verification') {
+                return job.downtimeMins;
             }
 
+            let startIso = job.createdIso;
             if (!startIso) return 0;
-            const rawWorkingMins = calculateWorkingMinutes(startIso, endIso);
-            const pausedMins = Math.floor((pausedMs || 0) / 60000);
-            return Math.max(0, rawWorkingMins - pausedMins);
+
+            let endIso = job.resolvedIso || new Date().toISOString();
+            let totalMins = calculateWorkingMinutes(startIso, endIso);
+
+            if (job.pausedMs) {
+                const pausedMins = Math.floor(job.pausedMs / (1000 * 60));
+                totalMins = Math.max(0, totalMins - pausedMins);
+            }
+
+            return totalMins;
         }
 
-        function formatElapsed(mins) {
-            if (mins < 60) return `${mins}m`;
-            return `${Math.floor(mins / 60)}h ${mins % 60}m`;
+        function formatElapsed(totalMins) {
+            if (isNaN(totalMins) || totalMins <= 0) return '0m';
+            const hrs = Math.floor(totalMins / 60);
+            const mins = totalMins % 60;
+            if (hrs > 0) return `${hrs}h ${mins}m`;
+            return `${mins}m`;
         }
 
-        function getCategoryBadge(cat) {
-            if (cat === 'Fabrication') return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-950 text-indigo-300 border border-indigo-700">FABRICATION</span>`;
-            if (cat === 'Modification') return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-950 text-teal-300 border border-teal-700">MODIFICATION</span>`;
-            if (cat === 'Routine') return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">ROUTINE</span>`;
-            return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-950 text-rose-300 border border-rose-700">BREAKDOWN</span>`;
+        function getCategoryBadge(category) {
+            if (category === 'Breakdown') return `<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-rose-950/80 text-rose-300 border border-rose-800"><i class="fa-solid fa-triangle-exclamation mr-1 text-[9px]"></i>Breakdown</span>`;
+            if (category === 'Fabrication') return `<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950/80 text-amber-300 border border-amber-800"><i class="fa-solid fa-hammer mr-1 text-[9px]"></i>Fabrication</span>`;
+            if (category === 'Modification') return `<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-purple-950/80 text-purple-300 border border-purple-800"><i class="fa-solid fa-gear mr-1 text-[9px]"></i>Modification</span>`;
+            return `<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-950/80 text-blue-300 border border-blue-800"><i class="fa-solid fa-clipboard-check mr-1 text-[9px]"></i>Routine</span>`;
         }
 
         function getDeptBadge(dept) {
-            if (dept === 'Maintenance') return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950 text-amber-300 border border-amber-800">MAINT</span>`;
-            if (dept === 'Management') return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-800">MGMT</span>`;
-            return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-950 text-blue-300 border border-blue-800">PROD</span>`;
+            if (dept === 'Production') return `<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-950/80 text-blue-300 border border-blue-800"><i class="fa-solid fa-industry mr-1 text-[9px]"></i>Production</span>`;
+            if (dept === 'Maintenance') return `<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950/80 text-amber-300 border border-amber-800"><i class="fa-solid fa-screwdriver-wrench mr-1 text-[9px]"></i>Maintenance</span>`;
+            return `<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-800"><i class="fa-solid fa-user-shield mr-1 text-[9px]"></i>Management</span>`;
         }
 
-        function updateLiveClock() {
-            const el = document.getElementById('live-time');
-            if (el) el.innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            renderActiveJobs();
-        }
-
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toast-container');
-            if (!container) return;
-            const toast = document.createElement('div');
-            let bg = 'bg-slate-800 border-slate-700 text-slate-200';
-            if (type === 'success') bg = 'bg-emerald-950/90 border-emerald-600/50 text-emerald-200';
-            else if (type === 'danger') bg = 'bg-rose-950/90 border-rose-600/50 text-rose-200';
-
-            toast.className = `p-3.5 rounded-xl border shadow-xl flex items-center space-x-3 text-xs transition transform translate-y-2 opacity-0 pointer-events-auto ${bg}`;
-            toast.innerHTML = `<i class="fa-solid fa-circle-info text-base"></i><span>${message}</span>`;
-            container.appendChild(toast);
-            requestAnimationFrame(() => toast.classList.remove('translate-y-2', 'opacity-0'));
-            setTimeout(() => { toast.classList.add('opacity-0', 'translate-y-2'); setTimeout(() => toast.remove(), 300); }, 3500);
-        }
-
-        /* ================= MODAL & NAVIGATION CONTROLS ================= */
-        function switchTab(tab) {
-            if (currentSessionUser && currentSessionUser.role === 'PRODUCTION') {
-                if (tab === 'management' || tab === 'weekend-ot' || tab === 'pm') {
-                    showToast("Access Restricted: Production cannot access Management, OT or PM schedules.", "danger");
-                    return;
-                }
-            }
-            ['active', 'management', 'weekend-ot', 'completed', 'pm', 'equipment', 'tech-workload'].forEach(t => {
+        /* ================= TAB & VIEW MODE SWITCHING ================= */
+        function switchTab(tabName) {
+            const tabs = ['active', 'management', 'weekend-ot', 'completed', 'pm', 'equipment', 'tech-workload'];
+            tabs.forEach(t => {
                 const content = document.getElementById(`tab-content-${t}`);
                 const btn = document.getElementById(`tab-btn-${t}`);
-                if (content && btn) {
-                    if (t === tab) {
-                        content.classList.remove('hidden');
-                        btn.className = "px-3.5 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white transition flex items-center space-x-2";
+                if (content) {
+                    if (t === tabName) content.classList.remove('hidden');
+                    else content.classList.add('hidden');
+                }
+                if (btn) {
+                    if (t === tabName) {
+                        btn.className = "px-3.5 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white transition flex items-center space-x-2 shadow";
                     } else {
-                        content.classList.add('hidden');
                         btn.className = "px-3.5 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center space-x-2";
                     }
                 }
             });
-            if (tab === 'management') {
+
+            const viewControls = document.getElementById('view-mode-controls');
+            if (viewControls) {
+                if (tabName === 'active') viewControls.classList.remove('hidden');
+                else viewControls.classList.add('hidden');
+            }
+
+            if (tabName === 'management') {
                 renderAnalyticsTables();
                 updateManagementDashboard();
-                updateCharts();
-            } else if (tab === 'tech-workload') {
+                setTimeout(initCharts, 50);
+            } else if (tabName === 'equipment') {
+                renderEquipmentGrid();
+            } else if (tabName === 'tech-workload') {
                 renderTechnicianWorkload();
+            } else if (tabName === 'active') {
+                renderActiveJobs();
+            } else if (tabName === 'completed') {
+                renderCompletedJobs();
+            } else if (tabName === 'pm') {
+                renderPMSchedules();
+            } else if (tabName === 'weekend-ot') {
+                renderWeekendOtJobs();
             }
         }
 
         function toggleActiveView(mode) {
             activeViewMode = mode;
-            const tblWrp = document.getElementById('active-table-wrapper');
-            const knbWrp = document.getElementById('active-kanban-wrapper');
-            if (mode === 'table') {
-                tblWrp?.classList.remove('hidden');
-                knbWrp?.classList.add('hidden');
+            const tableBtn = document.getElementById('view-mode-table');
+            const kanbanBtn = document.getElementById('view-mode-kanban');
+            const tableWrapper = document.getElementById('active-table-wrapper');
+            const kanbanWrapper = document.getElementById('active-kanban-wrapper');
+
+            if (mode === 'kanban') {
+                if (tableWrapper) tableWrapper.classList.add('hidden');
+                if (kanbanWrapper) kanbanWrapper.classList.remove('hidden');
+                if (tableBtn) tableBtn.className = "px-2.5 py-1 rounded text-xs text-slate-400 hover:text-white";
+                if (kanbanBtn) kanbanBtn.className = "px-2.5 py-1 rounded text-xs bg-slate-700 text-white";
             } else {
-                tblWrp?.classList.add('hidden');
-                knbWrp?.classList.remove('hidden');
+                if (tableWrapper) tableWrapper.classList.remove('hidden');
+                if (kanbanWrapper) kanbanWrapper.classList.add('hidden');
+                if (tableBtn) tableBtn.className = "px-2.5 py-1 rounded text-xs bg-slate-700 text-white";
+                if (kanbanBtn) kanbanBtn.className = "px-2.5 py-1 rounded text-xs text-slate-400 hover:text-white";
             }
             renderActiveJobs();
         }
 
-        function toggleNewJobModal() { document.getElementById('modal-new-job')?.classList.toggle('hidden'); }
-        function toggleCompleteJobModal() { document.getElementById('modal-complete-job')?.classList.toggle('hidden'); }
-        function toggleNewPMModal() { document.getElementById('modal-new-pm')?.classList.toggle('hidden'); }
-        function toggleNewWeekendOtModal() { document.getElementById('modal-new-weekend-ot')?.classList.toggle('hidden'); }
-        function toggleReviewWeekendOtModal() { document.getElementById('modal-review-weekend-ot')?.classList.toggle('hidden'); }
-        function toggleManageMachinesModal() { document.getElementById('modal-manage-machines')?.classList.toggle('hidden'); }
-        function toggleBackupModal() { document.getElementById('modal-backup')?.classList.toggle('hidden'); }
-        function toggleExecutiveReportModal() { document.getElementById('modal-executive-report')?.classList.toggle('hidden'); }
-        function toggleMachineHistoryModal() { document.getElementById('modal-machine-history')?.classList.toggle('hidden'); }
-        function toggleDeleteLogModal() { const m = document.getElementById('modal-delete-log'); m?.classList.toggle('hidden'); if (!m?.classList.contains('hidden')) renderDeleteLogTable(); }
-        function toggleFirebaseModal() { document.getElementById('modal-firebase-config')?.classList.toggle('hidden'); }
-        function openClearDataConfirmationModal() { document.getElementById('modal-clear-confirm')?.classList.remove('hidden'); }
-        function closeClearDataConfirmationModal() { document.getElementById('modal-clear-confirm')?.classList.add('hidden'); }
-
-        function confirmClearAllData() {
-            const pass = document.getElementById('clear-data-password')?.value;
-            if (pass !== ADMIN_CLEAR_PASSWORD) {
-                document.getElementById('clear-password-error')?.classList.remove('hidden');
+        /* ================= MODAL TOGGLES ================= */
+        function toggleNewJobModal() {
+            document.getElementById('modal-new-job')?.classList.toggle('hidden');
+        }
+        function toggleCompleteJobModal() {
+            document.getElementById('modal-complete-job')?.classList.toggle('hidden');
+        }
+        function toggleNewPMModal() {
+            document.getElementById('modal-new-pm')?.classList.toggle('hidden');
+        }
+        function toggleNewWeekendOtModal() {
+            document.getElementById('modal-new-weekend-ot')?.classList.toggle('hidden');
+        }
+        function toggleReviewWeekendOtModal() {
+            document.getElementById('modal-review-weekend-ot')?.classList.toggle('hidden');
+        }
+        function toggleManageMachinesModal() {
+            document.getElementById('modal-manage-machines')?.classList.toggle('hidden');
+        }
+        function toggleBackupModal() {
+            document.getElementById('modal-backup')?.classList.toggle('hidden');
+        }
+        function toggleFirebaseModal() {
+            const el = document.getElementById('modal-firebase-config');
+            if (el) {
+                el.classList.toggle('hidden');
+                if (!el.classList.contains('hidden')) {
+                    const jsonArea = document.getElementById('custom-firebase-json');
+                    const customConfigRaw = getSafeStorage('sml_custom_firebase_json');
+                    if (jsonArea) jsonArea.value = customConfigRaw || JSON.stringify(DEFAULT_FIREBASE_CONFIG, null, 2);
+                }
+            }
+        }
+        function openClearDataConfirmationModal() {
+            if (currentSessionUser && currentSessionUser.role === 'PRODUCTION') {
+                showToast("Only Management can clear factory dataset.", "danger");
                 return;
             }
-            activeJobs = []; completedJobs = []; pmSchedules = []; weekendOtJobs = []; deleteLog = [];
-            saveToCloudAndLocal();
-            closeClearDataConfirmationModal();
-            refreshUI();
-            showToast('All dashboard data cleared.', 'success');
+            document.getElementById('modal-clear-confirm')?.classList.remove('hidden');
+            const pwdInput = document.getElementById('clear-data-password');
+            if (pwdInput) pwdInput.value = '';
+            const errBox = document.getElementById('clear-password-error');
+            if (errBox) errBox.classList.add('hidden');
+        }
+        function closeClearDataConfirmationModal() {
+            document.getElementById('modal-clear-confirm')?.classList.add('hidden');
+        }
+        function confirmClearAllData() {
+            const pwdInput = document.getElementById('clear-data-password');
+            const errBox = document.getElementById('clear-password-error');
+            if (!pwdInput) return;
+            if (pwdInput.value === ADMIN_CLEAR_PASSWORD) {
+                activeJobs = [];
+                completedJobs = [];
+                pmSchedules = [];
+                weekendOtJobs = [];
+                deleteLog = [];
+                saveToCloudAndLocal();
+                closeClearDataConfirmationModal();
+                refreshUI();
+                showToast("Factory dashboard data cleared.", "info");
+            } else {
+                if (errBox) errBox.classList.remove('hidden');
+            }
+        }
+        function toggleExecutiveReportModal() {
+            document.getElementById('modal-executive-report')?.classList.toggle('hidden');
+        }
+        function toggleMachineHistoryModal() {
+            document.getElementById('modal-machine-history')?.classList.toggle('hidden');
+        }
+        function toggleDeleteLogModal() {
+            const el = document.getElementById('modal-delete-log');
+            if (el) {
+                el.classList.toggle('hidden');
+                if (!el.classList.contains('hidden')) renderDeleteLogTable();
+            }
         }
 
         /* ================= ROSTER & MACHINERY MANAGEMENT ================= */
+        function switchImportTab(tab) {
+            ['paste', 'single', 'list', 'techs'].forEach(t => {
+                const view = document.getElementById(`import-view-${t}`);
+                const btn = document.getElementById(`import-tab-btn-${t}`);
+                if (view) {
+                    if (t === tab) view.classList.remove('hidden');
+                    else view.classList.add('hidden');
+                }
+                if (btn) {
+                    if (t === tab) btn.className = "px-3 py-1.5 rounded-lg bg-blue-600 text-white";
+                    else btn.className = "px-3 py-1.5 rounded-lg text-slate-400 hover:text-white";
+                }
+            });
+        }
+
+        function processExcelPaste() {
+            const rawText = document.getElementById('excel-paste-input')?.value.trim();
+            if (!rawText) return;
+
+            const lines = rawText.split('\n');
+            let importedCount = 0;
+
+            lines.forEach((line) => {
+                if (!line.trim()) return;
+                const parts = line.split(/[\t,;]+/).map(s => s.trim());
+                if (parts.length >= 1) {
+                    const name = parts[0];
+                    const zone = parts[1] || 'General Zone';
+                    const id = parts[2] || `EQ-${Math.floor(100 + Math.random() * 900)}`;
+
+                    if (!equipmentList.some(e => e.id === id || e.name === name)) {
+                        equipmentList.push({
+                            id,
+                            name,
+                            zone,
+                            status: 'Operational',
+                            lastService: new Date().toISOString().slice(0, 10)
+                        });
+                        importedCount++;
+                    }
+                }
+            });
+
+            saveToCloudAndLocal();
+            updateAllMachineViews();
+            document.getElementById('excel-paste-input').value = '';
+            showToast(`Successfully imported ${importedCount} machine(s) into roster.`, 'success');
+        }
+
+        function handleCSVFileUpload(event) {
+            const file = event.target.files?.[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                document.getElementById('excel-paste-input').value = text;
+                processExcelPaste();
+            };
+            reader.readAsText(file);
+        }
+
+        function handleSingleMachineSubmit(event) {
+            if (event && event.preventDefault) event.preventDefault();
+            const name = document.getElementById('single-m-name').value.trim();
+            const zone = document.getElementById('single-m-zone').value.trim();
+            let id = document.getElementById('single-m-id').value.trim();
+
+            if (!id) id = `EQ-${Math.floor(100 + Math.random() * 900)}`;
+
+            if (equipmentList.some(e => e.id === id)) {
+                showToast(`Machine ID ${id} already exists!`, 'danger');
+                return;
+            }
+
+            equipmentList.push({
+                id,
+                name,
+                zone,
+                status: 'Operational',
+                lastService: new Date().toISOString().slice(0, 10)
+            });
+
+            saveToCloudAndLocal();
+            updateAllMachineViews();
+            document.getElementById('import-view-single').reset();
+            showToast(`Added machine ${name} (${id})`, 'success');
+        }
+
         function renderRosterTable() {
             const tbody = document.getElementById('roster-table-tbody');
             const countBadge = document.getElementById('roster-count');
+            const zoneSelect = document.getElementById('filter-equipment-zone');
+
             if (countBadge) countBadge.innerText = equipmentList.length;
+
+            if (zoneSelect) {
+                const zones = Array.from(new Set(equipmentList.map(e => e.zone))).sort();
+                const curVal = zoneSelect.value;
+                zoneSelect.innerHTML = '<option value="ALL">All Sections / Zones</option>' + zones.map(z => `<option value="${z}">${z}</option>`).join('');
+                zoneSelect.value = curVal || 'ALL';
+            }
+
             if (!tbody) return;
 
-            tbody.innerHTML = equipmentList.map(e => {
-                const safeId = escapeJsStr(e.id);
-                return `
-                    <tr class="hover:bg-slate-800/40">
-                        <td class="py-2 px-3 font-mono text-blue-400 font-bold">${e.id}</td>
-                        <td class="py-2 px-3 font-semibold text-white">${e.name}</td>
-                        <td class="py-2 px-3 text-slate-400">${e.zone}</td>
-                        <td class="py-2 px-3 text-right">
-                            ${e.id === 'EQ-000' ? '<span class="text-slate-500 text-[10px]">Default</span>' : `
-                                <button onclick="removeMachine('${safeId}')" class="text-slate-400 hover:text-rose-400 transition" title="Delete Machine">
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </button>
-                            `}
-                        </td>
-                    </tr>
-                `;
-            }).join('');
+            tbody.innerHTML = equipmentList.map(m => `
+                <tr class="hover:bg-slate-800/30 transition">
+                    <td class="py-2 px-3 font-mono text-blue-400 font-bold">${m.id}</td>
+                    <td class="py-2 px-3 font-semibold text-white">${m.name}</td>
+                    <td class="py-2 px-3 text-slate-300">${m.zone}</td>
+                    <td class="py-2 px-3 text-right">
+                        ${m.id === 'EQ-000' ? '<span class="text-[10px] text-slate-500">System Default</span>' : `
+                            <button onclick="deleteMachineFromRoster('${escapeJsStr(m.id)}')" class="p-1 text-slate-400 hover:text-rose-400 transition" title="Remove Machine">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        `}
+                    </td>
+                </tr>
+            `).join('');
         }
 
-        function removeMachine(id) {
-            const eq = equipmentList.find(e => e.id === id);
-            if (eq) moveToDeleteLog('Machine', `${eq.id} - ${eq.name}`, eq);
+        function deleteMachineFromRoster(id) {
+            const equip = equipmentList.find(e => e.id === id);
+            if (equip) moveToDeleteLog('Machine', `${equip.id} - ${equip.name}`, equip);
             equipmentList = equipmentList.filter(e => e.id !== id);
             saveToCloudAndLocal();
             updateAllMachineViews();
-            showToast("Machine moved to Delete Log.", "info");
+            showToast(`Removed machine ${id} from roster.`, 'info');
+        }
+
+        function handleAddTechnician(event) {
+            if (event && event.preventDefault) event.preventDefault();
+            const name = document.getElementById('single-tech-name')?.value.trim();
+            const role = document.getElementById('single-tech-role')?.value.trim();
+
+            if (!name) return;
+
+            const fullTechName = role ? `${name} (${role})` : name;
+
+            if (technicianList.includes(fullTechName)) {
+                showToast(`Technician ${fullTechName} already exists!`, 'danger');
+                return;
+            }
+
+            technicianList.push(fullTechName);
+            saveToCloudAndLocal();
+            populateTechnicianDropdowns();
+            renderTechnicianRoster();
+            document.getElementById('form-add-tech').reset();
+            showToast(`Added technician ${fullTechName}`, 'success');
         }
 
         function renderTechnicianRoster() {
             const tbody = document.getElementById('tech-roster-table-tbody');
             const countBadge = document.getElementById('tech-roster-count');
             if (countBadge) countBadge.innerText = technicianList.filter(t => t !== 'Unassigned').length;
+
             if (!tbody) return;
 
-            tbody.innerHTML = technicianList
-                .filter(t => t !== 'Unassigned')
-                .map((t, idx) => {
-                    const safeTech = escapeJsStr(t);
-                    return `
-                        <tr class="hover:bg-slate-800/40">
-                            <td class="py-2 px-3 font-mono text-slate-500">${idx + 1}</td>
-                            <td class="py-2 px-3 font-semibold text-white">
-                                <i class="fa-solid fa-user-gear text-blue-400 mr-2"></i>${t}
-                            </td>
-                            <td class="py-2 px-3 text-right">
-                                <button onclick="removeTechnician('${safeTech}')" class="text-slate-400 hover:text-rose-400 transition" title="Remove Technician">
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
+            tbody.innerHTML = technicianList.map((t, idx) => `
+                <tr class="hover:bg-slate-800/30 transition">
+                    <td class="py-2 px-3 font-mono text-slate-500 text-[11px]">${idx + 1}</td>
+                    <td class="py-2 px-3 font-semibold text-white"><i class="fa-solid fa-user-gear text-blue-400 mr-2"></i>${t}</td>
+                    <td class="py-2 px-3 text-right">
+                        ${t === 'Unassigned' ? '<span class="text-[10px] text-slate-500">System Default</span>' : `
+                            <button onclick="deleteTechnicianFromRoster('${escapeJsStr(t)}')" class="p-1 text-slate-400 hover:text-rose-400 transition" title="Remove Technician">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        `}
+                    </td>
+                </tr>
+            `).join('');
         }
 
-        function removeTechnician(techName) {
+        function deleteTechnicianFromRoster(techName) {
             moveToDeleteLog('Technician', techName, techName);
             technicianList = technicianList.filter(t => t !== techName);
             saveToCloudAndLocal();
-            updateAllMachineViews();
-            showToast(`Moved technician ${techName} to Delete Log.`, 'info');
+            populateTechnicianDropdowns();
+            renderTechnicianRoster();
+            showToast(`Removed technician ${techName}`, 'info');
         }
 
-        function handleAddTechnician(e) {
-            if (e && e.preventDefault) e.preventDefault();
-            const nameInput = document.getElementById('single-tech-name');
-            const roleInput = document.getElementById('single-tech-role');
-            const name = nameInput?.value.trim();
-            const role = roleInput?.value.trim();
-            if (!name) return;
+        /* ================= EXECUTIVE REPORT GENERATION ================= */
+        function generateExecutiveReport() {
+            const area = document.getElementById('executive-report-printable-area');
+            if (!area) return;
 
-            const formatted = role ? `${name} (${role})` : name;
-            if (technicianList.includes(formatted)) {
-                showToast("Technician already exists.", "danger");
-                return;
-            }
-            technicianList.push(formatted);
-            saveToCloudAndLocal();
-            updateAllMachineViews();
-            if (nameInput) nameInput.value = '';
-            if (roleInput) roleInput.value = '';
-            showToast(`Added ${formatted} successfully!`, 'success');
+            const filteredCompleted = filterJobsByTimeframe(completedJobs);
+
+            const totalSpend = filteredCompleted.reduce((acc, j) => acc + (j.costRs || 0), 0);
+            const totalDowntimeMins = filteredCompleted.reduce((acc, j) => acc + (j.downtimeMins || 0), 0);
+            const mttr = filteredCompleted.length > 0 ? Math.round(totalDowntimeMins / filteredCompleted.length) : 0;
+
+            let periodTitle = 'All Time Record';
+            if (mgmtTimeFilter === 'DAILY') periodTitle = 'Today Daily Audit';
+            else if (mgmtTimeFilter === 'WEEKLY') periodTitle = 'This Week Performance Audit';
+            else if (mgmtTimeFilter === 'MONTHLY') periodTitle = 'This Month Executive Summary';
+
+            area.innerHTML = `
+                <div class="space-y-6 text-slate-900 bg-white p-6 rounded-xl text-xs font-sans">
+                    <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+                        <div>
+                            <h1 class="text-xl font-bold text-slate-900">SAMSON MANUFACTURERS (PVT) LTD</h1>
+                            <p class="text-sm font-semibold text-blue-700">Plant Floor Maintenance & Financial Performance Audit</p>
+                            <p class="text-[11px] text-slate-500">Generated on: ${new Date().toLocaleString()} | Period: <strong>${periodTitle}</strong></p>
+                        </div>
+                        <div class="text-right">
+                            <span class="inline-block px-3 py-1 bg-blue-100 text-blue-800 font-bold rounded-lg border border-blue-200 text-xs">Official Report</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-4 gap-4">
+                        <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                            <div class="text-[10px] text-slate-500 uppercase font-bold">Total Spend</div>
+                            <div class="text-base font-bold text-emerald-700 font-mono mt-1">Rs. ${totalSpend.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                        </div>
+                        <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                            <div class="text-[10px] text-slate-500 uppercase font-bold">Resolved Work Orders</div>
+                            <div class="text-base font-bold text-slate-900 font-mono mt-1">${filteredCompleted.length}</div>
+                        </div>
+                        <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                            <div class="text-[10px] text-slate-500 uppercase font-bold">Total Plant Downtime</div>
+                            <div class="text-base font-bold text-amber-700 font-mono mt-1">${formatElapsed(totalDowntimeMins)}</div>
+                        </div>
+                        <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                            <div class="text-[10px] text-slate-500 uppercase font-bold">Mean Time To Repair (MTTR)</div>
+                            <div class="text-base font-bold text-blue-700 font-mono mt-1">${mttr} mins</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="font-bold text-slate-800 border-b border-slate-200 pb-1 mb-2">Resolved Work Order History Log</h3>
+                        <table class="w-full text-left text-[11px] border border-slate-200">
+                            <thead class="bg-slate-100 font-semibold border-b border-slate-200">
+                                <tr>
+                                    <th class="p-2 border-r border-slate-200">Ticket ID</th>
+                                    <th class="p-2 border-r border-slate-200">Equipment</th>
+                                    <th class="p-2 border-r border-slate-200">Dept</th>
+                                    <th class="p-2 border-r border-slate-200">Technician</th>
+                                    <th class="p-2 border-r border-slate-200 text-right">Downtime</th>
+                                    <th class="p-2 text-right">Cost (Rs.)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200">
+                                ${filteredCompleted.map(j => `
+                                    <tr>
+                                        <td class="p-2 font-mono font-bold text-blue-800 border-r border-slate-200">${j.id}</td>
+                                        <td class="p-2 border-r border-slate-200 font-semibold">${j.equipmentName}</td>
+                                        <td class="p-2 border-r border-slate-200">${j.createdDept || 'Production'}</td>
+                                        <td class="p-2 border-r border-slate-200">${j.technician}</td>
+                                        <td class="p-2 border-r border-slate-200 text-right font-mono">${formatElapsed(j.downtimeMins)}</td>
+                                        <td class="p-2 text-right font-mono font-bold text-emerald-800">Rs. ${(j.costRs || 0).toFixed(2)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-200 flex justify-between text-[10px] text-slate-400">
+                        <span>Signatures: Maintenance Lead ___________________</span>
+                        <span>Plant Manager ___________________</span>
+                    </div>
+                </div>
+            `;
+
+            toggleExecutiveReportModal();
         }
 
-        function handleSingleMachineSubmit(e) {
-            if (e && e.preventDefault) e.preventDefault();
-            const name = document.getElementById('single-m-name').value.trim();
-            const zone = document.getElementById('single-m-zone').value.trim();
-            const idVal = document.getElementById('single-m-id').value.trim();
-            const id = idVal || `EQ-${Math.floor(100 + Math.random() * 900)}`;
-
-            if (equipmentList.some(e => e.id === id)) {
-                showToast(`Machine ID ${id} already exists.`, "danger");
-                return;
-            }
-            equipmentList.push({ id, name, zone, status: 'Operational', lastService: new Date().toISOString().slice(0, 10) });
-            saveToCloudAndLocal();
-            updateAllMachineViews();
-            document.getElementById('import-view-single').reset();
-            showToast(`Added ${name} to machinery roster!`, "success");
-            switchImportTab('list');
-        }
-
-        function processExcelPaste() {
-            const raw = document.getElementById('excel-paste-input')?.value.trim();
-            if (!raw) return;
-            const lines = raw.split(/\r?\n/);
-            let count = 0;
-            lines.forEach(line => {
-                if (!line.trim()) return;
-                const cols = line.split(/[\t,;]/).map(c => c.trim());
-                if (cols.length >= 2) {
-                    const name = cols[0];
-                    const zone = cols[1];
-                    const id = cols[2] || `EQ-${Math.floor(100 + Math.random() * 900)}`;
-                    if (!equipmentList.some(e => e.id === id)) {
-                        equipmentList.push({ id, name, zone, status: 'Operational', lastService: new Date().toISOString().slice(0, 10) });
-                        count++;
-                    }
-                }
-            });
-            if (count > 0) {
-                saveToCloudAndLocal();
-                updateAllMachineViews();
-                showToast(`Imported ${count} machines successfully!`, "success");
-                document.getElementById('excel-paste-input').value = '';
-                switchImportTab('list');
-            }
-        }
-
-        function handleCSVFileUpload(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                document.getElementById('excel-paste-input').value = evt.target.result;
-                processExcelPaste();
-            };
-            reader.readAsText(file);
-        }
-
-        function switchImportTab(tab) {
-            ['paste', 'single', 'list', 'techs'].forEach(t => {
-                const view = document.getElementById(`import-view-${t}`);
-                const btn = document.getElementById(`import-tab-btn-${t}`);
-                if (view && btn) {
-                    if (t === tab) {
-                        view.classList.remove('hidden');
-                        btn.className = "px-3 py-1.5 rounded-lg bg-blue-600 text-white font-semibold";
-                    } else {
-                        view.classList.add('hidden');
-                        btn.className = "px-3 py-1.5 rounded-lg text-slate-400 hover:text-white font-semibold";
-                    }
-                }
-            });
-        }
-
-        /* ================= EXPORT & REPORTING ================= */
-        function triggerDownloadCSV(filename, csvContent) {
-            const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+        /* ================= CSV EXPORT / IMPORT ================= */
+        function downloadCSV(filename, csvContent) {
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.setAttribute("href", url);
-            link.setAttribute("download", filename);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
         }
 
         function exportActiveCSV() {
-            let csv = "Ticket ID,Equipment ID,Equipment Name,Created Dept,Category,Priority,Status,Assigned Tech,Description\n";
+            let csv = "Job ID,Equipment ID,Equipment Name,Created Dept,Category,Priority,Status,Technician,Created Time,Scope\n";
             activeJobs.forEach(j => {
-                const techs = getJobTechs(j).join(', ');
-                csv += `"${j.id}","${j.equipmentId}","${j.equipmentName}","${j.createdDept || 'Production'}","${j.category || 'Breakdown'}","${j.priority}","${j.status}","${techs}","${j.description.replace(/"/g, '""')}"\n`;
+                const techs = getJobTechs(j).join(' | ');
+                csv += `"${j.id}","${j.equipmentId}","${j.equipmentName}","${j.createdDept || 'Production'}","${j.category || 'Breakdown'}","${j.priority}","${j.status}","${techs}","${j.startTime || ''}","${(j.description || '').replace(/"/g, '""')}"\n`;
             });
-            triggerDownloadCSV(`active_work_orders_${_todayDateStr}.csv`, csv);
-            showToast("Exported active jobs CSV", "success");
+            downloadCSV(`active_work_orders_${_todayDateStr}.csv`, csv);
+            showToast("Exported Active Work Orders CSV", "success");
         }
 
         function exportCompletedCSV() {
-            let csv = "Job ID,Equipment ID,Equipment Name,Created Dept,Technician,Completion Time,Auto Downtime (Mins),Total Cost (Rs.),Resolution\n";
+            let csv = "Job ID,Equipment ID,Equipment Name,Created Dept,Category,Technician,Completed Time,Downtime Minutes,Cost Rs,Verified By,Resolution\n";
             completedJobs.forEach(j => {
-                csv += `"${j.id}","${j.equipmentId}","${j.equipmentName}","${j.createdDept || 'Production'}","${j.technician}","${j.completedTime}",${j.downtimeMins},${(j.costRs || 0).toFixed(2)},"${j.resolution.replace(/"/g, '""')}"\n`;
+                csv += `"${j.id}","${j.equipmentId}","${j.equipmentName}","${j.createdDept || 'Production'}","${j.category || 'Breakdown'}","${j.technician}","${j.completedTime}","${j.downtimeMins || 0}","${j.costRs || 0}","${j.verifiedBy || ''}","${(j.resolution || '').replace(/"/g, '""')}"\n`;
             });
-            triggerDownloadCSV(`completed_history_${_todayDateStr}.csv`, csv);
-            showToast("Exported completed history CSV", "success");
+            downloadCSV(`completed_work_orders_${_todayDateStr}.csv`, csv);
+            showToast("Exported Completed History CSV", "success");
         }
 
         function exportWeekendOtCSV() {
-            let csv = "OT ID,Equipment Name,Weekend Date,Shift,Hours,Lead Tech,Status\n";
-            weekendOtJobs.forEach(o => {
-                csv += `"${o.id}","${o.equipmentName}","${o.weekendDate}","${o.shiftType}",${o.shiftHours},"${o.leadTech}","${o.status}"\n`;
+            let csv = "OT ID,Equipment ID,Equipment Name,Weekend Date,Shift Type,Shift Hours,Lead Tech,Supporting Techs,Priority,Status,Actual Hours,Scope\n";
+            weekendOtJobs.forEach(ot => {
+                const support = (ot.supportTechs || []).join(' | ');
+                csv += `"${ot.id}","${ot.equipmentId}","${ot.equipmentName}","${ot.weekendDate}","${ot.shiftType}","${ot.shiftHours}","${ot.leadTech}","${support}","${ot.priority}","${ot.status}","${ot.actualHours || 0}","${(ot.jobScope || '').replace(/"/g, '""')}"\n`;
             });
-            triggerDownloadCSV(`weekend_ot_${_todayDateStr}.csv`, csv);
-            showToast("Exported Weekend OT schedule CSV", "success");
+            downloadCSV(`weekend_ot_schedule_${_todayDateStr}.csv`, csv);
+            showToast("Exported Weekend OT CSV", "success");
         }
 
         function exportEquipmentCSV() {
-            let csv = "Machine ID,Machine Name,Section/Zone,Status,Last Breakdown Fixed Date\n";
+            let csv = "Equipment ID,Machine Name,Zone / Section,Status,Last Breakdown Fixed\n";
             equipmentList.forEach(e => {
-                csv += `"${e.id}","${e.name}","${e.zone}","${e.status}","${e.lastService || 'None'}"\n`;
+                csv += `"${e.id}","${e.name}","${e.zone}","${e.status}","${e.lastService || ''}"\n`;
             });
-            triggerDownloadCSV(`machinery_layout_${_todayDateStr}.csv`, csv);
-            showToast("Exported machinery layout CSV", "success");
+            downloadCSV(`machinery_roster_${_todayDateStr}.csv`, csv);
+            showToast("Exported Machinery Roster CSV", "success");
         }
 
+        /* ================= JSON BACKUP / RESTORE ================= */
         function exportBackupJSON() {
-            const data = { version: "6.0", equipmentList, technicianList, activeJobs, completedJobs, pmSchedules, weekendOtJobs, deleteLog };
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const data = {
+                equipmentList,
+                technicianList,
+                activeJobs,
+                completedJobs,
+                pmSchedules,
+                weekendOtJobs,
+                deleteLog,
+                exportedAt: new Date().toISOString()
+            };
+            const jsonStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `sml_maintenance_backup_${_todayDateStr}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            showToast("Backup JSON file downloaded", "success");
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `sml_maintenance_backup_${_todayDateStr}.json`;
+            link.click();
+            showToast("Exported JSON backup file.", "success");
         }
 
-        function importBackupJSON(e) {
-            const file = e.target.files[0];
+        function importBackupJSON(event) {
+            const file = event.target.files?.[0];
             if (!file) return;
+
             const reader = new FileReader();
-            reader.onload = function(evt) {
+            reader.onload = function(e) {
                 try {
-                    const parsed = JSON.parse(evt.target.result);
-                    applySyncedData(parsed, true);
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed.equipmentList) equipmentList = parsed.equipmentList;
+                    if (parsed.technicianList) technicianList = parsed.technicianList;
+                    if (parsed.activeJobs) activeJobs = parsed.activeJobs;
+                    if (parsed.completedJobs) completedJobs = parsed.completedJobs;
+                    if (parsed.pmSchedules) pmSchedules = parsed.pmSchedules;
+                    if (parsed.weekendOtJobs) weekendOtJobs = parsed.weekendOtJobs;
+                    if (parsed.deleteLog) deleteLog = parsed.deleteLog;
+
+                    saveToCloudAndLocal();
                     toggleBackupModal();
-                    showToast("Restored system dataset successfully!", "success");
-                } catch(err) {
-                    showToast("Invalid JSON file format", "danger");
+                    refreshUI();
+                    showToast("System dataset successfully restored from backup!", "success");
+                } catch (err) {
+                    showToast("Invalid JSON backup file format.", "danger");
                 }
             };
             reader.readAsText(file);
         }
 
-        function generateExecutiveReport() {
-            const area = document.getElementById('executive-report-printable-area');
-            if (!area) return;
-            const totalSpend = completedJobs.reduce((acc, j) => acc + (j.costRs || 0), 0);
-            const totalDowntime = completedJobs.reduce((acc, j) => acc + (j.downtimeMins || 0), 0);
-            const mttr = completedJobs.length > 0 ? Math.round(totalDowntime / completedJobs.length) : 0;
+        /* ================= TOAST NOTIFICATION SYSTEM ================= */
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
 
-            area.innerHTML = `
-                <div class="space-y-4 text-slate-200">
-                    <div class="border-b border-slate-700 pb-3 flex items-center justify-between">
-                        <div>
-                            <h4 class="font-extrabold text-white text-sm">SAMSON MANUFACTURERS (PVT) LTD.</h4>
-                            <p class="text-[11px] text-slate-400">Executive Plant Reliability & Financial Audit Statement</p>
-                        </div>
-                        <div class="text-right text-[11px] font-mono text-slate-400">
-                            Generated: ${new Date().toLocaleString()}
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-3 gap-3">
-                        <div class="p-3 bg-slate-900 rounded-lg border border-slate-800">
-                            <div class="text-[10px] text-slate-400 uppercase">Total Maintenance Expenditure</div>
-                            <div class="text-base font-bold text-emerald-400 font-mono mt-1">Rs. ${totalSpend.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
-                        </div>
-                        <div class="p-3 bg-slate-900 rounded-lg border border-slate-800">
-                            <div class="text-[10px] text-slate-400 uppercase">Mean Time to Repair (MTTR)</div>
-                            <div class="text-base font-bold text-blue-400 font-mono mt-1">${mttr} mins</div>
-                        </div>
-                        <div class="p-3 bg-slate-900 rounded-lg border border-slate-800">
-                            <div class="text-[10px] text-slate-400 uppercase">Resolved Work Orders</div>
-                            <div class="text-base font-bold text-purple-400 font-mono mt-1">${completedJobs.length} Tickets</div>
-                        </div>
-                    </div>
-                    <div>
-                        <h5 class="font-bold text-white text-xs mb-2">Active Factory Equipment Status Summary</h5>
-                        <div class="border border-slate-800 rounded-lg overflow-hidden">
-                            <table class="w-full text-left text-xs">
-                                <thead class="bg-slate-900 text-slate-400 font-semibold border-b border-slate-800">
-                                    <tr>
-                                        <th class="py-2 px-3">ID</th>
-                                        <th class="py-2 px-3">Equipment Name</th>
-                                        <th class="py-2 px-3">Section</th>
-                                        <th class="py-2 px-3">Status</th>
-                                        <th class="py-2 px-3">Last Breakdown Fixed</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-slate-800/60">
-                                    ${equipmentList.map(eq => `
-                                        <tr>
-                                            <td class="py-2 px-3 font-mono text-blue-400 font-bold">${eq.id}</td>
-                                            <td class="py-2 px-3 font-semibold text-white">${eq.name}</td>
-                                            <td class="py-2 px-3 text-slate-400">${eq.zone}</td>
-                                            <td class="py-2 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${eq.status==='Operational'?'bg-emerald-950 text-emerald-300':'bg-rose-950 text-rose-300'}">${eq.status}</span></td>
-                                            <td class="py-2 px-3 font-mono text-slate-300">${eq.lastService || 'None'}</td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            `;
-            toggleExecutiveReportModal();
-        }
+            const toast = document.createElement('div');
+            let bgClass = 'bg-slate-800 text-slate-100 border-slate-700';
+            let icon = 'fa-circle-info text-blue-400';
 
-        // Expose functions globally on window object
-        window.handleUserLogin = handleUserLogin;
-        window.handleLogout = handleLogout;
-        window.togglePasswordVisibility = togglePasswordVisibility;
-        window.switchTab = switchTab;
-        window.toggleActiveView = toggleActiveView;
-        window.filterActiveJobs = filterActiveJobs;
-        window.resetActiveFilters = resetActiveFilters;
-        window.exportActiveCSV = exportActiveCSV;
-        window.openCompleteModal = openCompleteModal;
-        window.handleCompleteJob = handleCompleteJob;
-        window.toggleCompleteJobModal = toggleCompleteJobModal;
-        window.verifyJobCompletion = verifyJobCompletion;
-        window.rejectJobResolution = rejectJobResolution;
-        window.deleteActiveJob = deleteActiveJob;
-        window.openEditJobTechsModal = openEditJobTechsModal;
-        window.toggleEditJobTechsModal = toggleEditJobTechsModal;
-        window.handleSaveJobTechs = handleSaveJobTechs;
-        window.selectAllEditJobTechs = selectAllEditJobTechs;
-        window.selectAllNewJobTechs = selectAllNewJobTechs;
-        window.handleCreateJob = handleCreateJob;
-        window.toggleNewJobModal = toggleNewJobModal;
-        window.handleJobCategorySelect = handleJobCategorySelect;
-        window.filterNewJobEquipment = filterNewJobEquipment;
-        window.filterPmEquipment = filterPmEquipment;
-        window.filterWeekendOtEquipment = filterWeekendOtEquipment;
-        window.exportCompletedCSV = exportCompletedCSV;
-        window.filterCompletedJobs = filterCompletedJobs;
-        window.deleteCompletedJob = deleteCompletedJob;
-        window.handleMgmtTimeFilterChange = handleMgmtTimeFilterChange;
-        window.generateExecutiveReport = generateExecutiveReport;
-        window.renderWeekendOtJobs = renderWeekendOtJobs;
-        window.updateWeekendOtEstimatedHours = updateWeekendOtEstimatedHours;
-        window.setUpcomingWeekendFilter = setUpcomingWeekendFilter;
-        window.resetWeekendOtFilters = resetWeekendOtFilters;
-        window.resetPMFilters = resetPMFilters;
-        window.toggleNewWeekendOtModal = toggleNewWeekendOtModal;
-        window.handleCreateWeekendOt = handleCreateWeekendOt;
-        window.exportWeekendOtCSV = exportWeekendOtCSV;
-        window.openReviewWeekendOtModal = openReviewWeekendOtModal;
-        window.toggleReviewWeekendOtModal = toggleReviewWeekendOtModal;
-        window.handleReviewWeekendOt = handleReviewWeekendOt;
-        window.rolloverOtToActiveJob = rolloverOtToActiveJob;
-        window.deleteWeekendOtJob = deleteWeekendOtJob;
-        window.renderPMSchedules = renderPMSchedules;
-        window.toggleNewPMModal = toggleNewPMModal;
-        window.handleCreatePM = handleCreatePM;
-        window.executePMNow = executePMNow;
-        window.deletePMSchedule = deletePMSchedule;
-        window.manuallyUpdateMachineStatus = manuallyUpdateMachineStatus;
-        window.exportEquipmentCSV = exportEquipmentCSV;
-        window.openMachineHistoryModal = openMachineHistoryModal;
-        window.toggleMachineHistoryModal = toggleMachineHistoryModal;
-        window.openQuickDispatch = openQuickDispatch;
-        window.renderTechnicianWorkload = renderTechnicianWorkload;
-        window.filterActiveJobsByTech = filterActiveJobsByTech;
-        window.quickDispatchForTech = quickDispatchForTech;
-        window.toggleManageMachinesModal = toggleManageMachinesModal;
-        window.switchImportTab = switchImportTab;
-        window.processExcelPaste = processExcelPaste;
-        window.handleCSVFileUpload = handleCSVFileUpload;
-        window.handleSingleMachineSubmit = handleSingleMachineSubmit;
-        window.removeMachine = removeMachine;
-        window.handleAddTechnician = handleAddTechnician;
-        window.removeTechnician = removeTechnician;
-        window.toggleBackupModal = toggleBackupModal;
-        window.exportBackupJSON = exportBackupJSON;
-        window.importBackupJSON = importBackupJSON;
-        window.toggleFirebaseModal = toggleFirebaseModal;
-        window.saveCustomFirebaseConfig = saveCustomFirebaseConfig;
-        window.clearCustomFirebaseConfig = clearCustomFirebaseConfig;
-        window.forceCloudPush = forceCloudPush;
-        window.toggleDeleteLogModal = toggleDeleteLogModal;
-        window.renderDeleteLogTable = renderDeleteLogTable;
-        window.restoreDeletedItem = restoreDeletedItem;
-        window.clearDeleteLogPermanently = clearDeleteLogPermanently;
-        window.openClearDataConfirmationModal = openClearDataConfirmationModal;
-        window.closeClearDataConfirmationModal = closeClearDataConfirmationModal;
-        window.confirmClearAllData = confirmClearAllData;
-        window.toggleExecutiveReportModal = toggleExecutiveReportModal;
-
-        /* ================= INITIALIZATION ================= */
-        document.addEventListener('DOMContentLoaded', function() {
-            const savedSession = getSafeStorage('sml_active_user_session');
-            if (savedSession) {
-                try {
-                    currentSessionUser = JSON.parse(savedSession);
-                    document.getElementById('login-overlay')?.classList.add('hidden');
-                } catch(e) {}
+            if (type === 'success') {
+                bgClass = 'bg-emerald-950/90 text-emerald-200 border-emerald-800';
+                icon = 'fa-circle-check text-emerald-400';
+            } else if (type === 'danger') {
+                bgClass = 'bg-rose-950/90 text-rose-200 border-rose-800';
+                icon = 'fa-circle-exclamation text-rose-400';
+            } else if (type === 'warning') {
+                bgClass = 'bg-amber-950/90 text-amber-200 border-amber-800';
+                icon = 'fa-triangle-exclamation text-amber-400';
             }
 
+            toast.className = `pointer-events-auto flex items-center space-x-3 px-4 py-3 rounded-xl border shadow-xl backdrop-blur text-xs font-semibold transition-all duration-300 transform translate-y-2 opacity-0 ${bgClass}`;
+            toast.innerHTML = `<i class="fa-solid ${icon} text-base"></i><span>${message}</span>`;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        /* ================= SYSTEM INITIALIZATION ================= */
+        window.onload = function() {
+            // Live Clock
+            setInterval(() => {
+                const timeEl = document.getElementById('live-time');
+                if (timeEl) {
+                    timeEl.innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                }
+            }, 1000);
+
+            // Periodic UI Refresh (Updates Live Downtime Timers every 10 seconds)
+            setInterval(() => {
+                if (activeJobs.length > 0) {
+                    renderActiveJobs();
+                    updateKPICards();
+                }
+            }, 10000);
+
+            // Load active session from storage
+            try {
+                const sessionRaw = getSafeStorage('sml_active_user_session');
+                if (sessionRaw) {
+                    currentSessionUser = JSON.parse(sessionRaw);
+                    document.getElementById('login-overlay')?.classList.add('hidden');
+                }
+            } catch (e) {}
+
+            // Load Data & Init Cloud Sync
             loadFromLocalStorage();
-            updateLiveClock();
-            setInterval(updateLiveClock, 30000);
-            
-            if (currentSessionUser) applyUserPermissionsUI();
-            refreshUI();
-            initCharts();
             initCloudSync();
 
-            const pmDateInput = document.getElementById('pm-due-date');
-            if (pmDateInput) pmDateInput.value = new Date().toISOString().slice(0, 10);
-            const otDateInput = document.getElementById('weekend-ot-date');
-            if (otDateInput) otDateInput.value = new Date().toISOString().slice(0, 10);
-        });
+            // Apply Permissions & Refresh UI
+            applyUserPermissionsUI();
+        };
     </script>
 </body>
 </html>
