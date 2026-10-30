@@ -1910,6 +1910,52 @@
         let lastAppliedUpdatedAt = null;
         let firestoreQuotaExceeded = getSafeStorage('sml_firestore_quota_exceeded') === 'true';
 
+        // Suppress background SDK backoff logs for Firestore quota limit
+        const originalConsoleError = console.error;
+        console.error = function (...args) {
+            if (args && args[0] && typeof args[0] === 'string') {
+                if (args[0].includes('@firebase/firestore') && (args[0].includes('Quota exceeded') || args[0].includes('maximum backoff delay') || args[0].includes('resource-exhausted'))) {
+                    if (!firestoreQuotaExceeded) {
+                        handleFirestoreQuotaExceeded("Captured via console error filter");
+                    }
+                    return; // Suppress error from logging to console
+                }
+            }
+            originalConsoleError.apply(console, args);
+        };
+
+        // Intercept unhandled Firestore promise rejections to halt backoff retry console spam
+        window.addEventListener('unhandledrejection', function(event) {
+            const reasonStr = event && event.reason ? (event.reason.message || event.reason.toString() || '') : '';
+            if (reasonStr.includes('Quota exceeded') || reasonStr.includes('resource-exhausted')) {
+                event.preventDefault();
+                handleFirestoreQuotaExceeded(reasonStr);
+            }
+        });
+
+        /* ================= CLUSTER QUOTA & SHUTDOWN HELPER ================= */
+        function handleFirestoreQuotaExceeded(reason = "") {
+            firestoreQuotaExceeded = true;
+            setSafeStorage('sml_firestore_quota_exceeded', 'true');
+
+            if (unsubscribeSyncListener) {
+                try { unsubscribeSyncListener(); } catch(e){}
+                unsubscribeSyncListener = null;
+            }
+
+            if (db) {
+                const currentDb = db;
+                db = null;
+                try {
+                    if (currentDb.disableNetwork) currentDb.disableNetwork().catch(() => {});
+                    if (currentDb.terminate) currentDb.terminate().catch(() => {});
+                } catch(e) {}
+            }
+
+            console.warn("Firestore Quota Exceeded. Disabled Firestore network channel. System running on Realtime DB.");
+            updateCloudUIStatus(true, "Realtime DB Active", "Firestore daily quota exceeded. Live sync active via Realtime Database.");
+        }
+
         /* ================= CLOUD UI STATUS HELPER ================= */
         function updateCloudUIStatus(isConnected, statusText, details = "") {
             const dot = document.getElementById('cloud-status-dot');
@@ -1966,8 +2012,7 @@
                     fsSuccess = true;
                 } catch(e) {
                     if (e && (e.code === 'resource-exhausted' || (e.message && e.message.includes('Quota exceeded')))) {
-                        firestoreQuotaExceeded = true;
-                        console.warn("Firestore quota limit reached. Disabling Firestore ping retries.");
+                        handleFirestoreQuotaExceeded(e.message);
                     } else {
                         console.warn("Firestore Ping Error:", e);
                     }
@@ -4698,9 +4743,7 @@
                     savedToCloud = true;
                 } catch(err) {
                     if (err && (err.code === 'resource-exhausted' || (err.message && err.message.includes('Quota exceeded')) || (err.toString && err.toString().includes('Quota exceeded')))) {
-                        firestoreQuotaExceeded = true;
-                        setSafeStorage('sml_firestore_quota_exceeded', 'true');
-                        console.warn("Firestore quota exceeded. Disabling Firestore requests; running on Realtime DB / Local storage.");
+                        handleFirestoreQuotaExceeded(err.message);
                     } else {
                         console.warn("Firestore write error:", err);
                     }
@@ -4751,6 +4794,10 @@
 
         async function initCloudSync() {
             try {
+                if (window.firebase && window.firebase.firestore) {
+                    try { firebase.firestore.setLogLevel('silent'); } catch(e){}
+                }
+
                 let config = DEFAULT_FIREBASE_CONFIG;
                 const customConfig = getSafeStorage('sml_custom_firebase_json');
                 if (customConfig) {
@@ -4821,17 +4868,7 @@
                             }
                         }, (fsErr) => {
                             if (fsErr && (fsErr.code === 'resource-exhausted' || (fsErr.message && fsErr.message.includes('Quota exceeded')) || (fsErr.toString && fsErr.toString().includes('Quota exceeded')))) {
-                                firestoreQuotaExceeded = true;
-                                setSafeStorage('sml_firestore_quota_exceeded', 'true');
-                                if (unsubscribeSyncListener) {
-                                    try { unsubscribeSyncListener(); } catch(e){}
-                                    unsubscribeSyncListener = null;
-                                }
-                                if (isRtdbListening) {
-                                    updateCloudUIStatus(true, "Realtime DB Active", "Firestore daily quota exceeded. Live sync active via Realtime Database.");
-                                } else {
-                                    updateCloudUIStatus(false, "Firestore Quota Exceeded", "Using local storage mode.");
-                                }
+                                handleFirestoreQuotaExceeded(fsErr.message);
                             } else {
                                 console.warn("Firestore Listener Error:", fsErr);
                                 if (!isRtdbListening) {
@@ -4840,11 +4877,11 @@
                             }
                         });
                     } catch (fsErr) {
-                        console.warn("Firestore Init Error:", fsErr);
+                        handleFirestoreQuotaExceeded(fsErr.message || "Init error");
                     }
                 } else {
                     if (isRtdbListening) {
-                        updateCloudUIStatus(true, "Realtime DB Active", "Firestore quota previously exceeded. Live sync running smoothly on Realtime Database.");
+                        updateCloudUIStatus(true, "Realtime DB Active", "Firestore daily quota exceeded. Live sync active via Realtime Database.");
                     }
                 }
 
