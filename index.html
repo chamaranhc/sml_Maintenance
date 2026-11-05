@@ -3473,7 +3473,7 @@
         /* ================= DELETION LOG & RESTORE ================= */
         function moveToDeleteLog(type, details, payload) {
             const entry = {
-                id: `DEL-${Date.now()}`,
+                id: `DEL-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
                 type: type,
                 details: details,
                 payload: payload,
@@ -3491,9 +3491,9 @@
             if (!tbody) return;
 
             const filtered = deleteLog.filter(item => 
-                item.type.toLowerCase().includes(searchVal) || 
-                item.details.toLowerCase().includes(searchVal) ||
-                item.deletedBy.toLowerCase().includes(searchVal)
+                (item.type || '').toLowerCase().includes(searchVal) || 
+                (item.details || '').toLowerCase().includes(searchVal) ||
+                (item.deletedBy || '').toLowerCase().includes(searchVal)
             );
 
             if (filtered.length === 0) {
@@ -3501,24 +3501,28 @@
                 return;
             }
 
-            tbody.innerHTML = filtered.map((item, idx) => `
+            tbody.innerHTML = filtered.map((item) => {
+                const safeDelId = escapeJsStr(item.id || '');
+                return `
                 <tr class="hover:bg-slate-800/30 transition">
-                    <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-amber-400 border border-slate-700">${item.type}</span></td>
-                    <td class="py-2.5 px-3 font-semibold text-slate-200">${item.details}</td>
-                    <td class="py-2.5 px-3 font-mono text-slate-400 text-[11px]">${new Date(item.deletedIso).toLocaleString()}</td>
-                    <td class="py-2.5 px-3 text-slate-300">${item.deletedBy}</td>
+                    <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-amber-400 border border-slate-700">${item.type || 'Deleted Item'}</span></td>
+                    <td class="py-2.5 px-3 font-semibold text-slate-200">${item.details || 'N/A'}</td>
+                    <td class="py-2.5 px-3 font-mono text-slate-400 text-[11px]">${item.deletedIso ? new Date(item.deletedIso).toLocaleString() : 'N/A'}</td>
+                    <td class="py-2.5 px-3 text-slate-300">${item.deletedBy || 'System Admin'}</td>
                     <td class="py-2.5 px-3 text-right">
-                        <button onclick="restoreFromDeleteLog(${idx})" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold rounded shadow transition flex items-center space-x-1 inline-flex">
+                        <button onclick="restoreFromDeleteLog('${safeDelId}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold rounded shadow transition flex items-center space-x-1 inline-flex">
                             <i class="fa-solid fa-rotate-left text-[10px]"></i>
                             <span>Restore</span>
                         </button>
                     </td>
                 </tr>
-            `).join('');
+            `;
+            }).join('');
         }
 
-        function restoreFromDeleteLog(index) {
-            if (index < 0 || index >= deleteLog.length) return;
+        function restoreFromDeleteLog(deleteId) {
+            const index = deleteLog.findIndex(d => d.id === deleteId);
+            if (index === -1) return;
             const item = deleteLog[index];
 
             if (item.type === 'ActiveJob') activeJobs.unshift(item.payload);
@@ -3535,586 +3539,45 @@
         }
 
         function clearDeleteLogPermanently() {
-            if (deleteLog.length === 0) return;
+            if (deleteLog.length === 0) {
+                showToast('Trash log is already empty.', 'info');
+                return;
+            }
             deleteLog = [];
+            const trashCountEl = document.getElementById('hdr-trash-count');
+            if (trashCountEl) trashCountEl.innerText = '0';
             saveToCloudAndLocal();
-            refreshUI();
             renderDeleteLogTable();
-            showToast("Emptied Trash Permanently.", "info");
+            showToast('Trash log permanently emptied.', 'success');
         }
 
-        /* ================= CLEAR ALL DATA MODAL ================= */
-        function openClearDataConfirmationModal() {
-            const pwdInput = document.getElementById('clear-data-password');
-            const errEl = document.getElementById('clear-password-error');
-            if (pwdInput) pwdInput.value = '';
-            if (errEl) errEl.classList.add('hidden');
-            document.getElementById('modal-clear-confirm')?.classList.remove('hidden');
-        }
-
-        function closeClearDataConfirmationModal() {
-            document.getElementById('modal-clear-confirm')?.classList.add('hidden');
-        }
-
-        function confirmClearAllData() {
-            const pwdInput = document.getElementById('clear-data-password')?.value;
-            const errEl = document.getElementById('clear-password-error');
-
-            if (pwdInput === ADMIN_CLEAR_PASSWORD) {
-                activeJobs = [];
-                completedJobs = [];
-                pmSchedules = [];
-                weekendOtJobs = [];
-                deleteLog = [];
-
-                equipmentList.forEach(eq => eq.status = 'Operational');
-
-                saveToCloudAndLocal();
-                closeClearDataConfirmationModal();
-                refreshUI();
-                showToast("All operational maintenance records cleared.", "warning");
-            } else {
-                if (errEl) errEl.classList.remove('hidden');
-            }
-        }
-
-        /* ================= EXECUTIVE AUDIT REPORT ================= */
-        function generateExecutiveReport() {
-            const reportArea = document.getElementById('executive-report-printable-area');
-            if (!reportArea) return;
-
-            const nowStr = new Date().toLocaleString();
-            const totalSpend = completedJobs.reduce((acc, j) => acc + (j.costRs || 0), 0);
-            const totalDowntimeMins = completedJobs.reduce((acc, j) => acc + (j.downtimeMins || 0), 0);
-            const mttr = completedJobs.length > 0 ? Math.round(totalDowntimeMins / completedJobs.length) : 0;
-
-            reportArea.innerHTML = `
-                <div class="p-6 bg-white text-slate-900 rounded-xl space-y-6">
-                    <div class="flex items-center justify-between border-b pb-4">
-                        <div>
-                            <h2 class="text-xl font-extrabold text-blue-900">SAMSON MANUFACTURERS (PVT) LTD</h2>
-                            <h3 class="text-sm font-bold text-slate-600">Factory Maintenance Audit & Financial Executive Report</h3>
-                            <p class="text-xs text-slate-500 mt-1">Generated: ${nowStr} • Auditor: ${currentSessionUser ? currentSessionUser.name : 'System Admin'}</p>
-                        </div>
-                        <div class="text-right">
-                            <span class="text-xs font-mono font-bold bg-slate-100 px-3 py-1 rounded border">CONFIDENTIAL</span>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-4 gap-4 text-center">
-                        <div class="p-3 bg-slate-50 border rounded-lg">
-                            <div class="text-[10px] font-bold text-slate-500 uppercase">Total Maintenance Spend</div>
-                            <div class="text-lg font-bold text-emerald-700 font-mono mt-1">Rs. ${totalSpend.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
-                        </div>
-                        <div class="p-3 bg-slate-50 border rounded-lg">
-                            <div class="text-[10px] font-bold text-slate-500 uppercase">Jobs Resolved</div>
-                            <div class="text-lg font-bold text-blue-700 mt-1">${completedJobs.length}</div>
-                        </div>
-                        <div class="p-3 bg-slate-50 border rounded-lg">
-                            <div class="text-[10px] font-bold text-slate-500 uppercase">Average MTTR</div>
-                            <div class="text-lg font-bold text-amber-700 font-mono mt-1">${mttr} Mins</div>
-                        </div>
-                        <div class="p-3 bg-slate-50 border rounded-lg">
-                            <div class="text-[10px] font-bold text-slate-500 uppercase">Total Downtime</div>
-                            <div class="text-lg font-bold text-rose-700 font-mono mt-1">${formatElapsed(totalDowntimeMins)}</div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <h4 class="font-bold text-sm text-slate-800 mb-2">Section-Wise Maintenance Breakdown</h4>
-                        <table class="w-full text-left text-xs border">
-                            <thead class="bg-slate-100 text-slate-700 font-bold border-b">
-                                <tr>
-                                    <th class="p-2 border-r">Machinery & Zone</th>
-                                    <th class="p-2 border-r text-center">Completed Work Orders</th>
-                                    <th class="p-2 border-r text-right">Downtime Incurred</th>
-                                    <th class="p-2 text-right">Cost (Rs.)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${equipmentList.map(eq => {
-                                    const eqJobs = completedJobs.filter(j => j.equipmentId === eq.id || j.equipmentName === eq.name);
-                                    const eqDowntime = eqJobs.reduce((acc, j) => acc + (j.downtimeMins || 0), 0);
-                                    const eqCost = eqJobs.reduce((acc, j) => acc + (j.costRs || 0), 0);
-                                    if (eqJobs.length === 0) return '';
-                                    return `
-                                        <tr class="border-b">
-                                            <td class="p-2 border-r font-semibold">${eq.name} (${eq.zone})</td>
-                                            <td class="p-2 border-r text-center font-bold">${eqJobs.length}</td>
-                                            <td class="p-2 border-r text-right font-mono">${formatElapsed(eqDowntime)}</td>
-                                            <td class="p-2 text-right font-mono font-bold text-emerald-800">Rs. ${eqCost.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                                        </tr>
-                                    `;
-                                }).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="pt-4 border-t flex justify-between text-xs text-slate-500">
-                        <span>Certified Plant Floor Operating System Audit</span>
-                        <span>Page 1 of 1</span>
-                    </div>
-                </div>
-            `;
-
-            toggleExecutiveReportModal();
-        }
-
-        /* ================= CSV EXPORT UTILITIES ================= */
-        function downloadCSV(csvContent, filename) {
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.setAttribute('download', filename);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        function exportActiveCSV() {
-            let csv = 'Ticket ID,Equipment,Zone,Category,Origin Dept,Priority,Status,Assigned Techs,Description,Created Date\n';
-            activeJobs.forEach(j => {
-                const safeDesc = `"${(j.description || '').replace(/"/g, '""')}"`;
-                const techs = `"${getJobTechs(j).join(', ')}"`;
-                csv += `${j.id},"${j.equipmentName}","${getJobSection(j)}",${j.category || 'Breakdown'},${j.createdDept || 'Production'},${j.priority},${j.status},${techs},${safeDesc},"${j.createdIso || ''}"\n`;
-            });
-            downloadCSV(csv, `Active_Work_Orders_${new Date().toISOString().slice(0,10)}.csv`);
-        }
-
-        function exportCompletedCSV() {
-            let csv = 'Job ID,Equipment,Zone,Origin Dept,Issue Summary,Technician,Completion Date/Time,Downtime (Mins),Cost (Rs.),Resolution,Verified By\n';
-            completedJobs.forEach(j => {
-                const safeIssue = `"${(j.description || '').replace(/"/g, '""')}"`;
-                const safeRes = `"${(j.resolution || '').replace(/"/g, '""')}"`;
-                csv += `${j.id},"${j.equipmentName}","${getJobSection(j)}",${j.createdDept || 'Production'},${safeIssue},"${j.technician}","${j.completedTime}",${j.downtimeMins || 0},${j.costRs || 0},${safeRes},"${j.verifiedBy || ''}"\n`;
-            });
-            downloadCSV(csv, `Completed_Maintenance_History_${new Date().toISOString().slice(0,10)}.csv`);
-        }
-
-        function exportWeekendOtCSV() {
-            let csv = 'OT ID,Equipment,Weekend Date,Shift Type,Shift Hours,Lead Tech,Supporting Techs,Priority,Scope,Status,Actual Hours,Monday Comments\n';
-            weekendOtJobs.forEach(ot => {
-                const safeScope = `"${(ot.jobScope || '').replace(/"/g, '""')}"`;
-                const support = `"${(ot.supportTechs || []).join(', ')}"`;
-                const safeComm = `"${(ot.mondayComments || '').replace(/"/g, '""')}"`;
-                csv += `${ot.id},"${ot.equipmentName}",${ot.weekendDate},${ot.shiftType},${ot.shiftHours},"${ot.leadTech}",${support},${ot.priority},${safeScope},${ot.status},${ot.actualHours || 0},${safeComm}\n`;
-            });
-            downloadCSV(csv, `Weekend_OT_Schedule_${new Date().toISOString().slice(0,10)}.csv`);
-        }
-
-        function exportEquipmentCSV() {
-            let csv = 'Machine ID,Machine Name,Section / Zone,Status,Last Service Date\n';
-            equipmentList.forEach(e => {
-                csv += `${e.id},"${e.name}","${e.zone}",${e.status},"${e.lastService || ''}"\n`;
-            });
-            downloadCSV(csv, `Factory_Machinery_Roster_${new Date().toISOString().slice(0,10)}.csv`);
-        }
-
-        function exportBackupJSON() {
-            const backupData = {
-                version: '7.0',
-                exportedAt: new Date().toISOString(),
-                equipmentList,
-                technicianList,
-                activeJobs,
-                completedJobs,
-                pmSchedules,
-                weekendOtJobs,
-                deleteLog
-            };
-            const jsonStr = JSON.stringify(backupData, null, 2);
-            const blob = new Blob([jsonStr], { type: 'application/json' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `SML_Maintenance_Backup_${new Date().toISOString().slice(0,10)}.json`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            showToast('Downloaded full system backup JSON.', 'success');
-        }
-
-        function importBackupJSON(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                try {
-                    const data = JSON.parse(evt.target.result);
-                    if (data.equipmentList) equipmentList = data.equipmentList;
-                    if (data.technicianList) technicianList = data.technicianList;
-                    if (data.activeJobs) activeJobs = data.activeJobs;
-                    if (data.completedJobs) completedJobs = data.completedJobs;
-                    if (data.pmSchedules) pmSchedules = data.pmSchedules;
-                    if (data.weekendOtJobs) weekendOtJobs = data.weekendOtJobs;
-                    if (data.deleteLog) deleteLog = data.deleteLog;
-
-                    saveToCloudAndLocal();
-                    toggleBackupModal();
-                    refreshUI();
-                    showToast('System data successfully restored from JSON backup!', 'success');
-                } catch(err) {
-                    showToast('Invalid backup JSON file.', 'danger');
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        /* ================= SHIFT DOWNTIME CALCULATION ENGINE ================= */
-        function calculateWorkingMinutesBetween(startDate, endDate) {
-            if (!startDate || !endDate || startDate >= endDate) return 0;
-            let totalMins = 0;
-            let cur = new Date(startDate.getTime());
-
-            while (cur < endDate) {
-                const dayOfWeek = cur.getDay(); // 0 = Sun
-                if (dayOfWeek !== 0) { // Exclude Sundays
-                    const year = cur.getFullYear();
-                    const month = cur.getMonth();
-                    const date = cur.getDate();
-
-                    const shiftStart = new Date(year, month, date, 7, 20, 0); // 7:20 AM
-                    const shiftEnd = new Date(year, month, date, 19, 15, 0); // 7:15 PM
-                    const lunchStart = new Date(year, month, date, 12, 30, 0);
-                    const lunchEnd = new Date(year, month, date, 13, 0, 0);
-
-                    const effectiveStart = cur > shiftStart ? cur : shiftStart;
-                    const nextDayStart = new Date(year, month, date + 1, 0, 0, 0);
-                    const dayLimit = endDate < nextDayStart ? endDate : nextDayStart;
-                    const effectiveEnd = dayLimit < shiftEnd ? dayLimit : shiftEnd;
-
-                    if (effectiveStart < effectiveEnd) {
-                        let activeMs = effectiveEnd.getTime() - effectiveStart.getTime();
-
-                        // Deduct lunch break overlap
-                        const maxLunchStart = effectiveStart > lunchStart ? effectiveStart : lunchStart;
-                        const minLunchEnd = effectiveEnd < lunchEnd ? effectiveEnd : lunchEnd;
-                        if (maxLunchStart < minLunchEnd) {
-                            activeMs -= (minLunchEnd.getTime() - maxLunchStart.getTime());
-                        }
-
-                        if (activeMs > 0) {
-                            totalMins += Math.floor(activeMs / 60000);
-                        }
-                    }
-
-                    cur = nextDayStart;
-                } else {
-                    cur = new Date(cur.getFullYear(), cur.getMonth(), cur.getDate() + 1, 0, 0, 0);
-                }
-            }
-            return totalMins;
-        }
-
-        function calculateLiveElapsedMins(job) {
-            if (!job) return 0;
-            if (job.downtimeMins !== undefined && job.downtimeMins !== null && (job.status === 'Completed' || job.status === 'Pending Verification')) {
-                if (job.status === 'Completed') return job.downtimeMins;
-            }
-
-            const start = job.createdIso ? new Date(job.createdIso) : new Date();
-            const end = (job.status === 'Pending Verification' && job.resolvedIso) ? new Date(job.resolvedIso) : new Date();
-
-            let mins = calculateWorkingMinutesBetween(start, end);
-            if (job.pausedMs) {
-                mins -= Math.floor(job.pausedMs / 60000);
-            }
-            return Math.max(0, mins);
-        }
-
-        function formatElapsed(mins) {
-            if (isNaN(mins) || mins <= 0) return '0h 0m';
-            const hrs = Math.floor(mins / 60);
-            const m = mins % 60;
-            return `${hrs}h ${m}m`;
-        }
-
-        function getCategoryBadge(cat) {
-            switch (cat) {
-                case 'Breakdown':
-                    return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-950 text-rose-300 border border-rose-800"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Breakdown</span>`;
-                case 'Fabrication':
-                    return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-950 text-purple-300 border border-purple-800"><i class="fa-solid fa-hammer mr-1"></i>Fabrication</span>`;
-                case 'Modification':
-                    return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-950 text-blue-300 border border-blue-800"><i class="fa-solid fa-wrench mr-1"></i>Modification</span>`;
-                case 'Routine':
-                    return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700"><i class="fa-solid fa-rotate mr-1"></i>Routine</span>`;
-                default:
-                    return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">${cat}</span>`;
-            }
-        }
-
-        function getDeptBadge(dept) {
-            if (dept === 'Production') {
-                return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-950 text-blue-300 border border-blue-800"><i class="fa-solid fa-industry mr-1"></i>Production</span>`;
-            } else if (dept === 'Maintenance') {
-                return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950 text-amber-300 border border-amber-800"><i class="fa-solid fa-screwdriver-wrench mr-1"></i>Maintenance</span>`;
-            }
-            return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">${dept}</span>`;
-        }
-
-        /* ================= MODAL VISIBILITY CONTROLLERS ================= */
-        function toggleNewJobModal() {
-            const el = document.getElementById('modal-new-job');
-            if (!el) return;
-            el.classList.toggle('hidden');
-            if (!el.classList.contains('hidden')) {
-                populateSectionDropdowns();
-                populateTechnicianDropdowns();
-                filterNewJobEquipment();
-            }
-        }
-
-        function toggleCompleteJobModal() {
-            document.getElementById('modal-complete-job')?.classList.toggle('hidden');
-        }
-
-        function toggleNewPMModal() {
-            const el = document.getElementById('modal-new-pm');
-            if (!el) return;
-            el.classList.toggle('hidden');
-            if (!el.classList.contains('hidden')) {
-                filterPmEquipment();
-                populateTechnicianDropdowns();
-            }
-        }
-
-        function toggleNewWeekendOtModal() {
-            const el = document.getElementById('modal-new-weekend-ot');
-            if (!el) return;
-            el.classList.toggle('hidden');
-            if (!el.classList.contains('hidden')) {
-                filterWeekendOtEquipment();
-                populateTechnicianDropdowns();
-                const d = new Date();
-                const day = d.getDay();
-                const diff = (6 - day + 7) % 7 || 7;
-                d.setDate(d.getDate() + diff);
-                const otDateInput = document.getElementById('weekend-ot-date');
-                if (otDateInput && !otDateInput.value) otDateInput.value = d.toISOString().slice(0, 10);
-            }
-        }
-
-        function toggleReviewWeekendOtModal() {
-            document.getElementById('modal-review-weekend-ot')?.classList.toggle('hidden');
-        }
-
-        function openReviewWeekendOtModal(otId) {
-            selectedWeekendOtForReview = weekendOtJobs.find(o => o.id === otId);
-            if (!selectedWeekendOtForReview) return;
-            document.getElementById('review-ot-id-display').innerText = `${selectedWeekendOtForReview.id} - ${selectedWeekendOtForReview.equipmentName}`;
-            document.getElementById('review-ot-status').value = selectedWeekendOtForReview.status === 'Planned' ? 'Completed' : selectedWeekendOtForReview.status;
-            document.getElementById('review-ot-actual-hours').value = selectedWeekendOtForReview.actualHours || selectedWeekendOtForReview.shiftHours;
-            document.getElementById('review-ot-comments').value = selectedWeekendOtForReview.mondayComments || '';
-            toggleReviewWeekendOtModal();
-        }
-
-        function toggleManageMachinesModal() {
-            const el = document.getElementById('modal-manage-machines');
-            if (!el) return;
-            el.classList.toggle('hidden');
-            if (!el.classList.contains('hidden')) {
-                renderRosterTables();
-            }
-        }
-
-        function toggleBackupModal() { document.getElementById('modal-backup')?.classList.toggle('hidden'); }
-        
-        function toggleFirebaseModal() {
-            const el = document.getElementById('modal-firebase-config');
-            if (!el) return;
-            el.classList.toggle('hidden');
-            if (!el.classList.contains('hidden')) {
-                const customJson = getSafeStorage('sml_custom_firebase_json');
-                const txtArea = document.getElementById('custom-firebase-json');
-                if (txtArea) txtArea.value = customJson ? customJson : JSON.stringify(DEFAULT_FIREBASE_CONFIG, null, 2);
-            }
-        }
-
-        function toggleExecutiveReportModal() { document.getElementById('modal-executive-report')?.classList.toggle('hidden'); }
-        function toggleMachineHistoryModal() { document.getElementById('modal-machine-history')?.classList.toggle('hidden'); }
-        
-        function toggleDeleteLogModal() {
-            const el = document.getElementById('modal-delete-log');
-            if (!el) return;
-            el.classList.toggle('hidden');
-            if (!el.classList.contains('hidden')) {
-                renderDeleteLogTable();
-            }
-        }
-
-        function toggleEditJobTechsModal() { document.getElementById('modal-edit-job-techs')?.classList.toggle('hidden'); }
-
-        /* ================= WORK ORDER & SCHEDULE CREATION HANDLERS ================= */
-        function openNewJobForEquip(equipId) {
-            toggleNewJobModal();
-            const selectEq = document.getElementById('new-job-equipment');
-            if (selectEq) selectEq.value = equipId;
-        }
-
-        function filterNewJobEquipment() {
-            const searchVal = (document.getElementById('new-job-equipment-search')?.value || '').toLowerCase();
-            const sectionVal = document.getElementById('new-job-section')?.value || 'ALL';
-            const select = document.getElementById('new-job-equipment');
-            if (!select) return;
-
-            const filtered = equipmentList.filter(e => {
-                const matchSearch = e.name.toLowerCase().includes(searchVal) || e.id.toLowerCase().includes(searchVal) || e.zone.toLowerCase().includes(searchVal);
-                const matchSection = sectionVal === 'ALL' || e.zone === sectionVal;
-                return matchSearch && matchSection;
-            });
-
-            select.innerHTML = filtered.map(e => `<option value="${e.id}">${e.name} (${e.zone}) [${e.id}]</option>`).join('');
-        }
-
-        function handleNewJobSectionChange() { filterNewJobEquipment(); }
-        function handleNewJobEquipmentChange() {}
-
-        function filterPmEquipment(val = '') {
-            const searchVal = val.toLowerCase();
-            const select = document.getElementById('pm-equipment');
-            if (!select) return;
-            const filtered = equipmentList.filter(e => e.name.toLowerCase().includes(searchVal) || e.id.toLowerCase().includes(searchVal) || e.zone.toLowerCase().includes(searchVal));
-            select.innerHTML = filtered.map(e => `<option value="${e.id}">${e.name} (${e.zone}) [${e.id}]</option>`).join('');
-        }
-
-        function filterWeekendOtEquipment(val = '') {
-            const searchVal = val.toLowerCase();
-            const select = document.getElementById('weekend-ot-equipment');
-            if (!select) return;
-            const filtered = equipmentList.filter(e => e.name.toLowerCase().includes(searchVal) || e.id.toLowerCase().includes(searchVal) || e.zone.toLowerCase().includes(searchVal));
-            select.innerHTML = filtered.map(e => `<option value="${e.id}">${e.name} (${e.zone}) [${e.id}]</option>`).join('');
-        }
-
-        function updateWeekendOtEstimatedHours(shift) {
-            const hoursInput = document.getElementById('weekend-ot-hours');
-            if (!hoursInput) return;
-            if (shift === 'Saturday') hoursInput.value = '11.9';
-            else if (shift === 'Sunday') hoursInput.value = '9.9';
-            else if (shift === 'Both Days') hoursInput.value = '21.8';
-        }
-
-        function handleCreateJob(e) {
-            if (e && e.preventDefault) e.preventDefault();
-            const category = document.getElementById('new-job-category').value;
-            const section = document.getElementById('new-job-section').value;
-            const equipId = document.getElementById('new-job-equipment').value;
-            const priority = document.getElementById('new-job-priority').value;
-            const desc = document.getElementById('new-job-desc').value.trim();
-            const selectedTechs = Array.from(document.querySelectorAll('input[name="new-job-tech"]:checked')).map(cb => cb.value);
-
-            const equip = equipmentList.find(item => item.id === equipId) || { name: 'General Equipment', zone: section !== 'ALL' ? section : 'Workshop / General' };
-
-            const newJob = {
-                id: `JOB-${Math.floor(1000 + Math.random() * 9000)}`,
-                equipmentId: equipId,
-                equipmentName: equip.name,
-                equipmentZone: equip.zone,
-                createdDept: currentSessionUser ? currentSessionUser.dept : 'Production',
-                category: category,
-                priority: priority,
-                assignedTo: selectedTechs.length > 0 ? selectedTechs : ['Unassigned'],
-                status: selectedTechs.length > 0 ? 'Assigned' : 'Unassigned',
-                startTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                createdIso: new Date().toISOString(),
-                description: desc
-            };
-
-            activeJobs.unshift(newJob);
+        function deleteActiveJob(jobId) {
+            const job = activeJobs.find(j => j.id === jobId);
+            if (!job) return;
+            moveToDeleteLog('ActiveJob', `${job.id} - ${job.equipmentName}`, job);
+            activeJobs = activeJobs.filter(j => j.id !== jobId);
             recalculateMachineStatuses();
             saveToCloudAndLocal();
-            toggleNewJobModal();
             refreshUI();
-            showToast(`Work Order ${newJob.id} dispatched successfully.`, 'success');
+            showToast(`Cancelled & deleted work order ${jobId}`, 'info');
         }
 
-        function handleCreatePM(e) {
-            if (e && e.preventDefault) e.preventDefault();
-            const equipId = document.getElementById('pm-equipment').value;
-            const freq = document.getElementById('pm-frequency').value;
-            const tech = document.getElementById('pm-tech').value;
-            const dueDate = document.getElementById('pm-due-date').value;
-            const desc = document.getElementById('pm-desc').value.trim();
-
-            const equip = equipmentList.find(item => item.id === equipId) || { name: 'Equipment' };
-
-            const newPM = {
-                id: `PM-${Math.floor(100 + Math.random() * 900)}`,
-                equipmentId: equipId,
-                equipmentName: equip.name,
-                frequency: freq,
-                nextDueDate: dueDate,
-                assignedTech: tech,
-                taskDescription: desc,
-                lastCompleted: 'Never'
-            };
-
-            pmSchedules.unshift(newPM);
+        function deleteWeekendOt(otId) {
+            const ot = weekendOtJobs.find(o => o.id === otId);
+            if (!ot) return;
+            moveToDeleteLog('WeekendOT', `${ot.id} - ${ot.equipmentName}`, ot);
+            weekendOtJobs = weekendOtJobs.filter(o => o.id !== otId);
             saveToCloudAndLocal();
-            toggleNewPMModal();
             refreshUI();
-            showToast(`Preventive Maintenance ${newPM.id} scheduled.`, 'success');
-        }
-
-        function handleCreateWeekendOt(e) {
-            if (e && e.preventDefault) e.preventDefault();
-            const equipId = document.getElementById('weekend-ot-equipment').value;
-            const date = document.getElementById('weekend-ot-date').value;
-            const shift = document.getElementById('weekend-ot-shift').value;
-            const hours = parseFloat(document.getElementById('weekend-ot-hours').value) || 0;
-            const leadTech = document.getElementById('weekend-ot-lead-tech').value;
-            const priority = document.getElementById('weekend-ot-priority').value;
-            const scope = document.getElementById('weekend-ot-desc').value.trim();
-            const supportTechs = Array.from(document.querySelectorAll('input[name="ot-support-tech"]:checked')).map(cb => cb.value);
-
-            const equip = equipmentList.find(item => item.id === equipId) || { name: 'Equipment' };
-
-            const newOT = {
-                id: `OT-${Math.floor(100 + Math.random() * 900)}`,
-                equipmentId: equipId,
-                equipmentName: equip.name,
-                weekendDate: date,
-                shiftType: shift,
-                shiftHours: hours,
-                leadTech: leadTech,
-                supportTechs: supportTechs,
-                priority: priority,
-                jobScope: scope,
-                status: 'Planned',
-                actualHours: 0,
-                mondayComments: ''
-            };
-
-            weekendOtJobs.unshift(newOT);
-            saveToCloudAndLocal();
-            toggleNewWeekendOtModal();
-            refreshUI();
-            showToast(`Friday Weekend OT Job ${newOT.id} planned for ${leadTech}.`, 'success');
-        }
-
-        function handleReviewWeekendOt(e) {
-            if (e && e.preventDefault) e.preventDefault();
-            if (!selectedWeekendOtForReview) return;
-
-            const newStatus = document.getElementById('review-ot-status').value;
-            const actualHrs = parseFloat(document.getElementById('review-ot-actual-hours').value) || 0;
-            const comments = document.getElementById('review-ot-comments').value.trim();
-
-            selectedWeekendOtForReview.status = newStatus;
-            selectedWeekendOtForReview.actualHours = actualHrs;
-            selectedWeekendOtForReview.mondayComments = comments;
-
-            saveToCloudAndLocal();
-            toggleReviewWeekendOtModal();
-            refreshUI();
-            showToast(`Updated Monday Review for OT Ticket ${selectedWeekendOtForReview.id}`, 'success');
-            selectedWeekendOtForReview = null;
+            showToast(`Deleted weekend OT schedule ${otId}`, 'info');
         }
 
         function verifyJobCompletion(jobId) {
             const job = activeJobs.find(j => j.id === jobId);
             if (!job) return;
 
-            const todayStr = new Date().toISOString().slice(0, 10);
+            const downtimeMins = job.downtimeMins !== undefined ? job.downtimeMins : calculateLiveElapsedMins(job);
+            const verifiedBy = currentSessionUser ? currentSessionUser.name : 'Production Supervisor';
             const nowIso = new Date().toISOString();
 
             const completedEntry = {
@@ -4126,128 +3589,452 @@
                 category: job.category || 'Breakdown',
                 technician: getJobTechs(job).join(', '),
                 assignedTo: getJobTechs(job),
-                completedTime: `${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (${todayStr})`,
-                downtimeMins: job.downtimeMins !== undefined ? job.downtimeMins : calculateLiveElapsedMins(job),
+                completedTime: `${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} (${nowIso.slice(0, 10)})`,
+                downtimeMins: downtimeMins,
                 costRs: job.costRs || 0,
-                description: job.description,
-                resolution: job.resolution || 'Work order completed and verified.',
-                verifiedBy: currentSessionUser ? currentSessionUser.name : 'Production Supervisor',
+                description: job.description || 'N/A',
+                resolution: job.resolution || 'Work completed and verified by Production.',
+                verifiedBy: verifiedBy,
                 createdIso: job.createdIso || nowIso,
-                completedIso: nowIso
+                completedIso: job.resolvedIso || nowIso
             };
 
             completedJobs.unshift(completedEntry);
             activeJobs = activeJobs.filter(j => j.id !== jobId);
 
+            const equip = equipmentList.find(e => e.id === job.equipmentId);
+            if (equip) equip.lastService = nowIso.slice(0, 10);
+
             recalculateMachineStatuses();
             saveToCloudAndLocal();
             refreshUI();
-            showToast(`Work Order ${jobId} verified and archived to Completed History.`, 'success');
+            showToast(`Work order ${jobId} verified and archived to Completed History.`, 'success');
         }
 
         function rejectJobResolution(jobId) {
             const job = activeJobs.find(j => j.id === jobId);
             if (!job) return;
+
+            const now = Date.now();
+            const resolvedTime = job.resolvedIso ? new Date(job.resolvedIso).getTime() : now;
+            const timeInVerificationMs = Math.max(0, now - resolvedTime);
+            job.pausedMs = (job.pausedMs || 0) + timeInVerificationMs;
+            job.resolvedIso = null;
+            delete job.downtimeMins;
+
             job.status = 'In Progress';
-            if (job.resolvedIso) {
-                const timeInVerificationMs = Math.max(0, Date.now() - new Date(job.resolvedIso).getTime());
-                job.pausedMs = (job.pausedMs || 0) + timeInVerificationMs;
-                job.resolvedIso = null;
+            recalculateMachineStatuses();
+            saveToCloudAndLocal();
+            refreshUI();
+            showToast(`Reopened ${jobId}. Work order timer resumed.`, 'warning');
+        }
+
+        function handleCreateJob(e) {
+            if (e && e.preventDefault) e.preventDefault();
+
+            const cat = document.getElementById('new-job-category').value;
+            const equipId = document.getElementById('new-job-equipment').value;
+            const equip = equipmentList.find(e => e.id === equipId);
+            const sectionVal = document.getElementById('new-job-section').value;
+            const priority = document.getElementById('new-job-priority').value;
+            const desc = document.getElementById('new-job-desc').value.trim();
+            const originDept = currentSessionUser ? currentSessionUser.dept : 'Production';
+
+            let selectedTechs = Array.from(document.querySelectorAll('input[name="new-job-tech"]:checked')).map(cb => cb.value);
+            if (selectedTechs.length === 0) selectedTechs = ['Unassigned'];
+
+            const equipName = equip ? equip.name : 'General Task';
+            const equipZone = (equipId === 'EQ-000' && sectionVal !== 'ALL') ? sectionVal : (equip ? equip.zone : 'Workshop / General');
+
+            const nowIso = new Date().toISOString();
+            const newJob = {
+                id: `JOB-${Math.floor(1000 + Math.random() * 9000)}`,
+                equipmentId: equipId,
+                equipmentName: equipName,
+                equipmentZone: equipZone,
+                createdDept: originDept,
+                category: cat,
+                priority: priority,
+                assignedTo: selectedTechs,
+                status: selectedTechs.includes('Unassigned') ? 'Unassigned' : 'Assigned',
+                startTime: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                createdIso: nowIso,
+                description: desc
+            };
+
+            activeJobs.unshift(newJob);
+            recalculateMachineStatuses();
+            saveToCloudAndLocal();
+            toggleNewJobModal();
+            refreshUI();
+            showToast(`Created Work Order ${newJob.id} for ${equipName}`, 'success');
+        }
+
+        function handleCreatePM(e) {
+            if (e && e.preventDefault) e.preventDefault();
+            const equipId = document.getElementById('pm-equipment').value;
+            const equip = equipmentList.find(e => e.id === equipId);
+            const freq = document.getElementById('pm-frequency').value;
+            const tech = document.getElementById('pm-tech').value;
+            const dueDate = document.getElementById('pm-due-date').value;
+            const desc = document.getElementById('pm-desc').value.trim();
+
+            const newPm = {
+                id: `PM-${Math.floor(100 + Math.random() * 900)}`,
+                equipmentId: equipId,
+                equipmentName: equip ? equip.name : 'Equipment',
+                frequency: freq,
+                assignedTech: tech,
+                nextDueDate: dueDate,
+                taskDescription: desc,
+                lastCompleted: 'Never'
+            };
+
+            pmSchedules.unshift(newPm);
+            saveToCloudAndLocal();
+            toggleNewPMModal();
+            refreshUI();
+            showToast(`Scheduled PM task ${newPm.id}`, 'success');
+        }
+
+        function handleCreateWeekendOt(e) {
+            if (e && e.preventDefault) e.preventDefault();
+            const equipId = document.getElementById('weekend-ot-equipment').value;
+            const equip = equipmentList.find(e => e.id === equipId);
+            const dateVal = document.getElementById('weekend-ot-date').value;
+            const shiftVal = document.getElementById('weekend-ot-shift').value;
+            const hoursVal = parseFloat(document.getElementById('weekend-ot-hours').value) || 0;
+            const leadTech = document.getElementById('weekend-ot-lead-tech').value;
+            const priority = document.getElementById('weekend-ot-priority').value;
+            const scope = document.getElementById('weekend-ot-desc').value.trim();
+
+            const supportTechs = Array.from(document.querySelectorAll('input[name="ot-support-tech"]:checked')).map(cb => cb.value);
+
+            const newOt = {
+                id: `OT-${Math.floor(100 + Math.random() * 900)}`,
+                equipmentId: equipId,
+                equipmentName: equip ? equip.name : 'Equipment',
+                weekendDate: dateVal,
+                shiftType: shiftVal,
+                shiftHours: hoursVal,
+                leadTech: leadTech,
+                supportTechs: supportTechs,
+                priority: priority,
+                jobScope: scope,
+                status: 'Planned',
+                actualHours: 0,
+                mondayComments: ''
+            };
+
+            weekendOtJobs.unshift(newOt);
+            saveToCloudAndLocal();
+            toggleNewWeekendOtModal();
+            refreshUI();
+            showToast(`Friday OT Plan ${newOt.id} created for ${dateVal}`, 'success');
+        }
+
+        function openReviewWeekendOtModal(otId) {
+            selectedWeekendOtForReview = weekendOtJobs.find(o => o.id === otId);
+            if (!selectedWeekendOtForReview) return;
+
+            document.getElementById('review-ot-id-display').innerText = `${selectedWeekendOtForReview.id} - ${selectedWeekendOtForReview.equipmentName}`;
+            document.getElementById('review-ot-status').value = selectedWeekendOtForReview.status || 'Completed';
+            document.getElementById('review-ot-actual-hours').value = selectedWeekendOtForReview.actualHours || selectedWeekendOtForReview.shiftHours || 0;
+            document.getElementById('review-ot-comments').value = selectedWeekendOtForReview.mondayComments || '';
+
+            toggleReviewWeekendOtModal();
+        }
+
+        function handleReviewWeekendOt(e) {
+            if (e && e.preventDefault) e.preventDefault();
+            if (!selectedWeekendOtForReview) return;
+
+            const statusVal = document.getElementById('review-ot-status').value;
+            const actualHoursVal = parseFloat(document.getElementById('review-ot-actual-hours').value) || 0;
+            const commentsVal = document.getElementById('review-ot-comments').value.trim();
+
+            selectedWeekendOtForReview.status = statusVal;
+            selectedWeekendOtForReview.actualHours = actualHoursVal;
+            selectedWeekendOtForReview.mondayComments = commentsVal;
+
+            saveToCloudAndLocal();
+            toggleReviewWeekendOtModal();
+            refreshUI();
+            showToast(`Submitted Monday Review for ${selectedWeekendOtForReview.id}`, 'success');
+            selectedWeekendOtForReview = null;
+        }
+
+        function updateWeekendOtEstimatedHours(shift) {
+            const hoursInput = document.getElementById('weekend-ot-hours');
+            if (!hoursInput) return;
+            if (shift === 'Saturday') hoursInput.value = '11.9';
+            else if (shift === 'Sunday') hoursInput.value = '9.9';
+            else if (shift === 'Both Days') hoursInput.value = '21.8';
+        }
+
+        function calculateLiveElapsedMins(job) {
+            if (!job || !job.createdIso) return 0;
+
+            const created = new Date(job.createdIso);
+            const now = (job.status === 'Pending Verification' && job.resolvedIso) 
+                ? new Date(job.resolvedIso) 
+                : new Date();
+
+            let totalMs = 0;
+            let current = new Date(created.getTime());
+
+            while (current <= now) {
+                const dayOfWeek = current.getDay();
+                if (dayOfWeek !== 0) { // Exclude Sundays
+                    const shiftStart = new Date(current.getFullYear(), current.getMonth(), current.getDate(), 7, 20, 0);
+                    const shiftEnd = new Date(current.getFullYear(), current.getMonth(), current.getDate(), 19, 15, 0);
+                    const lunchStart = new Date(current.getFullYear(), current.getMonth(), current.getDate(), 12, 30, 0);
+                    const lunchEnd = new Date(current.getFullYear(), current.getMonth(), current.getDate(), 13, 0, 0);
+
+                    const windowStart = new Date(Math.max(current.getTime(), shiftStart.getTime()));
+                    const windowEnd = new Date(Math.min(now.getTime(), shiftEnd.getTime()));
+
+                    if (windowStart < windowEnd) {
+                        let ms = windowEnd - windowStart;
+
+                        const overlapLunchStart = new Date(Math.max(windowStart.getTime(), lunchStart.getTime()));
+                        const overlapLunchEnd = new Date(Math.min(windowEnd.getTime(), lunchEnd.getTime()));
+                        if (overlapLunchStart < overlapLunchEnd) {
+                            ms -= (overlapLunchEnd - overlapLunchStart);
+                        }
+
+                        if (ms > 0) totalMs += ms;
+                    }
+                }
+
+                current.setDate(current.getDate() + 1);
+                current.setHours(0, 0, 0, 0);
             }
-            recalculateMachineStatuses();
-            saveToCloudAndLocal();
-            refreshUI();
-            showToast(`Reopened ${jobId}. Work order set back to In Progress.`, 'warning');
+
+            if (job.pausedMs) {
+                totalMs = Math.max(0, totalMs - job.pausedMs);
+            }
+
+            return Math.floor(totalMs / 60000);
         }
 
-        function deleteActiveJob(jobId) {
-            const job = activeJobs.find(j => j.id === jobId);
-            if (!job) return;
-            moveToDeleteLog('ActiveJob', `${job.id} - ${job.equipmentName}`, job);
-            activeJobs = activeJobs.filter(j => j.id !== jobId);
-            recalculateMachineStatuses();
-            saveToCloudAndLocal();
-            refreshUI();
-            showToast(`Moved ticket ${jobId} to Delete Log.`, 'info');
+        function formatElapsed(mins) {
+            if (isNaN(mins) || mins <= 0) return '0m';
+            const h = Math.floor(mins / 60);
+            const m = mins % 60;
+            if (h > 0) return `${h}h ${m}m`;
+            return `${m}m`;
         }
 
-        function deleteWeekendOt(otId) {
-            const ot = weekendOtJobs.find(o => o.id === otId);
-            if (!ot) return;
-            moveToDeleteLog('WeekendOT', `${ot.id} - ${ot.equipmentName}`, ot);
-            weekendOtJobs = weekendOtJobs.filter(o => o.id !== otId);
-            saveToCloudAndLocal();
-            refreshUI();
-            showToast(`Deleted Weekend OT job ${otId}`, 'info');
+        function getCategoryBadge(cat) {
+            if (cat === 'Breakdown') return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-950/80 text-rose-300 border border-rose-800"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Breakdown</span>`;
+            if (cat === 'Fabrication') return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-950/80 text-blue-300 border border-blue-800"><i class="fa-solid fa-hammer mr-1"></i>Fabrication</span>`;
+            if (cat === 'Modification') return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950/80 text-amber-300 border border-amber-800"><i class="fa-solid fa-gears mr-1"></i>Modification</span>`;
+            return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700"><i class="fa-solid fa-clipboard-check mr-1"></i>Routine</span>`;
         }
 
-        /* ================= MACHINE & TECHNICIAN ROSTER MANAGEMENT ================= */
+        function getDeptBadge(dept) {
+            if (dept === 'Production') return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-950 text-blue-300 border border-blue-800">Production</span>`;
+            if (dept === 'Maintenance') return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950 text-amber-300 border border-amber-800">Maintenance</span>`;
+            return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-800">Management</span>`;
+        }
+
+        function recalculateMachineStatuses() {
+            equipmentList.forEach(eq => {
+                if (eq.id === 'EQ-000') return;
+                const equipActive = activeJobs.filter(j => j.equipmentId === eq.id || j.equipmentName === eq.name);
+                if (equipActive.some(j => j.priority === 'Critical')) {
+                    eq.status = 'Fault';
+                } else if (equipActive.length > 0) {
+                    eq.status = 'Maintenance';
+                } else {
+                    eq.status = 'Operational';
+                }
+            });
+        }
+
+        function downloadCSV(csvContent, fileName) {
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', fileName);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function exportActiveCSV() {
+            const headers = ['Ticket ID', 'Machine Name', 'Machine ID', 'Section / Zone', 'Created Dept', 'Category', 'Task Description', 'Priority', 'Status', 'Assigned Technicians', 'Live Duration (Mins)'];
+            const rows = activeJobs.map(j => [
+                `"${j.id}"`,
+                `"${j.equipmentName}"`,
+                `"${j.equipmentId}"`,
+                `"${getJobSection(j)}"`,
+                `"${j.createdDept || 'Production'}"`,
+                `"${j.category || 'Breakdown'}"`,
+                `"${(j.description || '').replace(/"/g, '""')}"`,
+                `"${j.priority}"`,
+                `"${j.status}"`,
+                `"${getJobTechs(j).join(', ')}"`,
+                calculateLiveElapsedMins(j)
+            ]);
+            const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+            downloadCSV(csv, `Active_Work_Orders_${new Date().toISOString().slice(0,10)}.csv`);
+            showToast('Exported Active Work Orders CSV.', 'success');
+        }
+
+        function exportCompletedCSV() {
+            const headers = ['Job ID', 'Machine Name', 'Machine ID', 'Section / Zone', 'Created Dept', 'Issue / Task Summary', 'Assigned Technicians', 'Completed Date', 'Downtime (Mins)', 'Total Cost (Rs)', 'Resolution Summary', 'Verified By'];
+            const rows = completedJobs.map(j => [
+                `"${j.id}"`,
+                `"${j.equipmentName}"`,
+                `"${j.equipmentId}"`,
+                `"${getJobSection(j)}"`,
+                `"${j.createdDept || 'Production'}"`,
+                `"${(j.description || 'N/A').replace(/"/g, '""')}"`,
+                `"${j.technician}"`,
+                `"${j.completedTime}"`,
+                j.downtimeMins || 0,
+                j.costRs || 0,
+                `"${(j.resolution || '').replace(/"/g, '""')}"`,
+                `"${j.verifiedBy || ''}"`
+            ]);
+            const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+            downloadCSV(csv, `Completed_Maintenance_History_${new Date().toISOString().slice(0,10)}.csv`);
+            showToast('Exported Completed History CSV.', 'success');
+        }
+
+        function exportWeekendOtCSV() {
+            const headers = ['OT Job ID', 'Equipment / Area', 'Weekend Date', 'Shift Type', 'Shift Hours', 'Lead Technician', 'Supporting Techs', 'Priority', 'Scope & Objectives', 'Status', 'Actual Hours Logged', 'Monday Comments'];
+            const rows = weekendOtJobs.map(o => [
+                `"${o.id}"`,
+                `"${o.equipmentName}"`,
+                `"${o.weekendDate}"`,
+                `"${o.shiftType}"`,
+                o.shiftHours || 0,
+                `"${o.leadTech}"`,
+                `"${(o.supportTechs || []).join(', ')}"`,
+                `"${o.priority}"`,
+                `"${(o.jobScope || '').replace(/"/g, '""')}"`,
+                `"${o.status}"`,
+                o.actualHours || 0,
+                `"${(o.mondayComments || '').replace(/"/g, '""')}"`
+            ]);
+            const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+            downloadCSV(csv, `Weekend_OT_Schedule_${new Date().toISOString().slice(0,10)}.csv`);
+            showToast('Exported Weekend OT CSV.', 'success');
+        }
+
+        function exportEquipmentCSV() {
+            const headers = ['Machine ID', 'Machine Name', 'Section / Zone', 'Current Status', 'Last Service Date'];
+            const rows = equipmentList.map(e => [
+                `"${e.id}"`,
+                `"${e.name}"`,
+                `"${e.zone}"`,
+                `"${e.status}"`,
+                `"${e.lastService || ''}"`
+            ]);
+            const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+            downloadCSV(csv, `Machinery_Roster_${new Date().toISOString().slice(0,10)}.csv`);
+            showToast('Exported Machinery Roster CSV.', 'success');
+        }
+
+        function exportBackupJSON() {
+            const data = {
+                timestamp: new Date().toISOString(),
+                equipmentList,
+                technicianList,
+                activeJobs,
+                completedJobs,
+                pmSchedules,
+                weekendOtJobs,
+                deleteLog
+            };
+            const jsonStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `SML_Maintenance_Backup_${new Date().toISOString().slice(0,10)}.json`;
+            link.click();
+            showToast('System JSON backup downloaded.', 'success');
+        }
+
+        function importBackupJSON(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const parsed = JSON.parse(evt.target.result);
+                    if (parsed.equipmentList) equipmentList = parsed.equipmentList;
+                    if (parsed.technicianList) technicianList = parsed.technicianList;
+                    if (parsed.activeJobs) activeJobs = parsed.activeJobs;
+                    if (parsed.completedJobs) completedJobs = parsed.completedJobs;
+                    if (parsed.pmSchedules) pmSchedules = parsed.pmSchedules;
+                    if (parsed.weekendOtJobs) weekendOtJobs = parsed.weekendOtJobs;
+                    if (parsed.deleteLog) deleteLog = parsed.deleteLog;
+
+                    saveToCloudAndLocal();
+                    refreshUI();
+                    toggleBackupModal();
+                    showToast('System data successfully restored from JSON backup.', 'success');
+                } catch(err) {
+                    showToast('Invalid backup file format.', 'danger');
+                }
+            };
+            reader.readAsText(file);
+        }
+
         function switchImportTab(tab) {
-            const btnPaste = document.getElementById('import-tab-btn-paste');
-            const btnSingle = document.getElementById('import-tab-btn-single');
-            const btnList = document.getElementById('import-tab-btn-list');
-            const btnTechs = document.getElementById('import-tab-btn-techs');
+            document.getElementById('import-view-paste').classList.toggle('hidden', tab !== 'paste');
+            document.getElementById('import-view-single').classList.toggle('hidden', tab !== 'single');
+            document.getElementById('import-view-list').classList.toggle('hidden', tab !== 'list');
+            document.getElementById('import-view-techs').classList.toggle('hidden', tab !== 'techs');
 
-            const viewPaste = document.getElementById('import-view-paste');
-            const viewSingle = document.getElementById('import-view-single');
-            const viewList = document.getElementById('import-view-list');
-            const viewTechs = document.getElementById('import-view-techs');
-
-            if (!btnPaste || !btnSingle || !btnList || !btnTechs || !viewPaste || !viewSingle || !viewList || !viewTechs) return;
-
-            btnPaste.className = tab === 'paste' ? 'px-3 py-1.5 rounded-lg bg-blue-600 text-white' : 'px-3 py-1.5 rounded-lg text-slate-400 hover:text-white';
-            btnSingle.className = tab === 'single' ? 'px-3 py-1.5 rounded-lg bg-blue-600 text-white' : 'px-3 py-1.5 rounded-lg text-slate-400 hover:text-white';
-            btnList.className = tab === 'list' ? 'px-3 py-1.5 rounded-lg bg-blue-600 text-white' : 'px-3 py-1.5 rounded-lg text-slate-400 hover:text-white';
-            btnTechs.className = tab === 'techs' ? 'px-3 py-1.5 rounded-lg bg-blue-600 text-white' : 'px-3 py-1.5 rounded-lg text-slate-400 hover:text-white';
-
-            viewPaste.classList.toggle('hidden', tab !== 'paste');
-            viewSingle.classList.toggle('hidden', tab !== 'single');
-            viewList.classList.toggle('hidden', tab !== 'list');
-            viewTechs.classList.toggle('hidden', tab !== 'techs');
+            document.getElementById('import-tab-btn-paste').className = tab === 'paste' ? 'px-3 py-1.5 rounded-lg bg-blue-600 text-white font-semibold' : 'px-3 py-1.5 rounded-lg text-slate-400 hover:text-white font-semibold';
+            document.getElementById('import-tab-btn-single').className = tab === 'single' ? 'px-3 py-1.5 rounded-lg bg-blue-600 text-white font-semibold' : 'px-3 py-1.5 rounded-lg text-slate-400 hover:text-white font-semibold';
+            document.getElementById('import-tab-btn-list').className = tab === 'list' ? 'px-3 py-1.5 rounded-lg bg-blue-600 text-white font-semibold' : 'px-3 py-1.5 rounded-lg text-slate-400 hover:text-white font-semibold';
+            document.getElementById('import-tab-btn-techs').className = tab === 'techs' ? 'px-3 py-1.5 rounded-lg bg-blue-600 text-white font-semibold' : 'px-3 py-1.5 rounded-lg text-slate-400 hover:text-white font-semibold';
 
             if (tab === 'list' || tab === 'techs') renderRosterTables();
         }
 
         function processExcelPaste() {
-            const txt = document.getElementById('excel-paste-input')?.value.trim();
-            if (!txt) return;
-
-            const lines = txt.split('\n');
+            const raw = document.getElementById('excel-paste-input').value.trim();
+            if (!raw) return;
+            const lines = raw.split('\n');
             let addedCount = 0;
 
-            lines.forEach(line => {
-                const parts = line.split(/[\t,]/).map(s => s.trim()).filter(Boolean);
-                if (parts.length >= 1) {
+            lines.forEach((line) => {
+                const parts = line.split(/[\t,]+/).map(p => p.trim());
+                if (parts.length >= 2) {
                     const name = parts[0];
-                    const zone = parts[1] || 'General Zone';
+                    const zone = parts[1];
                     const id = parts[2] || `EQ-${Math.floor(100 + Math.random() * 900)}`;
 
-                    if (!equipmentList.some(e => e.id === id || e.name === name)) {
-                        equipmentList.push({ id, name, zone, status: 'Operational', lastService: new Date().toISOString().slice(0,10) });
+                    if (name && !equipmentList.some(e => e.id === id)) {
+                        equipmentList.push({ id, name, zone, status: 'Operational', lastService: new Date().toISOString().slice(0, 10) });
                         addedCount++;
                     }
                 }
             });
 
-            if (addedCount > 0) {
-                saveToCloudAndLocal();
-                refreshUI();
-                document.getElementById('excel-paste-input').value = '';
-                showToast(`Imported ${addedCount} new machines to factory roster!`, 'success');
-                switchImportTab('list');
-            } else {
-                showToast('No new unique machines parsed from input.', 'info');
-            }
+            saveToCloudAndLocal();
+            refreshUI();
+            showToast(`Imported ${addedCount} machinery entries from Excel/CSV paste.`, 'success');
+            document.getElementById('excel-paste-input').value = '';
+            switchImportTab('list');
         }
 
         function handleCSVFileUpload(e) {
             const file = e.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = function(evt) {
-                const content = evt.target.result;
-                document.getElementById('excel-paste-input').value = content;
+                document.getElementById('excel-paste-input').value = evt.target.result;
                 processExcelPaste();
             };
             reader.readAsText(file);
@@ -4257,24 +4044,19 @@
             if (e && e.preventDefault) e.preventDefault();
             const name = document.getElementById('single-m-name').value.trim();
             const zone = document.getElementById('single-m-zone').value.trim();
-            let id = document.getElementById('single-m-id').value.trim();
-
-            if (!id) id = `EQ-${Math.floor(100 + Math.random() * 900)}`;
+            let id = document.getElementById('single-m-id').value.trim() || `EQ-${Math.floor(100 + Math.random() * 900)}`;
 
             if (equipmentList.some(eq => eq.id === id)) {
-                showToast(`Machine ID ${id} already exists. Using alternative ID.`, 'warning');
-                id = `EQ-${Math.floor(100 + Math.random() * 900)}`;
+                id = `${id}-${Math.floor(Math.random()*100)}`;
             }
 
-            const newEquip = { id, name, zone, status: 'Operational', lastService: new Date().toISOString().slice(0, 10) };
-            equipmentList.push(newEquip);
-
+            equipmentList.push({ id, name, zone, status: 'Operational', lastService: new Date().toISOString().slice(0, 10) });
             saveToCloudAndLocal();
             refreshUI();
+            showToast(`Added machine ${name} (${id})`, 'success');
             document.getElementById('single-m-name').value = '';
             document.getElementById('single-m-zone').value = '';
             document.getElementById('single-m-id').value = '';
-            showToast(`Added machine ${name} (${id})`, 'success');
             switchImportTab('list');
         }
 
@@ -4282,10 +4064,9 @@
             if (e && e.preventDefault) e.preventDefault();
             const name = document.getElementById('single-tech-name').value.trim();
             const role = document.getElementById('single-tech-role').value.trim();
-
-            if (!name) return;
             const fullName = role ? `${name} (${role})` : name;
 
+            if (!name) return;
             if (technicianList.includes(fullName)) {
                 showToast('Technician already exists in roster.', 'warning');
                 return;
@@ -4294,300 +4075,245 @@
             technicianList.push(fullName);
             saveToCloudAndLocal();
             refreshUI();
+            showToast(`Added technician: ${fullName}`, 'success');
             document.getElementById('single-tech-name').value = '';
             document.getElementById('single-tech-role').value = '';
-            showToast(`Added ${fullName} to Technician Roster.`, 'success');
             renderRosterTables();
         }
 
+        function renderRosterTables() {
+            const mBody = document.getElementById('roster-table-tbody');
+            const rosterCount = document.getElementById('roster-count');
+            const tBody = document.getElementById('tech-roster-table-tbody');
+            const techCount = document.getElementById('tech-roster-count');
+
+            if (rosterCount) rosterCount.innerText = equipmentList.length;
+            if (techCount) techCount.innerText = technicianList.filter(t => t !== 'Unassigned').length;
+
+            if (mBody) {
+                mBody.innerHTML = equipmentList.map(e => `
+                    <tr class="hover:bg-slate-800/30 transition">
+                        <td class="py-2 px-3 font-mono font-bold text-blue-400">${e.id}</td>
+                        <td class="py-2 px-3 text-slate-200 font-semibold">${e.name}</td>
+                        <td class="py-2 px-3 text-slate-400">${e.zone}</td>
+                        <td class="py-2 px-3 text-right">
+                            ${e.id !== 'EQ-000' ? `<button onclick="deleteMachine('${escapeJsStr(e.id)}')" class="p-1 text-slate-400 hover:text-rose-400"><i class="fa-solid fa-trash-can"></i></button>` : `<span class="text-[10px] text-slate-500 font-semibold">Default</span>`}
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            if (tBody) {
+                tBody.innerHTML = technicianList.filter(t => t !== 'Unassigned').map((t, idx) => `
+                    <tr class="hover:bg-slate-800/30 transition">
+                        <td class="py-2 px-3 text-slate-500 font-mono">${idx + 1}</td>
+                        <td class="py-2 px-3 text-slate-200 font-semibold">${t}</td>
+                        <td class="py-2 px-3 text-right">
+                            <button onclick="deleteTechnician('${escapeJsStr(t)}')" class="p-1 text-slate-400 hover:text-rose-400"><i class="fa-solid fa-trash-can"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        }
+
         function deleteMachine(equipId) {
-            const eq = equipmentList.find(e => e.id === equipId);
-            if (!eq) return;
-            moveToDeleteLog('Machine', `${eq.name} (${eq.id})`, eq);
+            const equip = equipmentList.find(e => e.id === equipId);
+            if (!equip || equipId === 'EQ-000') return;
+            moveToDeleteLog('Machine', `${equip.name} (${equip.id})`, equip);
             equipmentList = equipmentList.filter(e => e.id !== equipId);
             saveToCloudAndLocal();
             refreshUI();
             renderRosterTables();
-            showToast(`Removed machine ${equipId}`, 'info');
+            showToast(`Deleted machine ${equip.name}`, 'info');
         }
 
-        function deleteTechnician(index) {
-            if (index < 0 || index >= technicianList.length) return;
-            const name = technicianList[index];
-            if (name === 'Unassigned') {
-                showToast('Cannot delete default Unassigned entry.', 'warning');
-                return;
-            }
-            technicianList.splice(index, 1);
+        function deleteTechnician(techName) {
+            if (techName === 'Unassigned') return;
+            technicianList = technicianList.filter(t => t !== techName);
             saveToCloudAndLocal();
             refreshUI();
             renderRosterTables();
-            showToast(`Removed ${name} from roster.`, 'info');
+            showToast(`Removed technician ${techName}`, 'info');
         }
 
-        function renderRosterTables() {
-            const rosterTbody = document.getElementById('roster-table-tbody');
-            const techTbody = document.getElementById('tech-roster-table-tbody');
-            const rosterCountEl = document.getElementById('roster-count');
-            const techCountEl = document.getElementById('tech-roster-count');
+        function generateExecutiveReport() {
+            const printableArea = document.getElementById('executive-report-printable-area');
+            if (!printableArea) return;
 
-            if (rosterCountEl) rosterCountEl.innerText = equipmentList.length;
-            if (techCountEl) techCountEl.innerText = technicianList.filter(t => t !== 'Unassigned').length;
+            const filteredCompleted = filterJobsByTimeframe(completedJobs);
+            const totalSpend = filteredCompleted.reduce((sum, j) => sum + (j.costRs || 0), 0);
+            const totalDowntime = filteredCompleted.reduce((sum, j) => sum + (j.downtimeMins || 0), 0);
+            const avgMttr = filteredCompleted.length > 0 ? Math.round(totalDowntime / filteredCompleted.length) : 0;
 
-            if (rosterTbody) {
-                rosterTbody.innerHTML = equipmentList.map(eq => `
-                    <tr class="hover:bg-slate-800/30 transition">
-                        <td class="py-2 px-3 font-mono text-blue-400 font-bold">${eq.id}</td>
-                        <td class="py-2 px-3 font-semibold text-white">${eq.name}</td>
-                        <td class="py-2 px-3 text-slate-400">${eq.zone}</td>
-                        <td class="py-2 px-3 text-right">
-                            <button onclick="deleteMachine('${escapeJsStr(eq.id)}')" class="p-1 text-slate-400 hover:text-rose-400 transition" title="Delete Machine"><i class="fa-solid fa-trash-can"></i></button>
-                        </td>
-                    </tr>
-                `).join('');
-            }
-
-            if (techTbody) {
-                techTbody.innerHTML = technicianList.map((t, idx) => `
-                    <tr class="hover:bg-slate-800/30 transition">
-                        <td class="py-2 px-3 font-mono text-slate-400">${idx + 1}</td>
-                        <td class="py-2 px-3 font-semibold text-slate-200"><i class="fa-solid fa-user-gear text-blue-400 mr-2"></i>${t}</td>
-                        <td class="py-2 px-3 text-right">
-                            ${t !== 'Unassigned' ? `<button onclick="deleteTechnician(${idx})" class="p-1 text-slate-400 hover:text-rose-400 transition" title="Delete Technician"><i class="fa-solid fa-trash-can"></i></button>` : ''}
-                        </td>
-                    </tr>
-                `).join('');
-            }
-        }
-
-        /* ================= STATE PERSISTENCE & REAL-TIME SYNC ================= */
-        function recalculateMachineStatuses() {
-            equipmentList.forEach(eq => {
-                const activeForEquip = activeJobs.filter(j => j.equipmentId === eq.id || j.equipmentName === eq.name);
-                const hasCritical = activeForEquip.some(j => j.priority === 'Critical');
-                if (hasCritical) {
-                    eq.status = 'Fault';
-                } else if (activeForEquip.length > 0) {
-                    eq.status = 'Maintenance';
-                } else {
-                    eq.status = 'Operational';
-                }
-            });
-        }
-
-        function saveToCloudAndLocal() {
-            const payload = {
-                equipmentList,
-                technicianList,
-                activeJobs,
-                completedJobs,
-                pmSchedules,
-                weekendOtJobs,
-                deleteLog,
-                updatedAt: new Date().toISOString()
-            };
-
-            setSafeStorage(STORAGE_KEY, JSON.stringify(payload));
-            lastAppliedUpdatedAt = payload.updatedAt;
-
-            if (broadcastChannel) {
-                broadcastChannel.postMessage({ type: 'SML_MAINTENANCE_UPDATE', payload });
-            }
-
-            if (rtdb) {
-                rtdb.ref('sml_maintenance_payload').set(payload).catch(err => console.warn('RTDB sync save error:', err));
-            }
-
-            if (db && !firestoreQuotaExceeded) {
-                db.collection('artifacts').doc(appId).collection('public').doc('data').collection('maintenance').doc('state').set(payload)
-                    .catch(err => {
-                        if (err && (err.code === 'resource-exhausted' || (err.message && err.message.includes('Quota exceeded')))) {
-                            handleFirestoreQuotaExceeded(err.message);
-                        } else {
-                            console.warn('Firestore sync save error:', err);
-                        }
-                    });
-            }
-        }
-
-        function applySyncedData(payload, isFromCloud = false) {
-            if (!payload) return;
-            if (payload.updatedAt && lastAppliedUpdatedAt && payload.updatedAt <= lastAppliedUpdatedAt) {
-                return;
-            }
-            lastAppliedUpdatedAt = payload.updatedAt || new Date().toISOString();
-
-            if (payload.equipmentList) equipmentList = payload.equipmentList;
-            if (payload.technicianList) technicianList = payload.technicianList;
-            if (payload.activeJobs) activeJobs = payload.activeJobs;
-            if (payload.completedJobs) completedJobs = payload.completedJobs;
-            if (payload.pmSchedules) pmSchedules = payload.pmSchedules;
-            if (payload.weekendOtJobs) weekendOtJobs = payload.weekendOtJobs;
-            if (payload.deleteLog) deleteLog = payload.deleteLog;
-
-            setSafeStorage(STORAGE_KEY, JSON.stringify(payload));
-            refreshUI();
-
-            if (isFromCloud) {
-                updateCloudUIStatus(true, "Firebase Cloud Active", "Synced latest updates from Cloud");
-            }
-        }
-
-        function loadFromLocalStorage() {
-            const saved = getSafeStorage(STORAGE_KEY);
-            if (saved) {
-                try {
-                    const parsed = JSON.parse(saved);
-                    equipmentList = parsed.equipmentList || defaultEquipmentList;
-                    technicianList = parsed.technicianList || defaultTechnicianList;
-                    activeJobs = parsed.activeJobs || defaultActiveJobs;
-                    completedJobs = parsed.completedJobs || defaultCompletedJobs;
-                    pmSchedules = parsed.pmSchedules || defaultPmSchedules;
-                    weekendOtJobs = parsed.weekendOtJobs || defaultWeekendOtJobs;
-                    deleteLog = parsed.deleteLog || [];
-                    lastAppliedUpdatedAt = parsed.updatedAt || null;
-                    return;
-                } catch(e) {}
-            }
-
-            equipmentList = defaultEquipmentList;
-            technicianList = defaultTechnicianList;
-            activeJobs = defaultActiveJobs;
-            completedJobs = defaultCompletedJobs;
-            pmSchedules = defaultPmSchedules;
-            weekendOtJobs = defaultWeekendOtJobs;
-            deleteLog = [];
-        }
-
-        function initCloudSync() {
-            try {
-                let config = DEFAULT_FIREBASE_CONFIG;
-                const customConfigStr = getSafeStorage('sml_custom_firebase_json');
-                if (customConfigStr) {
-                    try { config = JSON.parse(customConfigStr); } catch(e){}
-                }
-
-                if (!firebase.apps.length) {
-                    firebase.initializeApp(config);
-                }
-
-                rtdb = firebase.database();
-                if (!firestoreQuotaExceeded) {
-                    db = firebase.firestore();
-                }
-
-                rtdb.ref('sml_maintenance_payload').on('value', snapshot => {
-                    const data = snapshot.val();
-                    if (data) {
-                        applySyncedData(data, true);
-                    }
-                });
-
-                if (db && !firestoreQuotaExceeded) {
-                    unsubscribeSyncListener = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('maintenance').doc('state')
-                        .onSnapshot(doc => {
-                            if (doc.exists) {
-                                applySyncedData(doc.data(), true);
-                            }
-                        }, error => {
-                            if (error && (error.code === 'resource-exhausted' || (error.message && error.message.includes('Quota exceeded')))) {
-                                handleFirestoreQuotaExceeded(error.message);
-                            }
-                        });
-                }
-
-                updateCloudUIStatus(true, "Firebase Cloud Active");
-            } catch(err) {
-                console.warn("Cloud Sync init notice:", err);
-                updateCloudUIStatus(true, "Local Sync Active", "Running in local storage fallback mode");
-            }
-        }
-
-        /* ================= TABS & LAYOUT CONTROLLERS ================= */
-        function switchTab(tabName) {
-            const tabs = ['active', 'management', 'weekend-ot', 'completed', 'pm', 'equipment', 'tech-workload'];
-            tabs.forEach(t => {
-                const btn = document.getElementById(`tab-btn-${t}`);
-                const content = document.getElementById(`tab-content-${t}`);
-                if (btn) {
-                    if (t === tabName) {
-                        btn.className = "px-3.5 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white transition flex items-center space-x-2";
-                    } else {
-                        btn.className = "px-3.5 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center space-x-2";
-                    }
-                }
-                if (content) {
-                    content.classList.toggle('hidden', t !== tabName);
-                }
+            const sectionSummary = {};
+            filteredCompleted.forEach(j => {
+                const sec = getJobSection(j);
+                if (!sectionSummary[sec]) sectionSummary[sec] = { count: 0, downtime: 0, cost: 0 };
+                sectionSummary[sec].count++;
+                sectionSummary[sec].downtime += (j.downtimeMins || 0);
+                sectionSummary[sec].cost += (j.costRs || 0);
             });
 
-            const viewControls = document.getElementById('view-mode-controls');
-            if (viewControls) {
-                viewControls.style.display = tabName === 'active' ? '' : 'none';
-            }
+            printableArea.innerHTML = `
+                <div class="space-y-4 text-slate-200">
+                    <div class="p-4 bg-factory-900 border border-slate-800 rounded-xl flex items-center justify-between">
+                        <div>
+                            <h4 class="font-extrabold text-sm text-white">SML SAMSON MANUFACTURERS (PVT) LTD</h4>
+                            <p class="text-xs text-slate-400">Plant Maintenance Operational Audit • Generated ${new Date().toLocaleString()}</p>
+                        </div>
+                        <div class="text-right font-mono text-xs text-emerald-400 font-bold">
+                            Period: ${mgmtTimeFilter}
+                        </div>
+                    </div>
 
-            if (tabName === 'management') {
-                handleMgmtTimeFilterChange();
-                initCharts();
-            } else if (tabName === 'active') {
-                renderActiveJobs();
-            } else if (tabName === 'completed') {
-                renderCompletedJobs();
-            } else if (tabName === 'weekend-ot') {
-                renderWeekendOtJobs();
-            } else if (tabName === 'pm') {
-                renderPMSchedules();
-            } else if (tabName === 'equipment') {
-                renderEquipmentGrid();
-            } else if (tabName === 'tech-workload') {
-                renderTechnicianWorkload();
-            }
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="p-3 bg-factory-900 rounded-lg border border-slate-800">
+                            <div class="text-[10px] text-slate-400 font-bold uppercase">Total Financial Spend</div>
+                            <div class="text-lg font-bold text-emerald-400 font-mono mt-1">Rs. ${totalSpend.toLocaleString('en-US', {minimumFractionDigits:2})}</div>
+                        </div>
+                        <div class="p-3 bg-factory-900 rounded-lg border border-slate-800">
+                            <div class="text-[10px] text-slate-400 font-bold uppercase">Total Downtime Incurred</div>
+                            <div class="text-lg font-bold text-amber-400 font-mono mt-1">${formatElapsed(totalDowntime)}</div>
+                        </div>
+                        <div class="p-3 bg-factory-900 rounded-lg border border-slate-800">
+                            <div class="text-[10px] text-slate-400 font-bold uppercase">Average MTTR</div>
+                            <div class="text-lg font-bold text-blue-400 font-mono mt-1">${avgMttr} mins</div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <h4 class="font-bold text-white text-xs">Section Breakdown Summary</h4>
+                        <div class="border border-slate-800 rounded-lg overflow-hidden">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-900 text-slate-400 font-semibold border-b border-slate-800">
+                                    <tr>
+                                        <th class="py-2 px-3">Section / Zone</th>
+                                        <th class="py-2 px-3 text-center">Incidents</th>
+                                        <th class="py-2 px-3 text-right">Downtime</th>
+                                        <th class="py-2 px-3 text-right">Total Expenditure (Rs.)</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800 font-medium">
+                                    ${Object.keys(sectionSummary).map(sec => `
+                                        <tr>
+                                            <td class="py-2 px-3 font-semibold text-white">${sec}</td>
+                                            <td class="py-2 px-3 text-center font-bold text-blue-400">${sectionSummary[sec].count}</td>
+                                            <td class="py-2 px-3 text-right font-mono text-amber-400">${formatElapsed(sectionSummary[sec].downtime)}</td>
+                                            <td class="py-2 px-3 text-right font-mono text-emerald-400">Rs. ${sectionSummary[sec].cost.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            toggleExecutiveReportModal();
         }
 
-        function toggleActiveView(mode) {
-            activeViewMode = mode;
-            const btnTable = document.getElementById('view-mode-table');
-            const btnKanban = document.getElementById('view-mode-kanban');
-            const wrapTable = document.getElementById('active-table-wrapper');
-            const wrapKanban = document.getElementById('active-kanban-wrapper');
+        function handleNewJobSectionChange(sectionVal) {
+            filterNewJobEquipment();
+        }
 
-            if (btnTable && btnKanban && wrapTable && wrapKanban) {
-                if (mode === 'table') {
-                    btnTable.className = "px-2.5 py-1 rounded text-xs bg-slate-700 text-white";
-                    btnKanban.className = "px-2.5 py-1 rounded text-xs text-slate-400 hover:text-white";
-                    wrapTable.classList.remove('hidden');
-                    wrapKanban.classList.add('hidden');
-                } else {
-                    btnKanban.className = "px-2.5 py-1 rounded text-xs bg-slate-700 text-white";
-                    btnTable.className = "px-2.5 py-1 rounded text-xs text-slate-400 hover:text-white";
-                    wrapKanban.classList.remove('hidden');
-                    wrapTable.classList.add('hidden');
-                }
+        function handleNewJobEquipmentChange(equipId) {
+            // Equipment change handler
+        }
+
+        function filterNewJobEquipment() {
+            const sectionVal = document.getElementById('new-job-section')?.value || 'ALL';
+            const searchVal = (document.getElementById('new-job-equipment-search')?.value || '').toLowerCase();
+            const selectEl = document.getElementById('new-job-equipment');
+            if (!selectEl) return;
+
+            let filtered = equipmentList.filter(e => {
+                const isGeneralTask = e.id === 'EQ-000';
+                const matchSection = sectionVal === 'ALL' || e.zone === sectionVal || isGeneralTask;
+                const matchSearch = e.name.toLowerCase().includes(searchVal) || e.id.toLowerCase().includes(searchVal) || e.zone.toLowerCase().includes(searchVal);
+                return matchSection && matchSearch;
+            });
+
+            selectEl.innerHTML = filtered.map(e => `<option value="${e.id}">${e.name} (${e.id}) - [${e.zone}]</option>`).join('');
+        }
+
+        function filterPmEquipment(query) {
+            const searchVal = (query || '').toLowerCase();
+            const selectEl = document.getElementById('pm-equipment');
+            if (!selectEl) return;
+            const filtered = equipmentList.filter(e => e.name.toLowerCase().includes(searchVal) || e.id.toLowerCase().includes(searchVal) || e.zone.toLowerCase().includes(searchVal));
+            selectEl.innerHTML = filtered.map(e => `<option value="${e.id}">${e.name} (${e.id}) - [${e.zone}]</option>`).join('');
+        }
+
+        function filterWeekendOtEquipment(query) {
+            const searchVal = (query || '').toLowerCase();
+            const selectEl = document.getElementById('weekend-ot-equipment');
+            if (!selectEl) return;
+            const filtered = equipmentList.filter(e => e.name.toLowerCase().includes(searchVal) || e.id.toLowerCase().includes(searchVal) || e.zone.toLowerCase().includes(searchVal));
+            selectEl.innerHTML = filtered.map(e => `<option value="${e.id}">${e.name} (${e.id}) - [${e.zone}]</option>`).join('');
+        }
+
+        function openNewJobForEquip(equipId) {
+            toggleNewJobModal();
+            const equipSelect = document.getElementById('new-job-equipment');
+            if (equipSelect) equipSelect.value = equipId;
+        }
+
+        function toggleNewJobModal() { document.getElementById('modal-new-job')?.classList.toggle('hidden'); }
+        function toggleCompleteJobModal() { document.getElementById('modal-complete-job')?.classList.toggle('hidden'); }
+        function toggleNewPMModal() { document.getElementById('modal-new-pm')?.classList.toggle('hidden'); }
+        function toggleNewWeekendOtModal() { document.getElementById('modal-new-weekend-ot')?.classList.toggle('hidden'); }
+        function toggleReviewWeekendOtModal() { document.getElementById('modal-review-weekend-ot')?.classList.toggle('hidden'); }
+        function toggleManageMachinesModal() { document.getElementById('modal-manage-machines')?.classList.toggle('hidden'); renderRosterTables(); }
+        function toggleBackupModal() { document.getElementById('modal-backup')?.classList.toggle('hidden'); }
+        function toggleFirebaseModal() { document.getElementById('modal-firebase-config')?.classList.toggle('hidden'); }
+        function toggleDeleteLogModal() { document.getElementById('modal-delete-log')?.classList.toggle('hidden'); renderDeleteLogTable(); }
+        function toggleEditJobTechsModal() { document.getElementById('modal-edit-job-techs')?.classList.toggle('hidden'); }
+        function toggleExecutiveReportModal() { document.getElementById('modal-executive-report')?.classList.toggle('hidden'); }
+        function toggleMachineHistoryModal() { document.getElementById('modal-machine-history')?.classList.toggle('hidden'); }
+
+        function openClearDataConfirmationModal() {
+            document.getElementById('modal-clear-confirm')?.classList.remove('hidden');
+            const pwdInput = document.getElementById('clear-data-password');
+            if (pwdInput) pwdInput.value = '';
+            document.getElementById('clear-password-error')?.classList.add('hidden');
+        }
+
+        function closeClearDataConfirmationModal() {
+            document.getElementById('modal-clear-confirm')?.classList.add('hidden');
+        }
+
+        function confirmClearAllData() {
+            const pwdVal = document.getElementById('clear-data-password')?.value.trim();
+            if (pwdVal === ADMIN_CLEAR_PASSWORD) {
+                activeJobs = [];
+                completedJobs = [];
+                pmSchedules = [];
+                weekendOtJobs = [];
+                deleteLog = [];
+
+                saveToCloudAndLocal();
+                refreshUI();
+                closeClearDataConfirmationModal();
+                showToast('All operational dashboard data cleared successfully.', 'warning');
+            } else {
+                document.getElementById('clear-password-error')?.classList.remove('hidden');
             }
-            renderActiveJobs();
         }
 
         function showToast(message, type = 'info') {
             const container = document.getElementById('toast-container');
             if (!container) return;
 
-            let icon = 'fa-info-circle';
-            let bg = 'bg-slate-800 text-slate-200 border-slate-700';
-
-            if (type === 'success') {
-                icon = 'fa-circle-check';
-                bg = 'bg-emerald-950/90 text-emerald-200 border-emerald-800/80';
-            } else if (type === 'warning') {
-                icon = 'fa-triangle-exclamation';
-                bg = 'bg-amber-950/90 text-amber-200 border-amber-800/80';
-            } else if (type === 'danger') {
-                icon = 'fa-circle-xmark';
-                bg = 'bg-rose-950/90 text-rose-200 border-rose-800/80';
-            }
-
             const toast = document.createElement('div');
-            toast.className = `p-3.5 rounded-xl border shadow-xl text-xs font-semibold flex items-center space-x-2.5 pointer-events-auto transition-all duration-300 transform translate-y-2 opacity-0 ${bg}`;
-            toast.innerHTML = `<i class="fa-solid ${icon} text-sm"></i><span>${message}</span>`;
+            let bgClass = 'bg-slate-800 text-slate-200 border-slate-700';
+            let iconClass = 'fa-solid fa-circle-info text-blue-400';
+
+            if (type === 'success') { bgClass = 'bg-emerald-950/90 text-emerald-200 border-emerald-800'; iconClass = 'fa-solid fa-circle-check text-emerald-400'; }
+            else if (type === 'warning') { bgClass = 'bg-amber-950/90 text-amber-200 border-amber-800'; iconClass = 'fa-solid fa-triangle-exclamation text-amber-400'; }
+            else if (type === 'danger') { bgClass = 'bg-rose-950/90 text-rose-200 border-rose-800'; iconClass = 'fa-solid fa-circle-xmark text-rose-400'; }
+
+            toast.className = `p-3 rounded-xl border shadow-xl text-xs flex items-center space-x-2.5 pointer-events-auto transition-all transform duration-300 translate-y-2 opacity-0 ${bgClass}`;
+            toast.innerHTML = `<i class="${iconClass} text-sm"></i><span class="font-medium">${message}</span>`;
 
             container.appendChild(toast);
 
@@ -4601,53 +4327,243 @@
             }, 3500);
         }
 
-        function refreshUI() {
-            populateSectionDropdowns();
-            populateTechnicianDropdowns();
-            updateKPICards();
-
-            renderActiveJobs();
-            renderCompletedJobs();
-            renderWeekendOtJobs();
-            renderPMSchedules();
-            renderEquipmentGrid();
-            renderTechnicianWorkload();
-
-            const trashCountEl = document.getElementById('hdr-trash-count');
-            if (trashCountEl) trashCountEl.innerText = deleteLog.length;
-
-            updateManagementDashboard();
-            updateCharts();
+        function saveToLocalOnly() {
+            const payload = {
+                updatedAt: new Date().toISOString(),
+                equipmentList,
+                technicianList,
+                activeJobs,
+                completedJobs,
+                pmSchedules,
+                weekendOtJobs,
+                deleteLog
+            };
+            setSafeStorage(STORAGE_KEY, JSON.stringify(payload));
+            if (broadcastChannel) {
+                broadcastChannel.postMessage({ type: 'SML_MAINTENANCE_UPDATE', payload });
+            }
         }
 
-        // Real-time clock interval (1 second)
-        setInterval(() => {
-            const liveTimeEl = document.getElementById('live-time');
-            if (liveTimeEl) liveTimeEl.innerText = new Date().toLocaleTimeString();
-        }, 1000);
+        async function saveToCloudAndLocal() {
+            saveToLocalOnly();
+            const payload = {
+                updatedAt: new Date().toISOString(),
+                equipmentList,
+                technicianList,
+                activeJobs,
+                completedJobs,
+                pmSchedules,
+                weekendOtJobs,
+                deleteLog
+            };
 
-        // 10-Second Active Job Live Duration & UI Refresh Interval
-        setInterval(() => {
-            if (activeJobs.length > 0) {
-                renderActiveJobs();
+            if (rtdb) {
+                try {
+                    await rtdb.ref(`plants/${appId}/data`).set(payload);
+                } catch (err) {
+                    console.warn("RTDB Sync error:", err);
+                }
             }
-        }, 10000);
+
+            if (db && !firestoreQuotaExceeded) {
+                try {
+                    await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('maintenance').doc('state').set(payload);
+                } catch (err) {
+                    if (err && (err.code === 'resource-exhausted' || (err.message && err.message.includes('Quota exceeded')))) {
+                        handleFirestoreQuotaExceeded(err.message);
+                    } else {
+                        console.warn("Firestore sync error:", err);
+                    }
+                }
+            }
+        }
+
+        function loadFromLocalStorage() {
+            const raw = getSafeStorage(STORAGE_KEY);
+            if (raw) {
+                try {
+                    const parsed = JSON.parse(raw);
+                    applySyncedData(parsed, false);
+                } catch (e) {}
+            } else {
+                equipmentList = [...defaultEquipmentList];
+                technicianList = [...defaultTechnicianList];
+                activeJobs = [...defaultActiveJobs];
+                completedJobs = [...defaultCompletedJobs];
+                pmSchedules = [...defaultPmSchedules];
+                weekendOtJobs = [...defaultWeekendOtJobs];
+                deleteLog = [];
+                saveToLocalOnly();
+            }
+        }
+
+        function applySyncedData(data, broadcast = false) {
+            if (!data) return;
+            if (data.updatedAt && lastAppliedUpdatedAt && data.updatedAt <= lastAppliedUpdatedAt) return;
+
+            if (data.updatedAt) lastAppliedUpdatedAt = data.updatedAt;
+            if (data.equipmentList) equipmentList = data.equipmentList;
+            if (data.technicianList) technicianList = data.technicianList;
+            if (data.activeJobs) activeJobs = data.activeJobs;
+            if (data.completedJobs) completedJobs = data.completedJobs;
+            if (data.pmSchedules) pmSchedules = data.pmSchedules;
+            if (data.weekendOtJobs) weekendOtJobs = data.weekendOtJobs;
+            if (data.deleteLog) deleteLog = data.deleteLog;
+
+            populateTechnicianDropdowns();
+            populateSectionDropdowns();
+            filterNewJobEquipment();
+            filterPmEquipment('');
+            filterWeekendOtEquipment('');
+            refreshUI();
+
+            if (broadcast) saveToLocalOnly();
+        }
+
+        function initCloudSync() {
+            try {
+                let configToUse = DEFAULT_FIREBASE_CONFIG;
+                const customRaw = getSafeStorage('sml_custom_firebase_json');
+                if (customRaw) {
+                    try { configToUse = JSON.parse(customRaw); } catch(e){}
+                }
+
+                const jsonInput = document.getElementById('custom-firebase-json');
+                if (jsonInput) jsonInput.value = JSON.stringify(configToUse, null, 2);
+
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(configToUse);
+                }
+
+                rtdb = firebase.database();
+                if (!firestoreQuotaExceeded) {
+                    try {
+                        db = firebase.firestore();
+                    } catch (e) {
+                        handleFirestoreQuotaExceeded(e.message);
+                    }
+                }
+
+                rtdb.ref(`plants/${appId}/data`).on('value', snapshot => {
+                    const data = snapshot.val();
+                    if (data) applySyncedData(data, false);
+                });
+
+                if (db && !firestoreQuotaExceeded) {
+                    unsubscribeSyncListener = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('maintenance').doc('state')
+                        .onSnapshot(doc => {
+                            if (doc.exists) {
+                                applySyncedData(doc.data(), false);
+                            }
+                        }, err => {
+                            if (err && (err.code === 'resource-exhausted' || (err.message && err.message.includes('Quota exceeded')))) {
+                                handleFirestoreQuotaExceeded(err.message);
+                            }
+                        });
+                }
+
+                updateCloudUIStatus(true, "Firebase Cloud Active", "Bidirectional sync connected.");
+            } catch (err) {
+                console.warn("Firebase Cloud Sync setup warning:", err);
+                updateCloudUIStatus(false, "Local Offline Mode", "Running in browser local storage mode.");
+            }
+        }
+
+        function switchTab(tabId) {
+            const tabs = ['active', 'management', 'weekend-ot', 'completed', 'pm', 'equipment', 'tech-workload'];
+            tabs.forEach(t => {
+                const content = document.getElementById(`tab-content-${t}`);
+                const btn = document.getElementById(`tab-btn-${t}`);
+                if (content) content.classList.toggle('hidden', t !== tabId);
+                if (btn) {
+                    if (t === tabId) {
+                        btn.className = 'px-3.5 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white transition flex items-center space-x-2';
+                    } else {
+                        btn.className = 'px-3.5 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center space-x-2';
+                    }
+                }
+            });
+
+            if (tabId === 'management') {
+                renderAnalyticsTables();
+                updateManagementDashboard();
+                initCharts();
+            } else if (tabId === 'equipment') {
+                renderEquipmentGrid();
+            } else if (tabId === 'tech-workload') {
+                renderTechnicianWorkload();
+            }
+        }
+
+        function toggleActiveView(mode) {
+            activeViewMode = mode;
+            const tableWrap = document.getElementById('active-table-wrapper');
+            const kanbanWrap = document.getElementById('active-kanban-wrapper');
+            const btnTable = document.getElementById('view-mode-table');
+            const btnKanban = document.getElementById('view-mode-kanban');
+
+            if (mode === 'table') {
+                if (tableWrap) tableWrap.classList.remove('hidden');
+                if (kanbanWrap) kanbanWrap.classList.add('hidden');
+                if (btnTable) btnTable.className = 'px-2.5 py-1 rounded text-xs bg-slate-700 text-white';
+                if (btnKanban) btnKanban.className = 'px-2.5 py-1 rounded text-xs text-slate-400 hover:text-white';
+            } else {
+                if (tableWrap) tableWrap.classList.add('hidden');
+                if (kanbanWrap) kanbanWrap.classList.remove('hidden');
+                if (btnTable) btnTable.className = 'px-2.5 py-1 rounded text-xs text-slate-400 hover:text-white';
+                if (btnKanban) btnKanban.className = 'px-2.5 py-1 rounded text-xs bg-slate-700 text-white';
+            }
+            renderActiveJobs();
+        }
+
+        function refreshUI() {
+            updateKPICards();
+            renderActiveJobs();
+            renderCompletedJobs();
+            renderPMSchedules();
+            renderWeekendOtJobs();
+            renderEquipmentGrid();
+            renderTechnicianWorkload();
+            renderAnalyticsTables();
+            updateManagementDashboard();
+            updateCharts();
+            const trashCountEl = document.getElementById('hdr-trash-count');
+            if (trashCountEl) trashCountEl.innerText = deleteLog.length;
+        }
 
         window.onload = function() {
-            const savedUser = getSafeStorage('sml_active_user_session');
-            if (savedUser) {
+            loadFromLocalStorage();
+            populateTechnicianDropdowns();
+            populateSectionDropdowns();
+            filterNewJobEquipment();
+            filterPmEquipment('');
+            filterWeekendOtEquipment('');
+
+            const savedSession = getSafeStorage('sml_active_user_session');
+            if (savedSession) {
                 try {
-                    currentSessionUser = JSON.parse(savedUser);
+                    currentSessionUser = JSON.parse(savedSession);
                     document.getElementById('login-overlay')?.classList.add('hidden');
                     applyUserPermissionsUI();
-                } catch(e) {}
+                } catch(e) {
+                    currentSessionUser = null;
+                }
             } else {
                 document.getElementById('login-overlay')?.classList.remove('hidden');
             }
 
-            loadFromLocalStorage();
             initCloudSync();
-            refreshUI();
+
+            setInterval(() => {
+                const liveClockEl = document.getElementById('live-time');
+                if (liveClockEl) {
+                    liveClockEl.innerText = new Date().toLocaleTimeString();
+                }
+            }, 1000);
+
+            setInterval(() => {
+                renderActiveJobs();
+            }, 10000);
         };
     </script>
 </body>
