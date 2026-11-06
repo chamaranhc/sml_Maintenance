@@ -2448,6 +2448,13 @@
                 return matchSearch && matchPrio && matchStatus && matchDept && matchCat && matchTech;
             });
 
+            // Sort so active ongoing jobs come first and 'Pending Verification' jobs move to the bottom
+            filtered.sort((a, b) => {
+                const aIsPV = a.status === 'Pending Verification' ? 1 : 0;
+                const bIsPV = b.status === 'Pending Verification' ? 1 : 0;
+                return aIsPV - bIsPV;
+            });
+
             if (activeViewMode === 'kanban') {
                 renderKanbanBoard(filtered);
             }
