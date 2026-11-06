@@ -1424,8 +1424,18 @@
                 </div>
                 <div>
                     <h3 class="text-base font-bold text-white">Database Connectivity & Sync Setup</h3>
-                    <p class="text-xs text-slate-400">Firebase Cloud Database Synchronization (<code class="text-blue-300">sml-maintenance</code>)</p>
+                    <p class="text-xs text-slate-400">Firebase Cloud Database Synchronization (<code class="text-blue-300">sml-maintenance1</code>)</p>
                 </div>
+            </div>
+
+            <!-- Dynamic Diagnostic Status Box -->
+            <div id="syncDiagnosticBox" class="p-3.5 bg-blue-950/40 border border-blue-800/60 rounded-xl space-y-1.5">
+                <div class="font-bold text-blue-300 flex items-center space-x-2">
+                    <i class="fa-solid fa-cloud-arrow-up text-blue-400"></i>
+                    <span>Firebase Cloud Connected</span>
+                </div>
+                <p class="text-slate-300 text-[11px] leading-relaxed">Connected to project <code class="text-amber-300">sml-maintenance1</code>. All updates sync in real time across sessions.</p>
+            </div>
             </div>
 
             <!-- Dynamic Diagnostic Status Box -->
@@ -1709,14 +1719,14 @@
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'sml-global-plant';
 
         const DEFAULT_FIREBASE_CONFIG = {
-            apiKey: "AIzaSyAl4XJPBshYrhEiPOgedU2VOn9OLYuqnag",
-            authDomain: "sml-maintenance.firebaseapp.com",
-            databaseURL: "https://sml-maintenance-default-rtdb.firebaseio.com",
-            projectId: "sml-maintenance",
-            storageBucket: "sml-maintenance.firebasestorage.app",
-            messagingSenderId: "489017963709",
-            appId: "1:489017963709:web:6a977ed91d06323fbf73d4",
-            measurementId: "G-EHBNST37KT"
+            apiKey: "AIzaSyB3W-c-QMlCQRtEtPEC4vH7GXYmMPf_UzE",
+            authDomain: "sml-maintenance1.firebaseapp.com",
+            databaseURL: "https://sml-maintenance1-default-rtdb.firebaseio.com",
+            projectId: "sml-maintenance1",
+            storageBucket: "sml-maintenance1.firebasestorage.app",
+            messagingSenderId: "58224613087",
+            appId: "1:58224613087:web:102226ca3f991dd50c3b6a",
+            measurementId: "G-43WW20LWCR"
         };
 
         const AUTH_USER_DATABASE = {
@@ -1963,7 +1973,7 @@
                         <i class="fa-solid ${isConnected ? 'fa-cloud-arrow-up text-emerald-400' : 'fa-triangle-exclamation text-amber-400'}"></i>
                         <span>${statusText}</span>
                     </div>
-                    <p class="text-slate-300 text-[11px] leading-relaxed">${details || 'Connected to project sml-maintenance. Real-time sync active.'}</p>
+                    <p class="text-slate-300 text-[11px] leading-relaxed">${details || 'Connected to project sml-maintenance1. Real-time sync active.'}</p>
                 `;
             }
         }
@@ -4327,6 +4337,71 @@
             }, 3500);
         }
 
+        // Smart merge array of objects by unique 'id' key
+        function mergeById(localArr, cloudArr) {
+            if (!Array.isArray(cloudArr)) return Array.isArray(localArr) ? localArr : [];
+            if (!Array.isArray(localArr) || localArr.length === 0) return cloudArr;
+
+            const map = new Map();
+            localArr.forEach(item => {
+                if (item && item.id) map.set(item.id, item);
+            });
+            cloudArr.forEach(item => {
+                if (item && item.id) {
+                    const existing = map.get(item.id);
+                    if (!existing) {
+                        map.set(item.id, item);
+                    } else {
+                        const localTime = existing.updatedAt || existing.resolvedIso || existing.createdIso || '';
+                        const cloudTime = item.updatedAt || item.resolvedIso || item.createdIso || '';
+                        if (!localTime || !cloudTime || cloudTime >= localTime) {
+                            map.set(item.id, item);
+                        }
+                    }
+                }
+            });
+            return Array.from(map.values());
+        }
+
+        // Smart merge active jobs excluding completed or deleted items
+        function mergeActiveJobs(localArr, cloudArr, completedArr, deleteLogArr) {
+            if (!Array.isArray(cloudArr)) return Array.isArray(localArr) ? localArr : [];
+            const completedIds = new Set((completedArr || []).map(j => j.id));
+            const deletedIds = new Set((deleteLogArr || []).map(d => d.payload && d.payload.id ? d.payload.id : d.id));
+
+            const map = new Map();
+            (localArr || []).forEach(item => {
+                if (item && item.id && !completedIds.has(item.id) && !deletedIds.has(item.id)) {
+                    map.set(item.id, item);
+                }
+            });
+
+            cloudArr.forEach(item => {
+                if (item && item.id && !completedIds.has(item.id) && !deletedIds.has(item.id)) {
+                    const existing = map.get(item.id);
+                    if (!existing) {
+                        map.set(item.id, item);
+                    } else {
+                        const localTime = existing.updatedAt || existing.resolvedIso || existing.createdIso || '';
+                        const cloudTime = item.updatedAt || item.resolvedIso || item.createdIso || '';
+                        if (!localTime || !cloudTime || cloudTime >= localTime) {
+                            map.set(item.id, item);
+                        }
+                    }
+                }
+            });
+
+            return Array.from(map.values());
+        }
+
+        // Smart merge for primitive string array (e.g. technicianList)
+        function mergePrimitiveArray(localArr, cloudArr) {
+            if (!Array.isArray(cloudArr)) return Array.isArray(localArr) ? localArr : [];
+            if (!Array.isArray(localArr) || localArr.length === 0) return cloudArr;
+            const set = new Set([...cloudArr, ...localArr]);
+            return Array.from(set);
+        }
+
         function saveToLocalOnly() {
             const payload = {
                 updatedAt: new Date().toISOString(),
@@ -4399,16 +4474,34 @@
 
         function applySyncedData(data, broadcast = false) {
             if (!data) return;
-            if (data.updatedAt && lastAppliedUpdatedAt && data.updatedAt <= lastAppliedUpdatedAt) return;
+
+            // Step 1: Merge deleteLog first so deleted item IDs are registered
+            if (data.deleteLog && Array.isArray(data.deleteLog)) {
+                deleteLog = mergeById(deleteLog, data.deleteLog);
+            }
+            // Step 2: Merge completedJobs so finished work order IDs are registered
+            if (data.completedJobs && Array.isArray(data.completedJobs)) {
+                completedJobs = mergeById(completedJobs, data.completedJobs);
+            }
+            // Step 3: Merge activeJobs using cross-state deduplication
+            if (data.activeJobs && Array.isArray(data.activeJobs)) {
+                activeJobs = mergeActiveJobs(activeJobs, data.activeJobs, completedJobs, deleteLog);
+            }
+            // Step 4: Merge remaining datasets safely
+            if (data.pmSchedules && Array.isArray(data.pmSchedules)) {
+                pmSchedules = mergeById(pmSchedules, data.pmSchedules);
+            }
+            if (data.weekendOtJobs && Array.isArray(data.weekendOtJobs)) {
+                weekendOtJobs = mergeById(weekendOtJobs, data.weekendOtJobs);
+            }
+            if (data.equipmentList && Array.isArray(data.equipmentList)) {
+                equipmentList = mergeById(equipmentList, data.equipmentList);
+            }
+            if (data.technicianList && Array.isArray(data.technicianList)) {
+                technicianList = mergePrimitiveArray(technicianList, data.technicianList);
+            }
 
             if (data.updatedAt) lastAppliedUpdatedAt = data.updatedAt;
-            if (data.equipmentList) equipmentList = data.equipmentList;
-            if (data.technicianList) technicianList = data.technicianList;
-            if (data.activeJobs) activeJobs = data.activeJobs;
-            if (data.completedJobs) completedJobs = data.completedJobs;
-            if (data.pmSchedules) pmSchedules = data.pmSchedules;
-            if (data.weekendOtJobs) weekendOtJobs = data.weekendOtJobs;
-            if (data.deleteLog) deleteLog = data.deleteLog;
 
             populateTechnicianDropdowns();
             populateSectionDropdowns();
@@ -4421,98 +4514,105 @@
         }
 
         function initCloudSync() {
+            let config = DEFAULT_FIREBASE_CONFIG;
+            const customConfigStr = getSafeStorage('sml_custom_firebase_json');
+            if (customConfigStr) {
+                try {
+                    config = JSON.parse(customConfigStr);
+                } catch(e) {}
+            }
+
+            const jsonArea = document.getElementById('custom-firebase-json');
+            if (jsonArea && !jsonArea.value) {
+                jsonArea.value = JSON.stringify(config, null, 2);
+            }
+
             try {
-                let configToUse = DEFAULT_FIREBASE_CONFIG;
-                const customRaw = getSafeStorage('sml_custom_firebase_json');
-                if (customRaw) {
-                    try { configToUse = JSON.parse(customRaw); } catch(e){}
+                if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+                    firebase.initializeApp(config);
                 }
+                
+                if (typeof firebase !== 'undefined') {
+                    auth = firebase.auth();
+                    rtdb = firebase.database();
 
-                const jsonInput = document.getElementById('custom-firebase-json');
-                if (jsonInput) jsonInput.value = JSON.stringify(configToUse, null, 2);
+                    // Listen to Realtime Database
+                    const rtdbRef = rtdb.ref(`plants/${appId}/data`);
+                    rtdbRef.on('value', (snapshot) => {
+                        const data = snapshot.val();
+                        if (data && data.updatedAt !== lastAppliedUpdatedAt) {
+                            applySyncedData(data, false);
+                        }
+                    }, (error) => {
+                        console.warn("RTDB sync listener warning:", error);
+                    });
 
-                if (!firebase.apps.length) {
-                    firebase.initializeApp(configToUse);
-                }
-
-                rtdb = firebase.database();
-                if (!firestoreQuotaExceeded) {
-                    try {
+                    // Listen to Firestore if quota not exceeded
+                    if (!firestoreQuotaExceeded) {
                         db = firebase.firestore();
-                    } catch (e) {
-                        handleFirestoreQuotaExceeded(e.message);
-                    }
-                }
-
-                rtdb.ref(`plants/${appId}/data`).on('value', snapshot => {
-                    const data = snapshot.val();
-                    if (data) applySyncedData(data, false);
-                });
-
-                if (db && !firestoreQuotaExceeded) {
-                    unsubscribeSyncListener = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('maintenance').doc('state')
-                        .onSnapshot(doc => {
+                        const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('maintenance').doc('state');
+                        
+                        unsubscribeSyncListener = docRef.onSnapshot((doc) => {
                             if (doc.exists) {
-                                applySyncedData(doc.data(), false);
+                                const data = doc.data();
+                                if (data && data.updatedAt !== lastAppliedUpdatedAt) {
+                                    applySyncedData(data, false);
+                                }
                             }
-                        }, err => {
+                        }, (err) => {
                             if (err && (err.code === 'resource-exhausted' || (err.message && err.message.includes('Quota exceeded')))) {
                                 handleFirestoreQuotaExceeded(err.message);
+                            } else {
+                                console.warn("Firestore snapshot listener error:", err);
                             }
                         });
-                }
+                    }
 
-                updateCloudUIStatus(true, "Firebase Cloud Active", "Bidirectional sync connected.");
+                    updateCloudUIStatus(true, "Firebase Cloud Active", "Real-time sync established.");
+                }
             } catch (err) {
-                console.warn("Firebase Cloud Sync setup warning:", err);
-                updateCloudUIStatus(false, "Local Offline Mode", "Running in browser local storage mode.");
+                console.warn("Firebase initialization error:", err);
+                updateCloudUIStatus(false, "Local Offline Mode", "Running locally. Sync configured when online.");
             }
         }
 
-        function switchTab(tabId) {
+        function switchTab(tabName) {
             const tabs = ['active', 'management', 'weekend-ot', 'completed', 'pm', 'equipment', 'tech-workload'];
             tabs.forEach(t => {
                 const content = document.getElementById(`tab-content-${t}`);
                 const btn = document.getElementById(`tab-btn-${t}`);
-                if (content) content.classList.toggle('hidden', t !== tabId);
+                if (content) {
+                    content.classList.toggle('hidden', t !== tabName);
+                }
                 if (btn) {
-                    if (t === tabId) {
-                        btn.className = 'px-3.5 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white transition flex items-center space-x-2';
+                    if (t === tabName) {
+                        btn.className = "px-3.5 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white transition flex items-center space-x-2";
                     } else {
-                        btn.className = 'px-3.5 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center space-x-2';
+                        btn.className = "px-3.5 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center space-x-2";
                     }
                 }
             });
 
-            if (tabId === 'management') {
-                renderAnalyticsTables();
+            if (tabName === 'management') {
                 updateManagementDashboard();
-                initCharts();
-            } else if (tabId === 'equipment') {
-                renderEquipmentGrid();
-            } else if (tabId === 'tech-workload') {
-                renderTechnicianWorkload();
+                renderAnalyticsTables();
+                setTimeout(() => initCharts(), 100);
             }
         }
 
         function toggleActiveView(mode) {
             activeViewMode = mode;
-            const tableWrap = document.getElementById('active-table-wrapper');
-            const kanbanWrap = document.getElementById('active-kanban-wrapper');
+            const tableWrapper = document.getElementById('active-table-wrapper');
+            const kanbanWrapper = document.getElementById('active-kanban-wrapper');
             const btnTable = document.getElementById('view-mode-table');
             const btnKanban = document.getElementById('view-mode-kanban');
 
-            if (mode === 'table') {
-                if (tableWrap) tableWrap.classList.remove('hidden');
-                if (kanbanWrap) kanbanWrap.classList.add('hidden');
-                if (btnTable) btnTable.className = 'px-2.5 py-1 rounded text-xs bg-slate-700 text-white';
-                if (btnKanban) btnKanban.className = 'px-2.5 py-1 rounded text-xs text-slate-400 hover:text-white';
-            } else {
-                if (tableWrap) tableWrap.classList.add('hidden');
-                if (kanbanWrap) kanbanWrap.classList.remove('hidden');
-                if (btnTable) btnTable.className = 'px-2.5 py-1 rounded text-xs text-slate-400 hover:text-white';
-                if (btnKanban) btnKanban.className = 'px-2.5 py-1 rounded text-xs bg-slate-700 text-white';
-            }
+            if (tableWrapper) tableWrapper.classList.toggle('hidden', mode !== 'table');
+            if (kanbanWrapper) kanbanWrapper.classList.toggle('hidden', mode !== 'kanban');
+
+            if (btnTable) btnTable.className = mode === 'table' ? "px-2.5 py-1 rounded text-xs bg-slate-700 text-white" : "px-2.5 py-1 rounded text-xs text-slate-400 hover:text-white";
+            if (btnKanban) btnKanban.className = mode === 'kanban' ? "px-2.5 py-1 rounded text-xs bg-slate-700 text-white" : "px-2.5 py-1 rounded text-xs text-slate-400 hover:text-white";
+
             renderActiveJobs();
         }
 
@@ -4524,21 +4624,31 @@
             renderWeekendOtJobs();
             renderEquipmentGrid();
             renderTechnicianWorkload();
-            renderAnalyticsTables();
             updateManagementDashboard();
+            renderAnalyticsTables();
             updateCharts();
-            const trashCountEl = document.getElementById('hdr-trash-count');
-            if (trashCountEl) trashCountEl.innerText = deleteLog.length;
         }
 
-        window.onload = function() {
-            loadFromLocalStorage();
-            populateTechnicianDropdowns();
-            populateSectionDropdowns();
-            filterNewJobEquipment();
-            filterPmEquipment('');
-            filterWeekendOtEquipment('');
+        function startClockAndIntervals() {
+            // Live clock (1s interval)
+            setInterval(() => {
+                const timeEl = document.getElementById('live-time');
+                if (timeEl) {
+                    const now = new Date();
+                    timeEl.innerText = now.toLocaleTimeString();
+                }
+            }, 1000);
 
+            // Active jobs live duration & background refresh (10s interval)
+            setInterval(() => {
+                if (activeJobs && activeJobs.length > 0) {
+                    renderActiveJobs();
+                }
+            }, 10000);
+        }
+
+        // Initialize application on window load
+        window.addEventListener('load', () => {
             const savedSession = getSafeStorage('sml_active_user_session');
             if (savedSession) {
                 try {
@@ -4552,19 +4662,14 @@
                 document.getElementById('login-overlay')?.classList.remove('hidden');
             }
 
+            loadFromLocalStorage();
+            populateTechnicianDropdowns();
+            populateSectionDropdowns();
+            filterNewJobEquipment();
             initCloudSync();
-
-            setInterval(() => {
-                const liveClockEl = document.getElementById('live-time');
-                if (liveClockEl) {
-                    liveClockEl.innerText = new Date().toLocaleTimeString();
-                }
-            }, 1000);
-
-            setInterval(() => {
-                renderActiveJobs();
-            }, 10000);
-        };
+            startClockAndIntervals();
+            refreshUI();
+        });
     </script>
 </body>
 </html>
