@@ -1424,8 +1424,18 @@
                 </div>
                 <div>
                     <h3 class="text-base font-bold text-white">Database Connectivity & Sync Setup</h3>
-                    <p class="text-xs text-slate-400">Firebase Cloud Database Synchronization (<code class="text-blue-300">sml-maintenance1</code>)</p>
+                    <p class="text-xs text-slate-400">Firebase Cloud Database Synchronization (<code class="text-blue-300">sml-mmt-nov</code>)</p>
                 </div>
+            </div>
+
+            <!-- Dynamic Diagnostic Status Box -->
+            <div id="syncDiagnosticBox" class="p-3.5 bg-blue-950/40 border border-blue-800/60 rounded-xl space-y-1.5">
+                <div class="font-bold text-blue-300 flex items-center space-x-2">
+                    <i class="fa-solid fa-cloud-arrow-up text-blue-400"></i>
+                    <span>Firebase Cloud Connected</span>
+                </div>
+                <p class="text-slate-300 text-[11px] leading-relaxed">Connected to project <code class="text-amber-300">sml-mmt-nov</code>. All updates sync in real time across sessions.</p>
+            </div>
             </div>
 
             <!-- Dynamic Diagnostic Status Box -->
@@ -1719,14 +1729,14 @@
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'sml-global-plant';
 
         const DEFAULT_FIREBASE_CONFIG = {
-            apiKey: "AIzaSyB3W-c-QMlCQRtEtPEC4vH7GXYmMPf_UzE",
-            authDomain: "sml-maintenance1.firebaseapp.com",
-            databaseURL: "https://sml-maintenance1-default-rtdb.firebaseio.com",
-            projectId: "sml-maintenance1",
-            storageBucket: "sml-maintenance1.firebasestorage.app",
-            messagingSenderId: "58224613087",
-            appId: "1:58224613087:web:102226ca3f991dd50c3b6a",
-            measurementId: "G-43WW20LWCR"
+            apiKey: "AIzaSyBmW1Wnk6WVT6EGiKw4IHm6pT9Rizd3ym4",
+            authDomain: "sml-mmt-nov.firebaseapp.com",
+            databaseURL: "https://sml-mmt-nov-default-rtdb.firebaseio.com",
+            projectId: "sml-mmt-nov",
+            storageBucket: "sml-mmt-nov.firebasestorage.app",
+            messagingSenderId: "727333970672",
+            appId: "1:727333970672:web:5f47eca87a1493f2381835",
+            measurementId: "G-LSVFVGB3XL"
         };
 
         const AUTH_USER_DATABASE = {
@@ -1973,7 +1983,7 @@
                         <i class="fa-solid ${isConnected ? 'fa-cloud-arrow-up text-emerald-400' : 'fa-triangle-exclamation text-amber-400'}"></i>
                         <span>${statusText}</span>
                     </div>
-                    <p class="text-slate-300 text-[11px] leading-relaxed">${details || 'Connected to project sml-maintenance1. Real-time sync active.'}</p>
+                    <p class="text-slate-300 text-[11px] leading-relaxed">${details || 'Connected to project sml-mmt-nov. Real-time sync active.'}</p>
                 `;
             }
         }
